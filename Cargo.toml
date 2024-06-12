@@ -1,0 +1,11 @@
+[package]
+name = "fourier"
+version = "0.0.1"
+authors = ["HaמuL"]
+license = "Archivist Licence"
+edition = "2021"
+
+[dependencies]
+byteorder = "1.5.0"
+half = "2.4.1"
+lazy_static = "1.4.0"
