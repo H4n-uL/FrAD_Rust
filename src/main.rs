@@ -12,7 +12,7 @@ fn crc32(data: &[u8]) -> u32 {
     for byte in data {
         crc ^= *byte as u32;
         for _ in 0..8 {
-            if crc & 1 == 1 { crc = (crc >> 1) ^ 0xedb88320; } 
+            if crc & 1 == 1 { crc = (crc >> 1) ^ 0xedb88320; }
             else            { crc >>= 1; }
         }
     }
@@ -69,6 +69,7 @@ fn main() {
                     .take_while(|&i| (i as usize + 1) * channels as usize <= pcm.len())
                     .map(|i| pcm[i as usize * (channels as usize)..(i + 1) as usize * (channels as usize)].to_vec())
                     .collect();
+                let plen: u32 = pcm_t.len() as u32;
                 println!("Interleaving time: {:?}", start.elapsed());
 
                 let start = Instant::now();
@@ -95,7 +96,7 @@ fn main() {
 
                     buffer.extend_from_slice(&[0; 8]);
 
-                    buffer.extend_from_slice(&fsize.to_be_bytes());
+                    buffer.extend_from_slice(&plen.to_be_bytes());
                     buffer.extend_from_slice(&crc32(&frad).to_be_bytes());
                 }
                 buffer.extend_from_slice(&frad);
