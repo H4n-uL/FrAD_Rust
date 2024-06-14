@@ -23,7 +23,6 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>,
         bx += 1;
     }
 
-
     let frad = u8pack::pack(freqs_flat, bits, !little_endian);
 
     return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16);
