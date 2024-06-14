@@ -62,7 +62,7 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
             .chunks(2)
             .map(|bytes| {
                 let x = f16::from_bits(
-                    if be { u16::from_be_bytes(bytes.try_into().unwrap()) } 
+                    if be { u16::from_be_bytes(bytes.try_into().unwrap()) }
                     else { u16::from_le_bytes(bytes.try_into().unwrap()) }
                 );
                 f64::from(x)
@@ -73,8 +73,8 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
         vec = input
             .chunks(4)
             .map(|bytes| {
-                let x = 
-                    if be { f32::from_be_bytes(bytes.try_into().unwrap()) } 
+                let x =
+                    if be { f32::from_be_bytes(bytes.try_into().unwrap()) }
                     else { f32::from_le_bytes(bytes.try_into().unwrap()) }
                 ;
                 f64::from(x)
@@ -85,8 +85,8 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
         vec = input
             .chunks(8)
             .map(|bytes| {
-                let x = 
-                    if be { f64::from_be_bytes(bytes.try_into().unwrap()) } 
+                let x =
+                    if be { f64::from_be_bytes(bytes.try_into().unwrap()) }
                     else { f64::from_le_bytes(bytes.try_into().unwrap()) }
                 ;
                 f64::from(x)

@@ -34,7 +34,7 @@ fn _gf_div(x: u8, y: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
         panic!("Divide by 0");
     }
     if x == 0 {
-        0  
+        0
     } else {
         let log_x = gf_log[x as usize] as usize;
         let log_y = gf_log[y as usize] as usize;
