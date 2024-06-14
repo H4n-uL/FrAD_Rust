@@ -1,2 +1,12 @@
 /target
 .DS_Store
+
+# FrAD files
+*.frad
+*.fra
+*.dsin
+*.dsn
+
+# RAW PCM files
+*.pcm
+*.raw
