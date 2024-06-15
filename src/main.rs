@@ -57,7 +57,6 @@ fn main() {
 
                 let (mut frad, bits) = fourier::analogue(pcm_t, bit_depth, little_endian);
 
-                
                 if enable_ecc {
                     frad = tools::ecc::encode_rs(frad, ecc_rate[0] as usize, ecc_rate[1] as usize);
                 }
