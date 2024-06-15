@@ -8,7 +8,7 @@
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use half::f16;
 
-use super::bitify;
+use crate::backend::bitify;
 
 fn cut_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
     return bstr.chunks(bits as usize * 4 / 3).flat_map(|c| c.iter().take(bits as usize)).cloned().collect();
