@@ -1,11 +1,11 @@
-pub mod backend;
+mod backend;
 use backend::{u8pack, core_fast::{dct, idct}};
+pub mod profiles;
 
 const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];
 const FLOAT_DR: [i16; 6] = [5, 5, 8, 8, 11, 11];
 
 pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>, i16) {
-
     let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
         .map(|i| pcm.iter().map(|inner| inner[i]).collect())
         .collect();

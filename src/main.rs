@@ -1,9 +1,11 @@
+mod backend;
 mod fourier;
 mod tools;
 mod common;
 
 use std::fs::File;
 use std::io::{Read, Write};
+use fourier::profiles::profile1;
 
 // use libsoxr::Soxr;
 
@@ -15,51 +17,96 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
     let endian = (little_endian as u8) << 3;
     return vec![(prf | ecc | endian | bits as u8) as u8];
 }
-fn _decode_pfb(pfb: Vec<u8>) -> (u8, bool, bool, i16) {
-    let pfb = pfb[0];
-    let profile = pfb >> 5;
-    let enable_ecc = (pfb >> 4) & 1 == 1;
-    let little_endian = (pfb >> 3) & 1 == 1;
-    let bits = pfb & 0x07;
-    return (profile, enable_ecc, little_endian, bits as i16);
+
+fn encode_css_prf1(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
+    let chnl = (channels as u16 - 1) << 10;
+    let srate = (profile1::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
+    let fsize = *profile1::SMPLS_LI.iter().find(|&&x| x >= fsize).unwrap();
+    let mult = profile1::get_smpls_from_value(&fsize);
+    let px = (profile1::SMPLS.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
+    let fsize = ((fsize as f64 / mult as f64).log2() as u16) << 1;
+    return (chnl | srate | px | fsize).to_be_bytes().to_vec();
 }
 
+fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
+    let mut ndata = Vec::new();
+    let mut nprev = Vec::new();
+    let fsize = data.len() + prev.len();
+    let olap = if olap > 0 { if olap > 2 { olap } else { 2 } } else { 0 };
+
+    if prev.len() != 0 {
+        ndata.extend(prev.iter().cloned());
+        ndata.extend(data.iter().cloned());
+    }
+    else { ndata = data.clone(); }
+
+    if profile == 1 || profile == 2 && olap > 0 {
+        let cutoff = ndata.len() - (fsize as usize / olap as usize);
+        nprev = ndata[cutoff..].to_vec();
+    }
+    else { nprev = Vec::new(); }
+    return (ndata, nprev);
+}
+/**
+ * if prev.shape != np.array([]).shape: data = np.concatenate([prev, data])
+        if kwargs.get('profile') in [1, 2] and olap: prev = data[-fsize//olap:]
+        else: prev = np.array([])
+        return data, prev
+ */
+
 fn main() {
-    let bit_depth: i16 = 64;
+    let bit_depth: i16 = 24;
     let channels: i16 = 2;
-    let srate: u32 = 96000;
+    let srate: u32 = 48000;
     let mut readfile = File::open("test.pcm").unwrap();
     let mut writefile = File::create("test.frad").unwrap();
     let fsize: u32 = 2048;
-    let fbytes: u32 = fsize * channels as u32 * 8;
     let little_endian: bool = false;
 
-    let enable_ecc = false;
+    let enable_ecc = true;
     let ecc_rate: [u8; 2] = [96, 24];
     let profile: u8 = 0;
 
-    // let prev = Vec::new();
+    let olap: u8 = 16;
+
+    let mut prev: Vec<Vec<f64>> = Vec::new();
 
     loop {
-        let mut pcm_buf = vec![0u8; fbytes as usize];
+        let mut rlen = fsize as usize;
+
+        if profile == 1 {
+            rlen = *profile1::SMPLS_LI.iter().find(|&&x| x >= fsize).unwrap() as usize - prev.len();
+            if rlen <= 0 { rlen = *profile1::SMPLS_LI.iter().find(|&&x| x - prev.len() as u32 >= fsize).unwrap() as usize - prev.len(); }
+        }
+        let fbytes = rlen * channels as usize * 8;
+        // thread::sleep(Duration::from_millis(100));
+        let mut pcm_buf = vec![0u8; fbytes];
         match readfile.read(&mut pcm_buf){
-            Ok(rlen) => {
-                if rlen == 0 { break; }
-                let pcm: Vec<f64> = pcm_buf[..rlen].chunks(8)
-                    .map(|bytes| f64::from(f64::from_be_bytes(bytes.try_into().unwrap())))
-                    .collect();
+            Ok(readlen) => {
+                if readlen == 0 { break; }
+                let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)
+                .map(|bytes: &[u8]| f64::from(f64::from_be_bytes(bytes.try_into().unwrap())))
+                .collect();
 
-                let pcm_t: Vec<Vec<f64>> = (0..fsize)
-                    .take_while(|&i| (i as usize + 1) * channels as usize <= pcm.len())
-                    .map(|i| pcm[i as usize * (channels as usize)..(i + 1) as usize * (channels as usize)].to_vec())
-                    .collect();
-                let plen: u32 = pcm_t.len() as u32;
+                let mut frame: Vec<Vec<f64>> = (0..fsize)
+                .take_while(|&i| (i as usize + 1) * channels as usize <= pcm.len())
+                .map(|i| pcm[i as usize * (channels as usize)..(i + 1) as usize * (channels as usize)].to_vec())
+                .collect();
 
-                let (mut frad, bits) = fourier::analogue(pcm_t, bit_depth, little_endian);
+                // Overlapping for Profile 1
+                (frame, prev) = overlap(frame, prev, olap, profile);
+                let plen: u32 = frame.len() as u32;
 
-                if enable_ecc {
+                // Encoding
+                let (mut frad, bits) = 
+                if profile == 1 { fourier::profiles::profile1::analogue(frame, bit_depth, srate, 0) }
+                else { fourier::analogue(frame, bit_depth, little_endian) };
+
+                if enable_ecc { // Creating Reed-Solomon error correction code
                     frad = tools::ecc::encode_rs(frad, ecc_rate[0] as usize, ecc_rate[1] as usize);
                 }
+
+                // Frame writing
 
                 let pfb = encode_pfb(profile, enable_ecc, little_endian, bits);
 
@@ -67,7 +114,15 @@ fn main() {
                 buffer.extend_from_slice(&FRM_SIGN);
                 buffer.extend_from_slice(&(frad.len() as u32).to_be_bytes());
                 buffer.extend_from_slice(&pfb);
-                if profile == 0 {
+                if profile == 1 {
+                    buffer.extend_from_slice(&encode_css_prf1(channels, srate, fsize));
+                    buffer.extend_from_slice(&olap.to_be_bytes());
+                    if enable_ecc {
+                        buffer.extend_from_slice(&ecc_rate);
+                        buffer.extend_from_slice(&common::crc16_ansi(&frad));
+                    }
+                }
+                else {
                     buffer.extend_from_slice(&[(channels-1) as u8]);
                     buffer.extend_from_slice(&(if enable_ecc { ecc_rate } else { [0; 2] }));
                     buffer.extend_from_slice(&srate.to_be_bytes());
