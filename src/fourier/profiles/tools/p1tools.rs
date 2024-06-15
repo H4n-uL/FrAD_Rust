@@ -10,7 +10,6 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
 const MOSLEN: usize = MODIFIED_OPUS_SUBBANDS.len() - 1;
 
 fn getbinrng(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
-    
     let start = (MODIFIED_OPUS_SUBBANDS[i] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     let end = (MODIFIED_OPUS_SUBBANDS[i + 1] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     return start.min(len)..end.min(len);
@@ -68,7 +67,7 @@ pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec
         ).iter().map(|x| x * const_factor).collect();
         mask[c] = thres.clone();
         let thres = mapping_from_opus(&thres, freqs[0].len(), srate);
-        
+
         for i in 0..freqs[c].len() {
             pns_sgnl[c][i] = (freqs[c][i] / thres[i]).round() as i64;
         }
