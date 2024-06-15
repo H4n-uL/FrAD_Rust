@@ -6,32 +6,32 @@
 
 use std::f64::consts::PI;
 
-pub fn dct(input: Vec<f64>) -> Vec<f64> {
-    let slen = input.len();
-    let mut output = vec![0.0; slen];
+pub fn dct(x: Vec<f64>) -> Vec<f64> {
+    let n = x.len();
+    let mut y = vec![0.0; n];
 
-    for i in 0..slen {
+    for i in 0..n {
         let mut sum = 0.0;
-        for j in 0..slen {
-            let angle = (2 * j + 1) as f64 * i as f64 * PI / (2 * slen) as f64;
-            sum += input[j] * angle.cos();
+        for j in 0..n {
+            let angle = (PI / n as f64) * (j as f64 + 0.5) * i as f64;
+            sum += x[j] * angle.cos();
         }
-        output[i] = sum * 2.0;
+        y[i] = sum * 2.0;
     }
-    return output;
+    return y;
 }
 
-pub fn idct(input: Vec<f64>) -> Vec<f64> {
-    let slen = input.len();
-    let mut output = vec![0.0; slen];
+pub fn idct(y: Vec<f64>) -> Vec<f64> {
+    let n = y.len();
+    let mut x = vec![0.0; n];
 
-    for i in 0..slen {
-        let mut sum = input[0] / 2.0;
-        for j in 1..slen {
-            let angle = j as f64 * (2 * i + 1) as f64 * PI / (2 * slen) as f64;
-            sum += input[j] * angle.cos();
+    for i in 0..n {
+        let mut sum = y[0] / 2.0;
+        for j in 1..n {
+            let angle = (PI / n as f64) * (i as f64 + 0.5) * j as f64;
+            sum += y[j] * angle.cos();
         }
-        output[i] = sum / slen as f64;
+        x[i] = sum / n as f64;
     }
-    return output;
+    return x;
 }
