@@ -1,4 +1,10 @@
+# RUST #
+## Compiled sources
 /target
+## lock file
+Cargo.lock
+
+# macOS
 .DS_Store
 
 # FrAD files
