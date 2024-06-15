@@ -1,3 +1,10 @@
+/**                             Bytearray packer                              */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Pack float array into byte array and vice versa
+ * Dependencies: byteorder, half
+ */
+
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use half::f16;
 

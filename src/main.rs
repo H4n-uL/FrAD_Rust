@@ -1,23 +1,11 @@
 mod fourier;
 mod tools;
+mod common;
+
 use std::fs::File;
 use std::io::{Read, Write};
 
-use std::time::Instant;
-
 // use libsoxr::Soxr;
-
-fn crc32(data: &[u8]) -> u32 {
-    let mut crc = 0xffffffff;
-    for byte in data {
-        crc ^= *byte as u32;
-        for _ in 0..8 {
-            if crc & 1 == 1 { crc = (crc >> 1) ^ 0xedb88320; }
-            else            { crc >>= 1; }
-        }
-    }
-    crc ^ 0xffffffff
-}
 
 const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
@@ -46,7 +34,7 @@ fn main() {
     let fbytes: u32 = fsize * channels as u32 * 8;
     let little_endian: bool = false;
 
-    let enable_ecc = true;
+    let enable_ecc = false;
     let ecc_rate: [u8; 2] = [96, 24];
     let profile: u8 = 0;
 
@@ -57,32 +45,23 @@ fn main() {
         match readfile.read(&mut pcm_buf){
             Ok(rlen) => {
                 if rlen == 0 { break; }
-
-                let start = Instant::now();
                 let pcm: Vec<f64> = pcm_buf[..rlen].chunks(8)
                     .map(|bytes| f64::from(f64::from_be_bytes(bytes.try_into().unwrap())))
                     .collect();
-                println!("Read time: {:?}", start.elapsed());
 
-                let start = Instant::now();
                 let pcm_t: Vec<Vec<f64>> = (0..fsize)
                     .take_while(|&i| (i as usize + 1) * channels as usize <= pcm.len())
                     .map(|i| pcm[i as usize * (channels as usize)..(i + 1) as usize * (channels as usize)].to_vec())
                     .collect();
                 let plen: u32 = pcm_t.len() as u32;
-                println!("Interleaving time: {:?}", start.elapsed());
 
-                let start = Instant::now();
                 let (mut frad, bits) = fourier::analogue(pcm_t, bit_depth, little_endian);
-                println!("Transform time: {:?}", start.elapsed());
 
-                let start = Instant::now();
+                
                 if enable_ecc {
                     frad = tools::ecc::encode_rs(frad, ecc_rate[0] as usize, ecc_rate[1] as usize);
                 }
-                println!("ECC time: {:?}", start.elapsed());
 
-                let start = Instant::now();
                 let pfb = encode_pfb(profile, enable_ecc, little_endian, bits);
 
                 let mut buffer = Vec::new();
@@ -97,13 +76,11 @@ fn main() {
                     buffer.extend_from_slice(&[0; 8]);
 
                     buffer.extend_from_slice(&plen.to_be_bytes());
-                    buffer.extend_from_slice(&crc32(&frad).to_be_bytes());
+                    buffer.extend_from_slice(&common::crc32(&frad));
                 }
                 buffer.extend_from_slice(&frad);
 
                 writefile.write(buffer.as_slice()).unwrap();
-                println!("Write time: {:?}", start.elapsed());
-                println!();
             },
             Err(_e) => {
                 break;
