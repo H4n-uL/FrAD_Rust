@@ -52,11 +52,10 @@ pub fn encode() {
             if rlen <= 0 { rlen = *profile1::SMPLS_LI.iter().find(|&&x| x - prev.len() as u32 >= buffersize).unwrap() as usize - prev.len(); }
         }
         let fbytes = rlen * channels as usize * 8;
-        // thread::sleep(Duration::from_millis(100));
         let mut pcm_buf = vec![0u8; fbytes];
-
         let readlen = readfile.read(&mut pcm_buf).unwrap();
         if readlen == 0 { break; }
+
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)
         .map(|bytes: &[u8]| f64::from(f64::from_be_bytes(bytes.try_into().unwrap())))
         .collect();
