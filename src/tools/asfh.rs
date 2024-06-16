@@ -1,5 +1,22 @@
-use crate::{common::FRM_SIGN, fourier::profiles::profile1};
+use crate::{common::{FRM_SIGN, crc16_ansi, crc32}, fourier::profiles::profile1};
 use std::{fs::File, io::Read};
+
+fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> Vec<u8> {
+    let prf = profile << 5;
+    let ecc = (enable_ecc as u8) << 4;
+    let endian = (little_endian as u8) << 3;
+    return vec![(prf | ecc | endian | bits as u8) as u8];
+}
+
+fn encode_css_prf1(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
+    let chnl = (channels as u16 - 1) << 10;
+    let srate = (profile1::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
+    let fsize = *profile1::SMPLS_LI.iter().find(|&&x| x >= fsize).unwrap();
+    let mult = profile1::get_smpls_from_value(&fsize);
+    let px = (profile1::SMPLS.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
+    let fsize = ((fsize as f64 / mult as f64).log2() as u16) << 1;
+    return (chnl | srate | px | fsize).to_be_bytes().to_vec();
+}
 
 fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
     let prf = pfb >> 5;
@@ -61,6 +78,33 @@ impl ASFH {
             crc16: [0; 2],
             headlen: 0
         }
+    }
+
+    pub fn write_vec(&self, frad: Vec<u8>) -> Vec<u8> {
+        let mut fhead = FRM_SIGN.to_vec();
+
+        fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
+        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth)[0]);
+
+        if self.profile == 1 {
+            fhead.extend(encode_css_prf1(self.channels, self.srate, self.fsize));
+            fhead.push(self.olap);
+            if self.ecc {
+                fhead.extend(self.ecc_rate.to_vec());
+                fhead.extend(crc16_ansi(&frad).to_vec());
+            }
+        }
+        else {
+            fhead.push((self.channels - 1) as u8);
+            fhead.extend(self.ecc_rate.to_vec());
+            fhead.extend(self.srate.to_be_bytes().to_vec());
+            fhead.extend([0u8; 8].to_vec());
+            fhead.extend(self.fsize.to_be_bytes().to_vec());
+            fhead.extend(crc32(&frad).to_vec());
+        }
+
+        let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
+        return frad;
     }
 
     pub fn update(&mut self, file: &mut File) {
