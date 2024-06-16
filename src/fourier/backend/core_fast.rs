@@ -30,7 +30,7 @@ pub fn dct(x: Vec<f64>) -> Vec<f64> {
     return y;
 }
 
-pub fn idct(y: Vec<f64>) -> Vec<f64> {
+pub fn idct(y: Vec<f64>) -> Vec<f64> { // kinda buggy, should be fixed
     let n = y.len();
     let mut beta = vec![Complex::new(0.0, 0.0); 2 * n];
 

@@ -1,4 +1,4 @@
-use super::super::backend::core_fast::dct;
+use super::super::backend::{core_fast::dct, core::idct};
 use super::tools::p1tools;
 use half::f16;
 
@@ -60,6 +60,41 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
         .chain(freqs_glm.into_iter()).collect();
 
     // TODO: Implement zlib compression
+    // let frad = zlib::compress(frad);
 
     return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16);
+}
+
+pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, little_endian: bool, srate: u32) -> Vec<Vec<f64>> {
+    let channels = channels as usize;
+
+    // TODO: Implement zlib decompression
+    // let frad = zlib::decompress(frad);
+
+    let pns_len = if !little_endian { u32::from_be_bytes(frad[0..4].try_into().unwrap()) as usize }
+    else { u32::from_le_bytes(frad[0..4].try_into().unwrap()) as usize };
+
+    let pns_glm = frad[4..4+pns_len].to_vec();
+    let freqs_glm = frad[4+pns_len..].to_vec();
+
+    let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_glm).iter().map(|x| *x as f64).collect();
+    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(pns_glm).iter().map(|x| f16::from_bits(*x as u16).to_f64() * 2.0_f64.powi(bits as i32 - 1)).collect();
+
+    let samples = freqs_flat.len() / channels as usize;
+
+    let mut freqs: Vec<Vec<f64>> = (0..channels)
+        .map(|i| freqs_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
+        .collect();
+    let mask: Vec<Vec<f64>> = (0..channels)
+    .map(|i| pns_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
+    .collect();
+
+    freqs = p1tools::dequant(freqs, mask, channels as i16, srate);
+
+    let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
+
+    let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
+        .map(|i| pcm_trans.iter().map(|inner| inner[i] * samples as f64 / 2.0_f64.powi(bits as i32 - 1)).collect())
+        .collect();
+    return pcm;
 }

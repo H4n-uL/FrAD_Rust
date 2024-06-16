@@ -76,7 +76,7 @@ pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec
     return (pns_sgnl, mask);
 }
 
-pub fn dequant(pns_sgnl: Vec<Vec<i64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
+pub fn dequant(pns_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
     let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; pns_sgnl[0].len()]; channels as usize];
     masks = masks.iter().map(|x| x.iter().map(|y| y.max(0.0)).collect()).collect();
 
@@ -114,6 +114,7 @@ pub fn exp_golomb_rice_decode(data: Vec<u8>) -> Vec<i64> {
 
     while data.len() > 0 {
         let m = data.iter().position(|&x| x).unwrap_or(data.len());
+        if m == data.len() { break; }
 
         let codeword: Vec<bool> = data.iter().take((m * 2) + k as usize + 1).cloned().collect();
         data = data.iter().skip((m * 2) + k as usize + 1).cloned().collect();

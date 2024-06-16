@@ -1,3 +1,5 @@
+pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
+
 const fn gcrc32t() -> [u32; 256] {
     let mut table = [0u32; 256];
     let mut i = 0;
