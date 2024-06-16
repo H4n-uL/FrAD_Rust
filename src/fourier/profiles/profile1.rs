@@ -1,6 +1,9 @@
-use super::super::backend::{core_fast::dct, core::idct};
+use super::super::backend::core_fast::{dct, idct};
 use super::tools::p1tools;
 use half::f16;
+
+use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
+use std::io::prelude::*;
 
 pub const SRATES: [u32; 12] = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
 pub const SMPLS: [(u32, [u32; 8]); 3] = [
@@ -59,8 +62,9 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
         .into_iter().chain(pns_glm.into_iter())
         .chain(freqs_glm.into_iter()).collect();
 
-    // TODO: Implement zlib compression
-    // let frad = zlib::compress(frad);
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::best());
+    encoder.write_all(&frad).unwrap();
+    let frad = encoder.finish().unwrap();
 
     return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16);
 }
@@ -68,8 +72,12 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
 pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, little_endian: bool, srate: u32) -> Vec<Vec<f64>> {
     let channels = channels as usize;
 
-    // TODO: Implement zlib decompression
-    // let frad = zlib::decompress(frad);
+    let mut decoder = ZlibDecoder::new(&frad[..]);
+    let frad = {
+        let mut buf = Vec::new();
+        decoder.read_to_end(&mut buf).unwrap();
+        buf
+    };
 
     let pns_len = if !little_endian { u32::from_be_bytes(frad[0..4].try_into().unwrap()) as usize }
     else { u32::from_le_bytes(frad[0..4].try_into().unwrap()) as usize };
