@@ -1,5 +1,5 @@
 pub mod backend;
-use backend::{u8pack, core_fast::dct, core::idct};
+use backend::{u8pack, core_fast::{dct, idct}};
 pub mod profiles;
 
 const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];

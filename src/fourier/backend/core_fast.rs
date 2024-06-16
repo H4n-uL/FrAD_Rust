@@ -30,18 +30,20 @@ pub fn dct(x: Vec<f64>) -> Vec<f64> {
     return y;
 }
 
-pub fn idct(y: Vec<f64>) -> Vec<f64> { // kinda buggy, should be fixed
+pub fn idct(y: Vec<f64>) -> Vec<f64> {
     let n = y.len();
     let mut beta = vec![Complex::new(0.0, 0.0); 2 * n];
 
-    for i in 0..n {
-        beta[i] = Complex::new(y[i], 0.0);
-        beta[2 * n - 1 - i] = Complex::new(y[i], 0.0);
+    beta[0] = Complex::new(y[0], 0.0);
+    for k in 1..n {
+        let angle = -PI * k as f64 / (2.0 * n as f64);
+        beta[k] = Complex::new(y[k] * angle.cos(), -y[k] * angle.sin());
+        beta[2 * n - k] = Complex::new(y[k] * angle.cos(), y[k] * angle.sin());
     }
 
     let mut planner = FftPlanner::new();
-    let ifft = planner.plan_fft_inverse(2 * n);
-    ifft.process(&mut beta);
+    let fft = planner.plan_fft_inverse(2 * n);
+    fft.process(&mut beta);
 
     let mut x = vec![0.0; n];
     for i in 0..n {
