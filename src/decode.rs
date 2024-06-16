@@ -1,10 +1,7 @@
-use crate::{fourier, fourier::profiles::profile1};
-use crate::common;
-use crate::tools::ecc;
+use crate::{fourier, fourier::profiles::profile1, 
+    common, tools::{asfh::ASFH, ecc}};
 
-use super::common::FRM_SIGN;
 use std::{fs::File, io::{Read, Write}};
-use super::tools::asfh::ASFH;
 
 fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     if prev.len() != 0 {
@@ -46,7 +43,7 @@ pub fn decode() {
             if readlen == 0 { flush(&writefile, prev); break; }
             head = buf.to_vec();
         }
-        if head != FRM_SIGN {
+        if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = readfile.read(&mut buf).unwrap();
             if readlen == 0 { flush(&writefile, prev); break; }
@@ -58,7 +55,7 @@ pub fn decode() {
 
         let mut frad = vec![0u8; asfh.frmbytes as usize];
         let _ = readfile.read(&mut frad).unwrap();
-        
+
         if asfh.ecc {
             if fix_error && (
                 asfh.profile == 0 && common::crc32(&frad) != asfh.crc32 ||
@@ -67,12 +64,11 @@ pub fn decode() {
             else { frad = ecc::unecc(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
         }
 
-        let mut pcm = //fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian);
+        let mut pcm =
         if asfh.profile == 1 { profile1::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian, asfh.srate) }
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);
-
         flush(&writefile, pcm);
         head = Vec::new();
     }

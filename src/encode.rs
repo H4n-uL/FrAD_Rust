@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Write};
-use super::{fourier, fourier::profiles::profile1};
-use super::common; use super::tools;
+use crate::{fourier, fourier::profiles::profile1,
+    common, tools};
 
 // use libsoxr::Soxr;
 
