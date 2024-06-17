@@ -76,7 +76,7 @@ fn main() {
     let (action, input, params) = tools::cli::parse(env::args());
 
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
-        encode::encode(input, params.output, params.bits, params.channels, params.srate, params.frame_size, params.little_endian, params.enable_ecc, params.ecc_rate, params.profile, params.overlap, params.losslevel);
+        encode::encode(input, params);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
         decode::decode(input, params.output, params.enable_ecc);

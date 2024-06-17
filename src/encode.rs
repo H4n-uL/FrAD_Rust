@@ -1,5 +1,5 @@
 use crate::{fourier, fourier::profiles::profile1,
-    tools::{asfh::ASFH, ecc}};
+    tools::{asfh::ASFH, cli, ecc}};
 
 use std::{fs::File, io::{Read, Write}, path::Path};
 // use libsoxr::Soxr;
@@ -24,7 +24,21 @@ fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (
     return (ndata, _nprev);
 }
 
-pub fn encode(rfile: String, wfile: String, bit_depth: i16, channels: i16, srate: u32, buffersize: u32, little_endian: bool, enable_ecc: bool, ecc_rate: [u8; 2], profile: u8, olap: u8, losslevel: u8) {
+pub fn encode(rfile: String, params: cli::CliParams) {
+    let wfile = params.output;
+    let bit_depth = params.bits;
+    let channels = params.channels;
+    let srate = params.srate;
+
+    let buffersize = params.frame_size;
+    let little_endian = params.little_endian;
+
+    let enable_ecc = params.enable_ecc;
+    let ecc_rate = params.ecc_rate;
+
+    let profile = params.profile;
+    let olap = params.overlap;
+    let losslevel = params.losslevel;
     if rfile.len() == 0 { panic!("Input file must be given"); }
 
     if srate == 0 { panic!("Sample rate must be given"); }
@@ -99,7 +113,7 @@ pub fn encode(rfile: String, wfile: String, bit_depth: i16, channels: i16, srate
         let fsize: u32 = frame.len() as u32;
 
         // Encoding
-        let (mut frad, bits) = 
+        let (mut frad, bit_ind, chnl) = 
         if profile == 1 { profile1::analogue(frame, bit_depth, srate, losslevel) }
         else { fourier::analogue(frame, bit_depth, little_endian) };
 
@@ -108,8 +122,8 @@ pub fn encode(rfile: String, wfile: String, bit_depth: i16, channels: i16, srate
         }
 
         // Writing to file
-        (asfh.profile, asfh.ecc, asfh.endian, asfh.bit_depth) = (profile, enable_ecc, little_endian, bits);
-        (asfh.channels, asfh.srate, asfh.fsize) = (channels, srate, fsize);
+        (asfh.profile, asfh.ecc, asfh.endian, asfh.bit_depth) = (profile, enable_ecc, little_endian, bit_ind);
+        (asfh.channels, asfh.srate, asfh.fsize) = (chnl, srate, fsize);
         (asfh.olap, asfh.ecc, asfh.ecc_rate) = (olap, enable_ecc, ecc_rate);
 
         let frad: Vec<u8> = asfh.write_vec(frad);

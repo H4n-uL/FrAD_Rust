@@ -37,13 +37,14 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     return pcm;
 }
 
-pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8>, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
     let pcm = pad_pcm(pcm);
     let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
         .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bits-1) as f64) / pcm.len() as f64).collect())
         .collect();
 
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
+    let channels = freqs.len();
 
     let (freqs, pns) = p1tools::quant(freqs, pcm[0].len() as i16, srate, level);
 
@@ -66,7 +67,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     encoder.write_all(&frad).unwrap();
     let frad = encoder.finish().unwrap();
 
-    return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16);
+    return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16, channels as i16);
 }
 
 pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, little_endian: bool, srate: u32) -> Vec<Vec<f64>> {

@@ -5,12 +5,13 @@ pub mod profiles;
 pub const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];
 const FLOAT_DR: [i16; 6] = [5, 5, 8, 8, 11, 11];
 
-pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
     let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
         .map(|i| pcm.iter().map(|inner| inner[i]).collect())
         .collect();
 
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
+    let channels = freqs.len();
 
     let freqs_trans: Vec<Vec<f64>> = (0..freqs[0].len())
     .map(|i| freqs.iter().map(|inner| inner[i]).collect())
@@ -25,7 +26,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>,
 
     let frad = u8pack::pack(freqs_flat, bits, !little_endian);
 
-    return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16);
+    return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16, channels as i16);
 }
 
 pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, little_endian: bool) -> Vec<Vec<f64>> {
