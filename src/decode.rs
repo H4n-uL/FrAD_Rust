@@ -22,40 +22,45 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
     (frame, prev)
 }
 
-fn flush(mut file: &File, pcm: Vec<Vec<f64>>) {
+fn flush(mut file: &File, pcm: Vec<Vec<f64>>, pipe: bool) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
     let pcm_bytes: Vec<u8> = pcm_flat.iter().map(|x| x.to_be_bytes()).flatten().collect();
-    file.write(&pcm_bytes).unwrap();
+    if pipe { std::io::stdout().lock().write_all(&pcm_bytes).unwrap(); }
+    else { file.write_all(&pcm_bytes).unwrap(); }
 }
 
 pub fn decode(rfile: String, params: cli::CliParams) {
 
-    let wfile = params.output;
+    let mut wfile = params.output;
     let fix_error = params.enable_ecc;
     if rfile.len() == 0 { panic!("Input file must be given"); }
-    if rfile == wfile { panic!("Input and output files cannot be the same"); }
-    let mut wfile = wfile;
-    if wfile.len() == 0 {
-        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-        let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-        wfile = format!("{}.pcm", wfile_prefix);
-    }
 
-    if Path::new(&wfile).exists() && !params.overwrite {
-        println!("Output file already exists, overwrite? (Y/N)");
-        loop {
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
-            if input.trim().to_lowercase() == "y" { break; }
-            else if input.trim().to_lowercase() == "n" { 
-                println!("Aborted.");
-                std::process::exit(0);
+    let mut ispipe = false;
+    if rfile == wfile { panic!("Input and output files cannot be the same"); }
+    if wfile == common::PIPEOUT { ispipe = true; }
+    else {
+        if wfile.len() == 0 {
+            let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
+            let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
+            wfile = format!("{}.pcm", wfile_prefix);
+        }
+    
+        if Path::new(&wfile).exists() && !params.overwrite {
+            eprintln!("Output file already exists, overwrite? (Y/N)");
+            loop {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if input.trim().to_lowercase() == "y" { break; }
+                else if input.trim().to_lowercase() == "n" { 
+                    eprintln!("Aborted.");
+                    std::process::exit(0);
+                }
             }
         }
     }
 
     let mut readfile = File::open(rfile).unwrap();
-    let writefile = File::create(wfile).unwrap();
+    let writefile = if wfile != common::PIPEOUT { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
     let mut asfh = ASFH::new();
 
     let mut head = Vec::new();
@@ -64,13 +69,13 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         if head.len() == 0 {
             let mut buf = vec![0u8; 4];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { flush(&writefile, prev); break; }
+            if readlen == 0 { flush(&writefile, prev, ispipe); break; }
             head = buf.to_vec();
         }
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { flush(&writefile, prev); break; }
+            if readlen == 0 { flush(&writefile, prev, ispipe); break; }
             head.extend(buf);
             head = head[1..].to_vec();
             continue;
@@ -93,7 +98,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);
-        flush(&writefile, pcm);
+        flush(&writefile, pcm, ispipe);
         head = Vec::new();
     }
 }

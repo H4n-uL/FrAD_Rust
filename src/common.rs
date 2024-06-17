@@ -1,5 +1,8 @@
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
+pub const PIPEOUT: &str = "pipe:1";
+pub const DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
+
 const fn gcrc32t() -> [u32; 256] {
     let mut table = [0u32; 256];
     let mut i = 0;
