@@ -9,7 +9,7 @@ pub fn repair(rfile: String, params: cli::CliParams) {
     if wfile.len() == 0 { panic!("Output file must be given"); }
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
 
-    if Path::new(&wfile).exists() && params.overwrite {
+    if Path::new(&wfile).exists() && !params.overwrite {
         println!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();

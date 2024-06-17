@@ -69,7 +69,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    if Path::new(&wfile).exists() && params.overwrite {
+    if Path::new(&wfile).exists() && !params.overwrite {
         println!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();
