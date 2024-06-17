@@ -85,27 +85,27 @@ fn main() {
         repair::repair(input, params);
     }
     else if &action == &"help".to_string() {
-        println!("{}", BANNER);
+        eprintln!("{}", BANNER);
         if tools::cli::ENCODE_OPT.contains(&input.as_str()) {
-            println!("{}", ENCODE_HELP);
+            eprintln!("{}", ENCODE_HELP);
         }
         else if tools::cli::DECODE_OPT.contains(&input.as_str()) {
-            println!("{}", DECODE_HELP);
+            eprintln!("{}", DECODE_HELP);
         }
         else if tools::cli::REPAIR_OPT.contains(&input.as_str()) {
-            println!("{}", REPAIR_HELP);
+            eprintln!("{}", REPAIR_HELP);
         }
-        else { println!("------------------------------- Available actions ------------------------------
+        else { eprintln!("------------------------------- Available actions ------------------------------
 
     encode | Encode any audio formats to FrAD (alias: enc)
     decode | Encode FrAD to any audio formats (alias: dec)
     repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)"
         );}
-        println!();
+        eprintln!();
     }
     else {
-        println!("Fourier Analogue-in-Digital Rust Reference");
-        println!("Abstract syntax: frad [encode|decode|repair] <input> [kwargs...]");
-        println!("type 'frad help' to get help.");
+        eprintln!("Fourier Analogue-in-Digital Rust Reference");
+        eprintln!("Abstract syntax: frad [encode|decode|repair] <input> [kwargs...]");
+        eprintln!("type 'frad help' to get help.");
     }
 }

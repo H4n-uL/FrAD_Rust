@@ -70,13 +70,13 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     }
 
     if Path::new(&wfile).exists() && !params.overwrite {
-        println!("Output file already exists, overwrite? (Y/N)");
+        eprintln!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).unwrap();
             if input.trim().to_lowercase() == "y" { break; }
             else if input.trim().to_lowercase() == "n" { 
-                println!("Aborted.");
+                eprintln!("Aborted.");
                 std::process::exit(0);
             }
         }
