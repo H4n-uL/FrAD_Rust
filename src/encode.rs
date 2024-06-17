@@ -1,9 +1,7 @@
-use std::fs::File;
-use std::io::{Read, Write};
-
 use crate::{fourier, fourier::profiles::profile1,
     tools::{asfh::ASFH, ecc}};
 
+use std::{fs::File, io::{Read, Write}, path::Path};
 // use libsoxr::Soxr;
 
 fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
@@ -26,20 +24,51 @@ fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (
     return (ndata, _nprev);
 }
 
-pub fn encode() {
-    let bit_depth: i16 = 24;
-    let channels: i16 = 2;
-    let srate: u32 = 48000;
-    let mut readfile = File::open("test.pcm").unwrap();
-    let mut writefile = File::create("test.frad").unwrap();
-    let buffersize: u32 = 2048;
-    let little_endian: bool = false;
+pub fn encode(rfile: String, wfile: String, bit_depth: i16, channels: i16, srate: u32, buffersize: u32, little_endian: bool, enable_ecc: bool, ecc_rate: [u8; 2], profile: u8, olap: u8, losslevel: u8) {
+    if rfile.len() == 0 { panic!("Input file must be given"); }
 
-    let enable_ecc = false;
-    let ecc_rate: [u8; 2] = [96, 24];
-    let profile: u8 = 0;
+    if srate == 0 { panic!("Sample rate must be given"); }
+    if channels == 0 { panic!("Number of channels must be given"); }
 
-    let olap: u8 = 16;
+    if fourier::DEPTHS.contains(&bit_depth) == false
+    && profile1::DEPTHS.contains(&bit_depth) == false
+    { panic!("Invalid bit depth"); }
+
+    let segmax = if profile == 1 {
+        *profile1::SMPLS_LI.iter().max().unwrap()
+    } else { (2u64.pow(32) - 1) as u32 };
+    if buffersize > segmax { panic!("Samples per frame cannot exceed {}", segmax); }
+
+    // Making sure the output file is set
+    if rfile == wfile { panic!("Input and output files cannot be the same"); }
+    let mut wfile = wfile;
+    if wfile == "" {
+        let wfile_prefix = rfile.split(".").collect::<Vec<&str>>()[..rfile.split(".").count() - 1].join(".");
+        if profile == 0 {
+            if wfile_prefix.len() <= 8 { wfile = format!("{}.fra", wfile_prefix); }
+            else { wfile = format!("{}.frad", wfile_prefix); }
+        }
+        else {
+            if wfile_prefix.len() <= 8 { wfile = format!("{}.dsn", wfile_prefix); }
+            else { wfile = format!("{}.dsin", wfile_prefix); }
+        }
+    }
+
+    if Path::new(&wfile).exists() {
+        println!("Output file already exists, overwrite? (Y/N)");
+        loop {
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            if input.trim().to_lowercase() == "y" { break; }
+            else if input.trim().to_lowercase() == "n" { 
+                println!("Aborted.");
+                std::process::exit(0);
+            }
+        }
+    }
+
+    let mut readfile = File::open(rfile).unwrap();
+    let mut writefile = File::create(wfile).unwrap();
 
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
@@ -71,7 +100,7 @@ pub fn encode() {
 
         // Encoding
         let (mut frad, bits) = 
-        if profile == 1 { profile1::analogue(frame, bit_depth, srate, 0) }
+        if profile == 1 { profile1::analogue(frame, bit_depth, srate, losslevel) }
         else { fourier::analogue(frame, bit_depth, little_endian) };
 
         if enable_ecc { // Creating Reed-Solomon error correction code

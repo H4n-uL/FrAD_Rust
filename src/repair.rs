@@ -1,12 +1,25 @@
-use std::fs::File;
-use std::io::{Read, Write};
-
 use crate::{common, tools::{asfh::ASFH, ecc}};
+use std::{fs::File, io::{Read, Write}, path::Path};
 
-pub fn reecc() {
-    let mut readfile = File::open("test.frad").unwrap();
-    let mut writefile = File::create("test.ecc.frad").unwrap();
-    let ecc_rate: [u8; 2] = [96, 24];
+pub fn repair(rfile: &str, wfile: &str, ecc_rate: [u8; 2]) {
+    if rfile.len() == 0 { panic!("Input file must be given"); }
+    if rfile == wfile { panic!("Input and output files cannot be the same"); }
+
+    if Path::new(&wfile).exists() {
+        println!("Output file already exists, overwrite? (Y/N)");
+        loop {
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            if input.trim().to_lowercase() == "y" { break; }
+            else if input.trim().to_lowercase() == "n" { 
+                println!("Aborted.");
+                std::process::exit(0);
+            }
+        }
+    }
+
+    let mut readfile = File::open(rfile).unwrap();
+    let mut writefile = File::create(wfile).unwrap();
 
     let mut asfh = ASFH::new();
 

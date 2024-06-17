@@ -1,7 +1,7 @@
 use crate::{fourier, fourier::profiles::profile1, 
     common, tools::{asfh::ASFH, ecc}};
 
-use std::{fs::File, io::{Read, Write}};
+use std::{fs::File, io::{Read, Write}, path::Path};
 
 fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     if prev.len() != 0 {
@@ -28,11 +28,31 @@ fn flush(mut file: &File, pcm: Vec<Vec<f64>>) {
     file.write(&pcm_bytes).unwrap();
 }
 
-pub fn decode() {
-    let mut readfile = File::open("test.frad").unwrap();
-    let writefile = File::create("res.pcm").unwrap();
+pub fn decode(rfile: String, wfile: String, fix_error: bool) {
+    if rfile.len() == 0 { panic!("Input file must be given"); }
+    if rfile == wfile { panic!("Input and output files cannot be the same"); }
+    let mut wfile = wfile;
+    if wfile.len() == 0 {
+        let wfile_prefix = rfile.split(".").collect::<Vec<&str>>()[..rfile.split(".").count() - 1].join(".");
+        wfile = format!("{}.pcm", wfile_prefix);
+    }
+
+    if Path::new(&wfile).exists() {
+        println!("Output file already exists, overwrite? (Y/N)");
+        loop {
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            if input.trim().to_lowercase() == "y" { break; }
+            else if input.trim().to_lowercase() == "n" { 
+                println!("Aborted.");
+                std::process::exit(0);
+            }
+        }
+    }
+
+    let mut readfile = File::open(rfile).unwrap();
+    let writefile = File::create(wfile).unwrap();
     let mut asfh = ASFH::new();
-    let fix_error = true;
 
     let mut head = Vec::new();
     let mut prev = Vec::new();

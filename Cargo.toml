@@ -1,6 +1,6 @@
 [package]
-name = "fourier"
-version = "0.1.0"
+name = "frad"
+version = "0.2.0"
 authors = ["HaמuL"]
 license = "Archivist Licence"
 edition = "2021"
