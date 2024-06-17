@@ -15,7 +15,8 @@ pub struct CliParams {
     pub overlap: u8,
     pub losslevel: u8,
     pub enable_ecc: bool,
-    pub ecc_rate: [u8; 2]
+    pub ecc_rate: [u8; 2],
+    pub overwrite: bool
 }
 
 impl CliParams {
@@ -31,7 +32,8 @@ impl CliParams {
             overlap: 16,
             losslevel: 0,
             enable_ecc: false,
-            ecc_rate: [0; 2]
+            ecc_rate: [0; 2],
+            overwrite: false
         }
     }
     pub fn set_output(&mut self, output: String) -> () { self.output = output; }
@@ -45,6 +47,7 @@ impl CliParams {
     pub fn set_losslevel(&mut self, losslevel: String) -> () { self.losslevel = losslevel.parse().unwrap(); }
     pub fn set_enable_ecc(&mut self) -> () { self.enable_ecc = true; }
     pub fn set_ecc_rate(&mut self, dsize: String, csize: String) -> () { self.ecc_rate = [dsize.parse().unwrap(), csize.parse().unwrap()]; }
+    pub fn set_overwrite(&mut self) -> () { self.overwrite = true; }
 }
 
 pub fn parse(args: Args) -> (String, String, CliParams) {
@@ -105,6 +108,9 @@ pub fn parse(args: Args) -> (String, String, CliParams) {
             if ["losslevel", "level", "lv"].contains(&key) {
                 let (value, _args) = _args.split_first().unwrap();
                 params.set_losslevel(value.to_string());
+            }
+            if ["y"].contains(&key) {
+                params.set_overwrite();
             }
         }
         args = _args;

@@ -1,11 +1,15 @@
-use crate::{common, tools::{asfh::ASFH, ecc}};
+use crate::{common, tools::{asfh::ASFH, cli, ecc}};
 use std::{fs::File, io::{Read, Write}, path::Path};
 
-pub fn repair(rfile: &str, wfile: &str, ecc_rate: [u8; 2]) {
+pub fn repair(rfile: String, params: cli::CliParams) {
+
+    let wfile = params.output;
+    let ecc_rate = params.ecc_rate;
     if rfile.len() == 0 { panic!("Input file must be given"); }
+    if wfile.len() == 0 { panic!("Output file must be given"); }
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
 
-    if Path::new(&wfile).exists() {
+    if Path::new(&wfile).exists() && params.overwrite {
         println!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();

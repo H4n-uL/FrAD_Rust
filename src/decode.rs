@@ -1,5 +1,5 @@
 use crate::{fourier, fourier::profiles::profile1, 
-    common, tools::{asfh::ASFH, ecc}};
+    common, tools::{asfh::ASFH, cli, ecc}};
 
 use std::{fs::File, io::{Read, Write}, path::Path};
 
@@ -28,16 +28,20 @@ fn flush(mut file: &File, pcm: Vec<Vec<f64>>) {
     file.write(&pcm_bytes).unwrap();
 }
 
-pub fn decode(rfile: String, wfile: String, fix_error: bool) {
+pub fn decode(rfile: String, params: cli::CliParams) {
+
+    let wfile = params.output;
+    let fix_error = params.enable_ecc;
     if rfile.len() == 0 { panic!("Input file must be given"); }
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
     let mut wfile = wfile;
     if wfile.len() == 0 {
-        let wfile_prefix = rfile.split(".").collect::<Vec<&str>>()[..rfile.split(".").count() - 1].join(".");
+        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
+        let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         wfile = format!("{}.pcm", wfile_prefix);
     }
 
-    if Path::new(&wfile).exists() {
+    if Path::new(&wfile).exists() && params.overwrite {
         println!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();

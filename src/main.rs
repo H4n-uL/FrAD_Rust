@@ -79,10 +79,10 @@ fn main() {
         encode::encode(input, params);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
-        decode::decode(input, params.output, params.enable_ecc);
+        decode::decode(input, params);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
-        repair::repair(input.as_str(), params.output.as_str(), params.ecc_rate);
+        repair::repair(input, params);
     }
     else if &action == &"help".to_string() {
         println!("{}", BANNER);

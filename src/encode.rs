@@ -57,7 +57,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
     let mut wfile = wfile;
     if wfile == "" {
-        let wfile_prefix = rfile.split(".").collect::<Vec<&str>>()[..rfile.split(".").count() - 1].join(".");
+        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
+        let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         if profile == 0 {
             if wfile_prefix.len() <= 8 { wfile = format!("{}.fra", wfile_prefix); }
             else { wfile = format!("{}.frad", wfile_prefix); }
@@ -68,7 +69,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    if Path::new(&wfile).exists() {
+    if Path::new(&wfile).exists() && params.overwrite {
         println!("Output file already exists, overwrite? (Y/N)");
         loop {
             let mut input = String::new();
