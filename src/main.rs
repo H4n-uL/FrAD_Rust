@@ -18,6 +18,7 @@ const ENCODE_HELP: &str = "--------------------------------- Description -------
 
 Encode
 This action will encode your RAW f64be PCM audio file to FrAD format.
+This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
@@ -46,10 +47,11 @@ const DECODE_HELP: &str = "--------------------------------- Description -------
 
 Decode
 This action will decode any supported FrAD audio file to RAW f64be PCM format.
+This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-frad decode path/to/audio.file {kwargs...}
+frad decode path/to/audio.frad {kwargs...}
 
 ----------------------------------- Options ------------------------------------
 
@@ -64,11 +66,11 @@ This action will repair any supported FrAD audio file with ECC protection.
 
 ------------------------------------ Usage -------------------------------------
 
-frad repair path/to/audio.file {kwargs...}
+frad repair path/to/audio.frad --output path/to/audio_ecc.frad {kwargs...}
 
 ----------------------------------- Options ------------------------------------
 
-    --output      | Output file path (alias: o, out)
+    --output      | Output file path, REQUIRED (alias: o, out)
     --ecc         | ECC size ratio in --ecc [data size] [ecc code size]
                   | default: 96, 24 (alias: e, enable-ecc)";
 
