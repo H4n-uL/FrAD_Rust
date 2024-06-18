@@ -62,7 +62,7 @@ pub fn parse(args: Args) -> (String, String, CliParams) {
 
     while args.len() > 0 {
         let (key, _args) = args.split_first().unwrap();
-        
+
         if key.starts_with("-") {
             let key = key.trim_start_matches("-");
 
@@ -115,6 +115,6 @@ pub fn parse(args: Args) -> (String, String, CliParams) {
         }
         args = _args;
     }
-    
+
     return (action.to_string(), input.to_string(), params);
 }
