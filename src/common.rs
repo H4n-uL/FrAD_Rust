@@ -1,5 +1,8 @@
+use std::{fs::File, io::Read};
+
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
+pub const PIPEIN: &str = "pipe:0";
 pub const PIPEOUT: &str = "pipe:1";
 pub const DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
 
@@ -55,4 +58,19 @@ pub(crate) fn crc16_ansi(data: &[u8]) -> Vec<u8> {
         crc = (crc >> 8) ^ CRC16T_ANSI[((crc ^ byte as u16) & 0xff) as usize];
     }
     return crc.to_be_bytes().to_vec();
+}
+
+pub fn read_exact(file: &mut File, buf: &mut [u8], pipe: bool) -> usize {
+    let mut total_read = 0;
+    let mut stdin = std::io::stdin();
+
+    let reader: &mut dyn Read = 
+    if pipe { &mut stdin } else { file };
+
+    while total_read < buf.len() {
+        let read_size = reader.read(&mut buf[total_read..]).unwrap();
+        if read_size == 0 { break; }
+        total_read += read_size;
+    }
+    return total_read;
 }

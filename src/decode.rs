@@ -1,7 +1,7 @@
 use crate::{fourier, fourier::profiles::profile1, 
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{Read, Write}, path::Path};
+use std::{fs::File, io::Write, path::Path};
 
 fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     if prev.len() != 0 {
@@ -35,9 +35,13 @@ pub fn decode(rfile: String, params: cli::CliParams) {
     let fix_error = params.enable_ecc;
     if rfile.len() == 0 { panic!("Input file must be given"); }
 
-    let mut ispipe = false;
+    let mut rpipe = false;
+    if rfile == common::PIPEIN { rpipe = true; }
+    else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
+
+    let mut wpipe = false;
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
-    if wfile == common::PIPEOUT { ispipe = true; }
+    if wfile == common::PIPEOUT { wpipe = true; }
     else {
         if wfile.len() == 0 {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
@@ -59,8 +63,8 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile = File::open(rfile).unwrap();
-    let writefile = if wfile != common::PIPEOUT { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
+    let mut readfile = if !rpipe { File::open(rfile).unwrap() } else { File::open(common::DEVNULL).unwrap() };
+    let writefile = if !wpipe { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
     let mut asfh = ASFH::new();
 
     let mut head = Vec::new();
@@ -68,22 +72,22 @@ pub fn decode(rfile: String, params: cli::CliParams) {
     loop {
         if head.len() == 0 {
             let mut buf = vec![0u8; 4];
-            let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { flush(&writefile, prev, ispipe); break; }
+            let readlen = common::read_exact(&mut readfile, &mut buf, rpipe);
+            if readlen == 0 { flush(&writefile, prev, wpipe); break; }
             head = buf.to_vec();
         }
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
-            let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { flush(&writefile, prev, ispipe); break; }
+            let readlen = common::read_exact(&mut readfile, &mut buf, rpipe);
+            if readlen == 0 { flush(&writefile, prev, wpipe); break; }
             head.extend(buf);
             head = head[1..].to_vec();
             continue;
         }
-        asfh.update(&mut readfile);
+        asfh.update(&mut readfile, rpipe);
 
         let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = readfile.read(&mut frad).unwrap();
+        let _ = common::read_exact(&mut readfile, &mut frad, rpipe);
 
         if asfh.ecc {
             if fix_error && (
@@ -98,7 +102,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);
-        flush(&writefile, pcm, ispipe);
+        flush(&writefile, pcm, wpipe);
         head = Vec::new();
     }
 }

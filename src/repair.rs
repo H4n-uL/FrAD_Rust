@@ -43,10 +43,10 @@ pub fn repair(rfile: String, params: cli::CliParams) {
             head = head[1..].to_vec();
             continue;
         }
-        asfh.update(&mut readfile);
+        asfh.update(&mut readfile, false);
 
         let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = readfile.read(&mut frad).unwrap();
+        let _ = common::read_exact(&mut readfile, &mut frad, false);
 
         if asfh.ecc {
             if asfh.profile == 0 && common::crc32(&frad) != asfh.crc32 ||

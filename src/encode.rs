@@ -1,7 +1,7 @@
 use crate::{fourier, fourier::profiles::profile1,
-    tools::{asfh::ASFH, cli, ecc}};
+    common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{Read, Write}, path::Path};
+use std::{fs::File, io::Write, path::Path};
 // use libsoxr::Soxr;
 
 fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
@@ -97,7 +97,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
         let fbytes = rlen * channels as usize * 8;
         let mut pcm_buf = vec![0u8; fbytes];
-        let readlen = readfile.read(&mut pcm_buf).unwrap();
+        let readlen = common::read_exact(&mut readfile, &mut pcm_buf, false);
         if readlen == 0 { break; }
 
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)

@@ -1,4 +1,4 @@
-use crate::{common::{FRM_SIGN, crc16_ansi, crc32}, fourier::profiles::profile1};
+use crate::{common::{FRM_SIGN, crc16_ansi, crc32, read_exact}, fourier::profiles::profile1};
 use std::{fs::File, io::Read};
 
 fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> Vec<u8> {
@@ -107,17 +107,17 @@ impl ASFH {
         return frad;
     }
 
-    pub fn update(&mut self, file: &mut File) {
+    pub fn update(&mut self, file: &mut File, pipe: bool) {
         let mut fhead = FRM_SIGN.to_vec();
 
-        let mut buf = vec![0u8; 5]; let _ = file.read(&mut buf).unwrap();
+        let mut buf = vec![0u8; 5]; let _ = read_exact(file, &mut buf, pipe);
         fhead.extend(buf);
 
         self.frmbytes = u32::from_be_bytes(fhead[0x4..0x8].try_into().unwrap()) as u64;
         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(fhead[0x8]);
 
         if self.profile == 1 {
-            buf = vec![0u8; 3]; let _ = file.read(&mut buf).unwrap();
+            buf = vec![0u8; 3]; let _ = read_exact(file, &mut buf, pipe);
             fhead.extend(buf);
             (self.channels, self.srate, self.fsize) = decode_css_prf1(fhead[0x9..0xb].to_vec());
             self.olap = fhead[0xb];
@@ -129,7 +129,7 @@ impl ASFH {
             }
         }
         else {
-            buf = vec![0u8; 23]; let _ = file.read(&mut buf).unwrap();
+            buf = vec![0u8; 23]; let _ = read_exact(file, &mut buf, pipe);
             fhead.extend(buf);
             self.channels = fhead[0x9] as i16 + 1;
             self.ecc_rate = [fhead[0xa], fhead[0xb]];
@@ -140,7 +140,7 @@ impl ASFH {
         }
 
         if self.frmbytes == u32::MAX as u64 {
-            buf = vec![0u8; 23]; let _ = file.read(&mut buf).unwrap();
+            buf = vec![0u8; 8]; let _ = read_exact(file, &mut buf, pipe);
             fhead.extend(buf);
             self.frmbytes = u64::from_be_bytes(fhead[fhead.len()-8..].try_into().unwrap());
         }
