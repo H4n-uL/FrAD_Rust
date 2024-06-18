@@ -1,7 +1,7 @@
 use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::Write, path::Path};
+use std::{fs::File, io::{stdout, ErrorKind, Write}, path::Path};
 // use libsoxr::Soxr;
 
 fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
@@ -39,7 +39,12 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let profile = params.profile;
     let olap = params.overlap;
     let losslevel = params.losslevel;
+
+    let (mut rpipe, mut wpipe) = (false, false);
     if rfile.len() == 0 { panic!("Input file must be given"); }
+    if rfile == common::PIPEIN { rpipe = true; }
+    else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
+    if wfile == common::PIPEOUT { wpipe = true; }
 
     if srate == 0 { panic!("Sample rate must be given"); }
     if channels == 0 { panic!("Number of channels must be given"); }
@@ -82,8 +87,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile = File::open(rfile).unwrap();
-    let mut writefile = File::create(wfile).unwrap();
+    let mut readfile = if !rpipe { File::open(rfile).unwrap() } else { File::open(common::DEVNULL).unwrap() };
+    let mut writefile = if !wpipe { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
 
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
@@ -97,7 +102,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
         let fbytes = rlen * channels as usize * 8;
         let mut pcm_buf = vec![0u8; fbytes];
-        let readlen = common::read_exact(&mut readfile, &mut pcm_buf, false);
+        let readlen = common::read_exact(&mut readfile, &mut pcm_buf, rpipe);
         if readlen == 0 { break; }
 
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)
@@ -129,6 +134,9 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 
-        writefile.write(frad.as_slice()).unwrap();
+        if wpipe { stdout().write(frad.as_slice()).unwrap(); } 
+        else { writefile.write(frad.as_slice()).unwrap_or_else(|err| 
+            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
+        ); }
     }
 }

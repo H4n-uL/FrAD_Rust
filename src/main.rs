@@ -26,9 +26,9 @@ frad encode path/to/audio.file -srate [sample rate] -chnl [channels]
 
 ----------------------------------- Options ------------------------------------
 
+    --sample-rate | Input sample rate, REQUIRED (alias: sr, srate)
+    --channels    | Input hannels, REQUIRED (alias: ch, chnl, channel)
     --bits        | Bit depth, REQUIRED (alias: b, bit)
-    --sample-rate | Sample rate, REQUIRED (alias: sr, srate)
-    --channels    | Channels, REQUIRED (alias: ch, chnl, channel)
                   |
     --ecc         | Enable ECC, recommended.
                   | ECC size ratio in --ecc [data size] [ecc code size]
