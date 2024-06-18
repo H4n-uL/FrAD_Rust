@@ -1,7 +1,7 @@
 use crate::{fourier, fourier::profiles::profile1, 
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::Write, path::Path};
+use std::{fs::File, io::{Write, ErrorKind}, path::Path};
 
 fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     if prev.len() != 0 {
@@ -25,7 +25,11 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
 fn flush(mut file: &File, pcm: Vec<Vec<f64>>, pipe: bool) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
     let pcm_bytes: Vec<u8> = pcm_flat.iter().map(|x| x.to_be_bytes()).flatten().collect();
-    if pipe { std::io::stdout().lock().write_all(&pcm_bytes).unwrap(); }
+    if pipe { std::io::stdout().lock().write_all(&pcm_bytes)
+        .unwrap_or_else(|err| 
+            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
+        ); 
+    }
     else { file.write_all(&pcm_bytes).unwrap(); }
 }
 
