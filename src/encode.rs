@@ -4,24 +4,23 @@ use crate::{fourier, fourier::profiles::profile1,
 use std::{fs::File, io::{stdout, ErrorKind, Write}, path::Path};
 // use libsoxr::Soxr;
 
-fn overlap(data: Vec<Vec<f64>>, prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    let mut ndata = Vec::new();
-    let mut _nprev = Vec::new();
+fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let fsize = data.len() + prev.len();
     let olap = if olap > 0 { if olap > 2 { olap } else { 2 } } else { 0 };
 
     if prev.len() != 0 {
+        let mut ndata = Vec::new();
         ndata.extend(prev.iter().cloned());
         ndata.extend(data.iter().cloned());
+        data = ndata;
     }
-    else { ndata = data.clone(); }
 
     if profile == 1 || profile == 2 && olap > 0 {
-        let cutoff = ndata.len() - (fsize as usize / olap as usize);
-        _nprev = ndata[cutoff..].to_vec();
+        let cutoff = data.len() - (fsize as usize / olap as usize);
+        prev = data[cutoff..].to_vec();
     }
-    else { _nprev = Vec::new(); }
-    return (ndata, _nprev);
+    else { prev = Vec::new(); }
+    return (data, prev);
 }
 
 pub fn encode(rfile: String, params: cli::CliParams) {
