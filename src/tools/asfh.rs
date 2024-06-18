@@ -70,7 +70,7 @@ impl ASFH {
             endian: false,
             bit_depth: 0,
             channels: 0,
-            ecc_rate: [96, 24],
+            ecc_rate: [0; 2],
             srate: 0,
             fsize: 0,
             olap: 0,

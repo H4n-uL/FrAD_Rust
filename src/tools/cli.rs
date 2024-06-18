@@ -32,7 +32,7 @@ impl CliParams {
             overlap: 16,
             losslevel: 0,
             enable_ecc: false,
-            ecc_rate: [0; 2],
+            ecc_rate: [96, 24],
             overwrite: false
         }
     }
