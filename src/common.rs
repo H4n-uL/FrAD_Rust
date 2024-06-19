@@ -52,7 +52,7 @@ const fn gcrc16t_ansi() -> [u16; 256] {
 
 const CRC16T_ANSI: [u16; 256] = gcrc16t_ansi();
 
-pub(crate) fn crc16_ansi(data: &[u8]) -> Vec<u8> {
+pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
     let mut crc = 0u16;
     for &byte in data {
         crc = (crc >> 8) ^ CRC16T_ANSI[((crc ^ byte as u16) & 0xff) as usize];
