@@ -56,64 +56,63 @@ pub fn parse(args: Args) -> (String, String, CliParams) {
     args.remove(0);
     if args.len() < 1 { return (String::new(), String::new(), params); }
 
-    let (action, args) = args.split_first().unwrap();
+    let action = args.remove(0);
     if args.len() < 1 { return (action.to_string(), String::new(), params); }
-    let (input, mut args) = args.split_first().unwrap();
+    let input = args.remove(0);
 
     while args.len() > 0 {
-        let (key, _args) = args.split_first().unwrap();
+        let key = args.remove(0);
 
         if key.starts_with("-") {
             let key = key.trim_start_matches("-");
 
             if ["output", "out", "o"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_output(value.to_string());
             }
             if ["bits", "bit", "b"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_bits(value.to_string());
             }
             if ["srate", "sample-rate", "sr"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_srate(value.to_string());
             }
             if ["chnl", "channels", "channel", "ch"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_channels(value.to_string());
             }
             if ["frame-size", "fsize", "fr"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_frame_size(value.to_string());
             }
             if ["overlap", "olap"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_overlap(value.to_string());
             }
             if ["ecc", "enable-ecc", "e"].contains(&key) {
                 params.set_enable_ecc();
-                if _args.len() > 0 {
-                    let (v1, _args) = _args.split_first().unwrap();
-                    let (v2, _args) = _args.split_first().unwrap();
-                    params.set_ecc_rate(v1.to_string(), v2.to_string());
+                if args.len() > 0 {
+                    let v1 = args.remove(0);
+                    let v2 = args.remove(0);
+                    params.set_ecc_rate(v1, v2);
                 }
             }
             if ["le", "little-endian"].contains(&key) {
                 params.set_little_endian();
             }
             if ["profile", "prf", "p"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_profile(value.to_string());
             }
             if ["losslevel", "level", "lv"].contains(&key) {
-                let (value, _args) = _args.split_first().unwrap();
+                let value = args.remove(0);
                 params.set_losslevel(value.to_string());
             }
             if ["y"].contains(&key) {
                 params.set_overwrite();
             }
         }
-        args = _args;
     }
 
     return (action.to_string(), input.to_string(), params);
