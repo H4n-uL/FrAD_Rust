@@ -10,10 +10,22 @@ use half::f16;
 
 use crate::backend::bitify;
 
+/** cut_float3s
+ * Cuts off last bits of floats to make their bit depth to 12, 24, or 48
+ * Parameters:
+ *      Bitstream, Bit depth divisable by 3
+ * Returns: bitstream
+ */
 fn cut_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
     return bstr.chunks(bits as usize * 4 / 3).flat_map(|c| c.iter().take(bits as usize)).cloned().collect();
 }
 
+/** pack
+ * Makes Vec<f64> into byte array with specified bit depth and endianness
+ * Parameters:
+ *      Flat f64 array, Bit depth, Big endian toggle
+ * Returns: Byte array
+ */
 pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     if bits % 8 != 0 { be = true }
@@ -46,6 +58,12 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     return bytes;
 }
 
+/** pad_float3s
+ * Pads floats to make them readable directly as 16, 32, or 64 bit floats
+ * Parameters:
+ *      Bitstream, Bit depth divisable by 3
+ * Returns: bitstream
+ */
 fn pad_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
     bstr.chunks(bits as usize).flat_map(|c| {
         let mut padded = Vec::from(c);
@@ -54,6 +72,12 @@ fn pad_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
     }).collect()
 }
 
+/** unpack
+ * Makes byte array with specified bit depth and endianness into Vec<f64>
+ * Parameters:
+ *      Byte array, Bit depth, Big endian toggle
+ * Returns: Flat f64 array
+ */
 pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
     let mut vec: Vec<f64> = Vec::new();
     if bits % 8 != 0 { be = true }

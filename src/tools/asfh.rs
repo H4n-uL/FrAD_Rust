@@ -1,6 +1,17 @@
+/**                                ASFH Tools                                 */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Audio Stream Frame Header tools
+ */
+
 use crate::{common::{FRM_SIGN, crc16_ansi, crc32, read_exact}, fourier::profiles::profile1};
 use std::{fs::File, io::Read};
 
+/** encode_pfb
+ * Encodes PFloat byte (containing necessary info for the frame)
+ * Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
+ * Returns: Encoded byte
+ */
 fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> Vec<u8> {
     let prf = profile << 5;
     let ecc = (enable_ecc as u8) << 4;
@@ -8,6 +19,11 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
     return vec![(prf | ecc | endian | bits as u8) as u8];
 }
 
+/** encode_css_prf1
+ * Encodes Channel-Srate-Smpcount byte for Profile 1
+ * Parameters: Channel count, Sample rate, Sample count
+ * Returns: Encoded CSS
+ */
 fn encode_css_prf1(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
     let chnl = (channels as u16 - 1) << 10;
     let srate = (profile1::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
@@ -18,6 +34,11 @@ fn encode_css_prf1(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
     return (chnl | srate | px | fsize).to_be_bytes().to_vec();
 }
 
+/** decode_pfb
+ * Decodes PFloat byte
+ * Parameters: Encoded byte
+ * Returns: Profile, ECC toggle, Little-endian toggle, Bit depth index
+ */
 fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
     let prf = pfb >> 5;
     let ecc = (pfb >> 4) & 1 == 1;
@@ -26,6 +47,11 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
     return (prf, ecc, endian, bits as i16);
 }
 
+/** decode_css_prf1
+ * Decodes Channel-Srate-Smpcount byte for Profile 1
+ * Parameters: Encoded CSS
+ * Returns: Channel count, Sample rate, Sample count
+ */
 fn decode_css_prf1(css: Vec<u8>) -> (i16, u32, u32) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
     let chnl = (css_int >> 10) as i16 + 1;
@@ -37,11 +63,14 @@ fn decode_css_prf1(css: Vec<u8>) -> (i16, u32, u32) {
     return (chnl, srate, fsize);
 }
 
+/** ASFH
+ * Audio Stream Frame Header
+ */
 pub struct ASFH {
     // Audio Stream Frame Header
     pub frmbytes: u64,
 
-    // Profile-Float byte
+    // PFloat byte
     pub profile: u8,
     pub ecc: bool,
     pub endian: bool,
@@ -80,6 +109,10 @@ impl ASFH {
         }
     }
 
+    /** write_vec
+     * Makes a frame from audio frame and metadata
+     * Parameters: Audio frame
+     */
     pub fn write_vec(&self, frad: Vec<u8>) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
 
@@ -107,6 +140,10 @@ impl ASFH {
         return frad;
     }
 
+    /** update
+     * Updates the ASFH from a file
+     * Parameters: File, Pipe toggle
+     */
     pub fn update(&mut self, file: &mut File, pipe: bool) {
         let mut fhead = FRM_SIGN.to_vec();
 

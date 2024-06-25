@@ -1,9 +1,17 @@
+/**                                CLI Parser                                 */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Simple CLI parser for FrAD Library
+ */
+
 use std::env::Args;
 
+// CLI Options
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
 pub const DECODE_OPT: [&str; 2] = ["decode", "dec"];
 pub const REPAIR_OPT: [&str; 4] = ["reecc", "re-ecc", "repair", "ecc"];
 
+// CLI Parameters
 pub struct CliParams {
     pub output: String,
     pub bits: i16,
@@ -35,7 +43,7 @@ impl CliParams {
             ecc_rate: [96, 24],
             overwrite: false
         }
-    }
+    }// i rly miss lombok
     pub fn set_output(&mut self, output: String) -> () { self.output = output; }
     pub fn set_bits(&mut self, bits: String) -> () { self.bits = bits.parse().unwrap(); }
     pub fn set_srate(&mut self, srate: String) -> () { self.srate = srate.parse().unwrap(); }
@@ -50,6 +58,11 @@ impl CliParams {
     pub fn set_overwrite(&mut self) -> () { self.overwrite = true; }
 }
 
+/** parse
+ * Parse CLI arguments and return the action, input file, and parameters
+ * Parameters: arguments
+ * Returns: Action, Input file name / Pipe, any other parameters
+ */
 pub fn parse(args: Args) -> (String, String, CliParams) {
     let mut args: Vec<String> = args.collect();
     let mut params: CliParams = CliParams::new();

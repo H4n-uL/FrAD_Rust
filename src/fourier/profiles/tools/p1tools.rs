@@ -1,3 +1,9 @@
+/**                              Profile 1 Tools                              */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Quantisation and Dequantisation tools for Profile 1
+ */
+
 use crate::backend::bitify;
 
 const ALPHA: f64 = 0.8;
@@ -9,12 +15,22 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
 ];
 const MOSLEN: usize = MODIFIED_OPUS_SUBBANDS.len() - 1;
 
+/** getbinrng
+ * Gets the range of bins for a subband
+ * Parameters: Length of the DCT Array, Signal sample rate, Subband index
+ * Returns: Range of bins
+ */
 fn getbinrng(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
     let start = (MODIFIED_OPUS_SUBBANDS[i] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     let end = (MODIFIED_OPUS_SUBBANDS[i + 1] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     return start.min(len)..end.min(len);
 }
 
+/** mask_thres_mos
+ * Calculates the masking threshold for each subband
+ * Parameters: DCT Array, Alpha value(constant... for now)
+ * Returns: Masking threshold array
+ */
 fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
     let mut thres = vec![0.0; MOSLEN];
 
@@ -29,6 +45,11 @@ fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
     return thres;
 }
 
+/** mapping_to_opus
+ * Maps the frequencies to the modified Opus subbands
+ * Parameters: DCT Array, Sample rate
+ * Returns: Power-averages of the subbands
+ */
 fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     let mut mapped_freqs = [0.0; MOSLEN].to_vec();
 
@@ -43,6 +64,11 @@ fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     return mapped_freqs;
 }
 
+/** mapping_from_opus
+ * Maps the frequencies from the modified Opus subbands
+ * Parameters: MOS-Mapped frequencies, Length of the DCT Array, Sample rate
+ * Returns: Inverse-mapped frequencies
+ */
 fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
     let mut mapped_freqs = vec![0.0; freqs_len];
 
@@ -54,6 +80,11 @@ fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
     return mapped_freqs;
 }
 
+/** quant
+ * Quantises the frequencies
+ * Parameters: DCT Array, Number of channels, Sample rate, Quantisation level
+ * Returns: Quantised frequencies and Masking thresholds
+ */
 pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec<Vec<i64>>, Vec<Vec<f64>>) {
     let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
 
@@ -76,6 +107,11 @@ pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec
     return (pns_sgnl, mask);
 }
 
+/** dequant
+ * Dequantises the frequencies
+ * Parameters: Quantised frequencies, Masking thresholds, Number of channels, Sample rate
+ * Returns: Dequantised frequencies
+ */
 pub fn dequant(pns_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
     let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; pns_sgnl[0].len()]; channels as usize];
     masks = masks.iter().map(|x| x.iter().map(|y| y.max(0.0)).collect()).collect();
@@ -87,6 +123,11 @@ pub fn dequant(pns_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16,
     return freqs;
 }
 
+/** exp_golomb_rice_encode
+ * Encodes any integer array with Exponential Golomb-Rice Encoding
+ * Parameters: Integer array
+ * Returns: Encoded binary data
+ */
 pub fn exp_golomb_rice_encode(data: Vec<i64>) -> Vec<u8> {
     let dmax = data.iter().map(|x| x.abs()).max().unwrap();
     let k = if dmax > 0 { (dmax as f64).log2().ceil() as u8 } else { 0 };
@@ -107,6 +148,11 @@ pub fn exp_golomb_rice_encode(data: Vec<i64>) -> Vec<u8> {
     return encoded;
 }
 
+/** exp_golomb_rice_decode
+ * Decodes any integer array with Exponential Golomb-Rice Encoding
+ * Parameters: Binary data
+ * Returns: Decoded integer array
+ */
 pub fn exp_golomb_rice_decode(data: Vec<u8>) -> Vec<i64> {
     let k = data[0];
     let mut decoded: Vec<i64> = Vec::new();

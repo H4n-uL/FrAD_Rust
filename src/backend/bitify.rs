@@ -1,3 +1,9 @@
+/**                                 Bitifier                                  */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Convert byte array to bitstream and vice versa
+ */
+
 pub fn fromvec(bytes: Vec<u8>) -> Vec<bool> {
     let mut bitstream: Vec<bool> = Vec::new();
 
@@ -15,6 +21,6 @@ pub fn tovec(bitstream: Vec<bool>) -> Vec<u8> {
         if *bit { byte |= 1 << (7 - (i % 8)); }
         if (i + 1) % 8 == 0 { bytes.push(byte); byte = 0; }
     }
-    if bitstream.len() % 8 != 0 { bytes.push(byte); }
+    if bitstream.len() % 8 != 0 { bytes.push(byte); } // flushing last bits with zero padding
     return bytes;
 }

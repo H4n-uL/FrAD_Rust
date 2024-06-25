@@ -1,11 +1,20 @@
+/**                               Common tools                                */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Common tools for FrAD
+ */
+
 use std::{fs::File, io::Read};
 
+// Frame signature
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
-pub const PIPEIN: &str = "pipe:0";
-pub const PIPEOUT: &str = "pipe:1";
-pub const DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
+// Pipe and null device
+pub static PIPEIN: &[&str] = &["pipe:0"];
+pub static PIPEOUT: &[&str] = &["pipe:1"];
+pub static DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
 
+// CRC-32 Table generator
 const fn gcrc32t() -> [u32; 256] {
     let mut table = [0u32; 256];
     let mut i = 0;
@@ -23,8 +32,14 @@ const fn gcrc32t() -> [u32; 256] {
     table
 }
 
+// CRC-32 Table
 const CRC32T: [u32; 256] = gcrc32t();
 
+/** crc32
+ * Calculates CRC-32 checksum of a byte array
+ * Parameters: Byte array
+ * Returns: CRC-32 checksum in byte array
+ */
 pub fn crc32(data: &[u8]) -> Vec<u8> {
     let mut crc = 0xffffffff;
     for &byte in data {
@@ -34,6 +49,7 @@ pub fn crc32(data: &[u8]) -> Vec<u8> {
     return (crc ^ 0xffffffff).to_be_bytes().to_vec();
 }
 
+// CRC-16 ANSI Table generator
 const fn gcrc16t_ansi() -> [u16; 256] {
     let mut table = [0u16; 256];
     let mut i = 0;
@@ -50,8 +66,14 @@ const fn gcrc16t_ansi() -> [u16; 256] {
     table
 }
 
+// CRC-16 ANSI Table
 const CRC16T_ANSI: [u16; 256] = gcrc16t_ansi();
 
+/** crc16_ansi
+ * Calculates CRC-16 ANSI checksum of a byte array
+ * Parameters: Byte array
+ * Returns: CRC-16 ANSI checksum in byte array
+ */
 pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
     let mut crc = 0u16;
     for &byte in data {
@@ -60,6 +82,11 @@ pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
     return crc.to_be_bytes().to_vec();
 }
 
+/** read_exact
+ * Reads a file or stdin to a buffer with exact size
+ * Parameters: File(&mut), Buffer(&mut), Pipe flag
+ * Returns: Total bytes read
+ */
 pub fn read_exact(file: &mut File, buf: &mut [u8], pipe: bool) -> usize {
     let mut total_read = 0;
     let mut stdin = std::io::stdin();

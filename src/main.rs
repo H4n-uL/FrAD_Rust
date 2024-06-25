@@ -74,6 +74,7 @@ frad repair path/to/audio.frad --output path/to/audio_ecc.frad {kwargs...}
     --ecc         | ECC size ratio in --ecc [data size] [ecc code size]
                   | default: 96, 24 (alias: e, enable-ecc)";
 
+/** Main function  */
 fn main() {
     let (action, input, params) = tools::cli::parse(env::args());
 

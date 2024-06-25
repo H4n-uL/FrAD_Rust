@@ -1,9 +1,20 @@
+/**                                  Encode                                   */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Encode f64be PCM to FrAD
+ */
+
 use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
 use std::{fs::File, io::{stdout, ErrorKind, Write}, path::Path};
 // use libsoxr::Soxr;
 
+/** overlap
+ * Overlaps the current frame with the previous fragment
+ * Parameters: Current frame, Previous frame fragment, Overlap rate, Profile
+ * Returns: Overlapped frame, Updated fragment
+ */
 fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let fsize = data.len() + prev.len();
     let olap = if olap > 0 { if olap > 2 { olap } else { 2 } } else { 0 };
@@ -23,6 +34,11 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
     return (data, prev);
 }
 
+/** encode
+ * Encodes f64be PCM to FrAD frames
+ * Parameters: Input file, CLI parameters
+ * Returns: Encoded FrAD frames on File or stdout
+ */
 pub fn encode(rfile: String, params: cli::CliParams) {
     let wfile = params.output;
     let bit_depth = params.bits;
@@ -41,9 +57,10 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
     let (mut rpipe, mut wpipe) = (false, false);
     if rfile.len() == 0 { panic!("Input file must be given"); }
-    if rfile == common::PIPEIN { rpipe = true; }
+    if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
-    if wfile == common::PIPEOUT { wpipe = true; }
+    if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
+    else if rfile == wfile { panic!("Input and output files cannot be the same"); }
 
     if srate == 0 { panic!("Sample rate must be given"); }
     if channels == 0 { panic!("Number of channels must be given"); }
@@ -58,9 +75,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     if buffersize > segmax { panic!("Samples per frame cannot exceed {}", segmax); }
 
     // Making sure the output file is set
-    if rfile == wfile { panic!("Input and output files cannot be the same"); }
     let mut wfile = wfile;
-    if wfile == "" {
+    if wfile.len() == 0 {
         let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
         let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         if profile == 0 {
@@ -92,7 +108,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
 
-    loop {
+    loop { // Main encode loop
         let mut rlen = buffersize as usize;
 
         if profile == 1 {
@@ -127,9 +143,10 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
 
         // Writing to file
-        (asfh.profile, asfh.ecc, asfh.endian, asfh.bit_depth) = (profile, enable_ecc, little_endian, bit_ind);
-        (asfh.channels, asfh.srate, asfh.fsize) = (chnl, srate, fsize);
-        (asfh.olap, asfh.ecc, asfh.ecc_rate) = (olap, enable_ecc, ecc_rate);
+        (asfh.bit_depth, asfh.channels, asfh.endian, asfh.profile) = (bit_ind, chnl, little_endian, profile);
+        (asfh.srate, asfh.fsize, asfh.olap) = (srate, fsize, olap);
+        (asfh.ecc, asfh.ecc_rate) = (enable_ecc, ecc_rate);
+        // i rly wish i dont need to do this
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 

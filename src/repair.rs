@@ -1,8 +1,19 @@
+/**                                  Repair                                   */
+/**
+ * Copyright 2024 HaמuL
+ * Function: Repair or Apply ECC to FrAD stream
+ */
+
 use crate::{common, tools::{asfh::ASFH, cli, ecc}};
 use std::{fs::File, io::{Read, Write}, path::Path};
 
+/** repair
+ * Repair or Apply ECC to FrAD stream
+ * Parameters: Input file, CLI parameters
+ * Returns: Repaired FrAD stream on File
+ * Note: Pipe is not supported
+ */
 pub fn repair(rfile: String, params: cli::CliParams) {
-
     let wfile = params.output;
     let ecc_rate = params.ecc_rate;
     if rfile.len() == 0 { panic!("Input file must be given"); }
