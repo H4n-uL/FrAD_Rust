@@ -10,8 +10,8 @@ use std::{fs::File, io::Read};
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
 // Pipe and null device
-pub static PIPEIN: &[&str] = &["pipe:0"];
-pub static PIPEOUT: &[&str] = &["pipe:1"];
+pub static PIPEIN: &[&str] = &["pipe:0", "-"];
+pub static PIPEOUT: &[&str] = &["pipe:1", "-"];
 pub static DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
 
 // CRC-32 Table generator
