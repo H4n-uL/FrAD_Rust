@@ -7,7 +7,7 @@
 use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{stdout, ErrorKind, Write}, path::Path};
+use std::{fs::File, io::{stdout, ErrorKind, IsTerminal, Write}, path::Path};
 // use libsoxr::Soxr;
 
 /** overlap
@@ -90,15 +90,22 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     }
 
     if Path::new(&wfile).exists() && !params.overwrite {
-        eprintln!("Output file already exists, overwrite? (Y/N)");
-        loop {
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
-            if input.trim().to_lowercase() == "y" { break; }
-            else if input.trim().to_lowercase() == "n" { 
-                eprintln!("Aborted.");
-                std::process::exit(0);
+        if std::io::stdin().is_terminal() {
+            eprintln!("Output file already exists, overwrite? (Y/N)");
+            loop {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if input.trim().to_lowercase() == "y" { break; }
+                else if input.trim().to_lowercase() == "n" { 
+                    eprintln!("Aborted.");
+                    std::process::exit(0);
+                }
             }
+        }
+        else {
+            eprintln!("Output file already exists, please provide -y flag to overwrite.");
+            eprintln!("Aborted.");
+            std::process::exit(0);
         }
     }
 
