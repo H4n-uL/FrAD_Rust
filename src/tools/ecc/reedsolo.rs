@@ -7,51 +7,57 @@
 use std::cmp::max;
 
 #[derive(Debug)]
-pub struct ReedSolomonError();
+pub enum RSError {
+    DivideByZero,
+    MessageTooLong,
+    TooManyErasures,
+    TooManyErrors,
+    ErrorLocationFailure,
+    ErrorCorrectionFailure,
+}
 
 // Polynomial arithmetic routines
 fn _gf_add(x: u8, y: u8) -> u8 {
-    x ^ y
+    return x ^ y;
 }
 
 fn _gf_sub(x: u8, y: u8) -> u8 {
-    _gf_add(x, y)
+    return _gf_add(x, y);
 }
 
 fn _gf_mul(x: u8, y: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
-    if x == 0 || y == 0 {
+    return if x == 0 || y == 0 {
         0
     } else {
         gf_exp[(
             gf_log[x as usize] as usize +
             gf_log[y as usize] as usize
         ) % 255]
-    }
+    };
 }
 
-fn _gf_div(x: u8, y: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
-    if y == 0 {
-        panic!("Divide by 0");
-    }
-    if x == 0 {
-        0
+fn _gf_div(x: u8, y: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<u8, RSError> {
+    return if y == 0 {
+        Err(RSError::DivideByZero)
+    } else if x == 0 {
+        Ok(0)
     } else {
         let log_x = gf_log[x as usize] as usize;
         let log_y = gf_log[y as usize] as usize;
-        gf_exp[((log_x + 255 - log_y) % 255) as usize]
-    }
+        Ok(gf_exp[((log_x + 255 - log_y) % 255) as usize])
+    };
 }
 
 fn _gf_pow(x: u8, power: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
-    gf_exp[(gf_log[x as usize] as usize * power as usize) % 255]
+    return gf_exp[(gf_log[x as usize] as usize * power as usize) % 255];
 }
 
 fn _gf_inverse(x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
-    gf_exp[255 - gf_log[x as usize] as usize]
+    return gf_exp[255 - gf_log[x as usize] as usize];
 }
 
 fn _gf_poly_scale(p: &[u8], x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
-    p.iter().map(|&p_coef| _gf_mul(p_coef, x, gf_exp, gf_log)).collect()
+    return p.iter().map(|&p_coef| _gf_mul(p_coef, x, gf_exp, gf_log)).collect();
 }
 
 fn _gf_poly_add(p: &[u8], q: &[u8]) -> Vec<u8> {
@@ -63,7 +69,7 @@ fn _gf_poly_add(p: &[u8], q: &[u8]) -> Vec<u8> {
     for i in 0..q.len() {
         r[i + rlen - q.len()] ^= q[i];
     }
-    r
+    return r;
 }
 
 fn _gf_poly_mul(p: &[u8], q: &[u8], gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -79,7 +85,7 @@ fn _gf_poly_mul(p: &[u8], q: &[u8], gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> V
             }
         }
     }
-    r
+    return r;
 }
 
 fn _gf_poly_eval(poly: &[u8], x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> u8 {
@@ -87,7 +93,7 @@ fn _gf_poly_eval(poly: &[u8], x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> 
     for i in 1..poly.len() {
         y = _gf_mul(y, x, gf_exp, gf_log) ^ poly[i];
     }
-    y
+    return y;
 }
 
 fn _rs_generator_poly(nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -95,7 +101,7 @@ fn _rs_generator_poly(nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], g
     for i in 0..nsym {
         g = _gf_poly_mul(&g, &[1, _gf_pow(generator, i as u8 + fcr, gf_exp, gf_log)], gf_exp, gf_log);
     }
-    g
+    return g;
 }
 
 fn _rs_encode_msg(msg_in: &[u8], nsym: usize, fcr: u8, generator: u8, gen: Option<&[u8]>, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -119,7 +125,7 @@ fn _rs_encode_msg(msg_in: &[u8], nsym: usize, fcr: u8, generator: u8, gen: Optio
     }
 
     msg_out[..msg_in.len()].copy_from_slice(msg_in);
-    msg_out
+    return msg_out;
 }
 
 fn _rs_calc_syndromes(msg: &[u8], nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -128,10 +134,10 @@ fn _rs_calc_syndromes(msg: &[u8], nsym: usize, fcr: u8, generator: u8, gf_exp: &
     for i in 0..nsym {
         synd[i + 1] = _gf_poly_eval(msg, _gf_pow(generator, i as u8 + fcr, gf_exp, gf_log), gf_exp, gf_log);
     }
-    synd
+    return synd;
 }
 
-fn _rs_correct_errata(msg_in: &mut [u8], synd: &[u8], err_pos: &[usize], generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) {
+fn _rs_correct_errata(msg_in: &mut [u8], synd: &[u8], err_pos: &[usize], generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<(), RSError> {
     let coef_pos: Vec<_> = err_pos.iter().map(|&p| msg_in.len() - 1 - p).collect();
     let err_loc = _rs_find_errata_locator(&coef_pos, generator, gf_exp, gf_log);
     let err_eval = _rs_find_error_evaluator(&synd[1..], &err_loc, gf_exp, gf_log);
@@ -160,20 +166,22 @@ fn _rs_correct_errata(msg_in: &mut [u8], synd: &[u8], err_pos: &[usize], generat
         }
 
         if err_loc_prime == 0 {
-            panic!("Could not find error magnitude");
+            return Err(RSError::ErrorCorrectionFailure);
         }
 
         let y = _gf_poly_eval(&err_eval, xi_inv, gf_exp, gf_log);
-        let magnitude = _gf_div(y, err_loc_prime, gf_exp, gf_log);
+        let magnitude = _gf_div(y, err_loc_prime, gf_exp, gf_log)?;
         evec[err_pos[i]] = magnitude;
     }
 
     for (i, e) in evec.iter().enumerate() {
         msg_in[i] ^= *e;
     }
+
+    return Ok(());
 }
 
-fn _rs_find_error_locator(synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, erase_count: usize, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
+fn _rs_find_error_locator(synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, erase_count: usize, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<Vec<u8>, RSError> {
     let mut err_loc = match erase_loc {
         Some(erase_loc) => erase_loc.to_vec(),
         None => vec![1],
@@ -206,10 +214,10 @@ fn _rs_find_error_locator(synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, er
 
     let errs = err_loc.len() - 1;
     if errs*2 + erase_count > nsym {
-        panic!("Too many errors to correct");
+        return Err(RSError::TooManyErrors);
     }
 
-    err_loc
+    return Ok(err_loc);
 }
 
 fn _rs_find_errata_locator(e_pos: &[usize], generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -217,15 +225,15 @@ fn _rs_find_errata_locator(e_pos: &[usize], generator: u8, gf_exp: &[u8; 512], g
     for i in e_pos {
         e_loc = _gf_poly_mul(&e_loc, &[1, _gf_pow(generator, *i as u8, gf_exp, gf_log)], gf_exp, gf_log);
     }
-    e_loc
+    return e_loc;
 }
 
 fn _rs_find_error_evaluator(synd: &[u8], err_loc: &[u8], gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
     let (_, remainder) = _gf_poly_div(_gf_poly_mul(synd, err_loc, gf_exp, gf_log), &[1], gf_exp, gf_log);
-    remainder
+    return remainder;
 }
 
-fn _rs_find_errors(err_loc: &[u8], nmess: usize, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<usize> {
+fn _rs_find_errors(err_loc: &[u8], nmess: usize, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<Vec<usize>, RSError> {
     let mut errs = vec![];
     for i in 0..nmess {
         if _gf_poly_eval(err_loc, _gf_pow(generator, i as u8, gf_exp, gf_log), gf_exp, gf_log) == 0 {
@@ -234,10 +242,10 @@ fn _rs_find_errors(err_loc: &[u8], nmess: usize, generator: u8, gf_exp: &[u8; 51
     }
 
     if errs.len() != err_loc.len() - 1 {
-        panic!("Too many (or few) errors found by Chien Search");
+        return Err(RSError::TooManyErrors);
     }
 
-    errs
+    return Ok(errs);
 }
 
 fn _rs_forney_syndromes(synd: &[u8], pos: &[usize], nmess: usize, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
@@ -253,9 +261,9 @@ fn _rs_forney_syndromes(synd: &[u8], pos: &[usize], nmess: usize, generator: u8,
     fsynd
 }
 
-fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase_pos: Option<&[usize]>, only_erasures: bool, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> (Vec<u8>, Vec<u8>, Vec<usize>) {
+fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase_pos: Option<&[usize]>, only_erasures: bool, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<(Vec<u8>, Vec<u8>, Vec<usize>), RSError> {
     if msg_in.len() > 255 {
-        panic!("Message is too long");
+        return Err(RSError::MessageTooLong);
     }
 
     let erase_pos = erase_pos.unwrap_or(&[]);
@@ -264,31 +272,34 @@ fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase
     }
 
     if erase_pos.len() > nsym {
-        panic!("Too many erasures to correct");
+        return Err(RSError::TooManyErasures);
     }
 
     let synd = _rs_calc_syndromes(msg_in, nsym, fcr, generator, gf_exp, gf_log);
     if synd.iter().max() == Some(&0) {
-        return (msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), vec![]);
+        return Ok((msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), vec![]));
     }
 
     let mut err_pos = vec![];
     if !only_erasures {
         let fsynd = _rs_forney_syndromes(&synd, erase_pos, msg_in.len(), generator, gf_exp, gf_log);
-        let err_loc = _rs_find_error_locator(&fsynd, nsym, Some(&_rs_find_errata_locator(erase_pos, generator, gf_exp, gf_log)), erase_pos.len(), gf_exp, gf_log);
-        err_pos = _rs_find_errors(&err_loc, msg_in.len(), generator, gf_exp, gf_log);
+        let err_loc = _rs_find_error_locator(&fsynd, nsym, Some(&_rs_find_errata_locator(erase_pos, generator, gf_exp, gf_log)), erase_pos.len(), gf_exp, gf_log)?;
+        err_pos = _rs_find_errors(&err_loc, msg_in.len(), generator, gf_exp, gf_log)?;
         if err_pos.is_empty() {
-            panic!("Could not locate error");
+            return Err(RSError::ErrorLocationFailure);
         }
     }
 
-    _rs_correct_errata(msg_in, &synd, &(erase_pos.iter().chain(err_pos.iter()).cloned().collect::<Vec<_>>()), generator, gf_exp, gf_log);
+    let corres = _rs_correct_errata(msg_in, &synd, &(erase_pos.iter().chain(err_pos.iter()).cloned().collect::<Vec<_>>()), generator, gf_exp, gf_log);
+    if corres.is_err() {
+        return Err(corres.err().unwrap());
+    }
     let synd = _rs_calc_syndromes(msg_in, nsym, fcr, generator, gf_exp, gf_log);
     if synd.iter().max() != Some(&0) {
-        panic!("Could not correct message");
+        return Err(RSError::ErrorCorrectionFailure);
     }
 
-    (msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), erase_pos.iter().chain(err_pos.iter()).cloned().collect())
+    return Ok((msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), erase_pos.iter().chain(err_pos.iter()).cloned().collect()));
 }
 
 fn _rs_check(msg: &[u8], nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> bool {
@@ -313,7 +324,7 @@ fn _gf_poly_div(mut dividend: Vec<u8>, divisor: &[u8], gf_exp: &[u8; 512], gf_lo
     }
 
     let separator = -(divisor.len() as isize) + 1;
-    (dividend[..dividend.len()-(divisor.len()-1)].to_vec(), dividend[(separator as usize)..].to_vec())
+    return (dividend[..dividend.len()-(divisor.len()-1)].to_vec(), dividend[(separator as usize)..].to_vec());
 }
 
 // Log/antilog tables and polynomial generator routines
@@ -333,7 +344,7 @@ fn _init_tables(prim: u16, generator: u8, c_exp: u32) -> ([u8; 256], [u8; 512]) 
         gf_exp[i] = gf_exp[i - field_charac as usize];
     }
 
-    (gf_log, gf_exp)
+    return (gf_log, gf_exp);
 }
 
 fn _gf_mul_no_lut(mut x: u16, y: u8, prim: u16, field_charac_full: u16) -> u8 {
@@ -349,7 +360,7 @@ fn _gf_mul_no_lut(mut x: u16, y: u8, prim: u16, field_charac_full: u16) -> u8 {
             x ^= prim;
         }
     }
-    result as u8
+    return result as u8;
 }
 
 // Galois Field arithmetic routines
@@ -386,7 +397,7 @@ fn _find_prime_polys(generator: u8, c_exp: u32, fast_primes: bool, single: bool)
         }
     }
 
-    correct_primes
+    return correct_primes;
 }
 
 // Prime numbers routines
@@ -410,7 +421,7 @@ fn _primes_in_range(start: u32, end: u32) -> Vec<u32> {
         }
     }
 
-    primes
+    return primes;
 }
 
 #[derive(Debug)]
@@ -454,7 +465,7 @@ impl RSCodec {
 
         rs.gen = _rs_generator_poly(nsym, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
 
-        rs
+        return rs;
     }
 
     pub fn encode(&self, data: &[u8]) -> Vec<u8> {
@@ -465,10 +476,10 @@ impl RSCodec {
             let chunk_enc = _rs_encode_msg(&chunk.to_vec(), self.nsym, self.fcr, self.generator, None, &self.gf_exp, &self.gf_log);
             chunks.push(chunk_enc);
         }
-        chunks.into_iter().flatten().collect()
+        return chunks.into_iter().flatten().collect();
     }
 
-    pub fn decode(&self, data: &[u8], erase_pos: Option<&[usize]>) -> Result<Vec<u8>, ReedSolomonError> {
+    pub fn decode(&self, data: &[u8], erase_pos: Option<&[usize]>) -> Result<Vec<u8>, RSError> {
         let chunk_size = self.nsize;
         let enc_chunk_size = chunk_size + self.nsym;
         let erase_pos = erase_pos.unwrap_or(&[]);
@@ -483,10 +494,14 @@ impl RSCodec {
                 })
                 .collect();
 
-            let (chunk_dec, _, _) = _rs_correct_msg(&mut chunk.to_vec(), self.nsym, self.fcr, self.generator, Some(&chunk_erase_pos), false, &self.gf_exp, &self.gf_log);
-            chunks.push(chunk_dec);
+            let chunk_dec = _rs_correct_msg(&mut chunk.to_vec(), self.nsym, self.fcr, self.generator, Some(&chunk_erase_pos), false, &self.gf_exp, &self.gf_log);
+            if chunk_dec.is_err() {
+                return Err(chunk_dec.err().unwrap());
+            }
+            let (decoded, _, _) = chunk_dec.unwrap();
+            chunks.push(decoded);
         }
 
-        Ok(chunks.into_iter().flatten().collect())
+        return Ok(chunks.into_iter().flatten().collect());
     }
 }
