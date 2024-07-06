@@ -17,7 +17,7 @@ use std::{fs::File, io::{stdout, ErrorKind, IsTerminal, Write}, path::Path};
  */
 fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let fsize = data.len() + prev.len();
-    let olap = if olap > 0 { olap.min(2) } else { 0 };
+    let olap = if olap > 0 { olap.max(2) } else { 0 };
 
     if prev.len() != 0 {
         let mut ndata = Vec::new();
