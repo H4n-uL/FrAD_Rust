@@ -1,11 +1,5 @@
-mod backend;
-mod fourier;
-mod tools;
-mod common;
-
-mod encode;
-mod decode;
-mod repair;
+mod backend; mod fourier; mod tools; mod common;
+mod encode; mod decode; mod repair;
 
 use std::env;
 
