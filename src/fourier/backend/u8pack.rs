@@ -5,7 +5,6 @@
  * Dependencies: byteorder, half
  */
 
-use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use half::f16;
 
 use crate::backend::bitify;
@@ -33,20 +32,29 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     if bits == 12 || bits == 16 {
         let input: Vec<f16> = input.iter().map(|&x| f16::from_f64(x)).collect();
         for &x in &input {
-            if be { bytes.write_u16::<BigEndian>   (x.to_bits() as u16).unwrap(); }
-            else  { bytes.write_u16::<LittleEndian>(x.to_bits() as u16).unwrap(); }
+            bytes.extend(
+                if be { u16::to_be_bytes(x.to_bits()) }
+                else  { u16::to_le_bytes(x.to_bits()) }
+                .to_vec()
+            );
         }
     }
     else if bits == 24 || bits == 32 {
         for &x in &input {
-            if be { bytes.write_f32::<BigEndian>   (x as f32).unwrap(); }
-            else  { bytes.write_f32::<LittleEndian>(x as f32).unwrap(); }
+            bytes.extend(
+                if be { f32::to_be_bytes(x as f32) }
+                else  { f32::to_le_bytes(x as f32) }
+                .to_vec()
+            );
         }
     }
     else if bits == 48 || bits == 64 {
         for &x in &input {
-            if be { bytes.write_f64::<BigEndian>   (x).unwrap(); }
-            else  { bytes.write_f64::<LittleEndian>(x).unwrap(); }
+            bytes.extend(
+                if be { f64::to_be_bytes(x) }
+                else  { f64::to_le_bytes(x) }
+                .to_vec()
+            );
         }
     }
 

@@ -6,7 +6,6 @@ license = "Archivist Licence"
 edition = "2021"
 
 [dependencies]
-byteorder = "1.5.0"
 flate2 = "1.0.30"
 half = "2.4.1"
 libsoxr = "0.2.9"
