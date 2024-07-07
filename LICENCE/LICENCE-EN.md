@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.4 - 2024. 5. 16., Original Repository
+V1.5 - 2024. 7. 7., Original Repository
 
 ## Definition of Terms
 
@@ -14,7 +14,7 @@ V1.4 - 2024. 5. 16., Original Repository
 
 "Contributor" means any person or entity who has contributed to the Work in any form, including by raising issues or modifying the source code.
 
-"End-Consumer Product" means an end product, such as physical or electronic goods or services, that reaches the end consumer via Fourier Analogue-in-Digital.
+"End-Consumer Product" means an end product, such as physical or electronic good or service, that reaches the end consumer that is created using Fourier Analogue-in-Digital.
 
 "Source Distribution" means distribution through distribution channels other than the repositories specified in the Official Documentation without modification of the source code.
 
@@ -61,13 +61,15 @@ Disputes between the Project Lead and a Contributor may only arise from a breach
 
 ## Intellectual Property Rights
 
-FrAD is without intellectual property rights. All original repository code, technology, and ideas that make up FrAD cannot be claimed as intellectual property rights such as patents, trademarks, or design rights. However, if add-ons or plug-ins are developed and applied, independent intellectual property rights are guaranteed only for those features.
+FrAD is without intellectual property rights. All original repository code, technology, and ideas developed by FrAD devteam cannot be claimed as intellectual property rights such as patents, trademarks, or design rights.
+
+However, for add-ons or plug-ins developed by third parties, independent intellectual property rights are guaranteed for those features only, regardless of the Archivist Licence.
 
 ## Licence Violations
 
 After confirming that one of the conditions below has been met, the original author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
 
-1. Standalone commercial use of this repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the official public repository, but it's prohibited anyway. It's a death penalty.
+1. Standalone commercial use of this repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the official public repository, but it's prohibited anyway.
 2. You are not required to credit the original author of the project. However, it is prohibited for third parties who have not contributed to the project to claim that they are the copyright holder of the project. If you have contributed, you may list the original author and the names of the contributors.
 3. Claiming intellectual property rights over FrAD is prohibited.
 4. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
