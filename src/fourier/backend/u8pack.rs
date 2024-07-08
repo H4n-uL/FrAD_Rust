@@ -6,8 +6,7 @@
  */
 
 use half::f16;
-
-use crate::backend::bitify;
+use crate::backend::bitcvt;
 
 /** cut_float3s
  * Cuts off last bits of floats to make their bit depth to 12, 24, or 48
@@ -59,8 +58,8 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     }
 
     if bits % 3 == 0 {
-        let bitstrm: Vec<bool> = bitify::fromvec(bytes.clone());
-        bytes = bitify::tovec(cut_float3s(bitstrm, bits));
+        let bitstrm: Vec<bool> = bitcvt::frombytes(bytes.clone());
+        bytes = bitcvt::tobytes(cut_float3s(bitstrm, bits));
     }
 
     return bytes;
@@ -91,9 +90,9 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
     if bits % 8 != 0 { be = true }
 
     if bits % 3 == 0 {
-        let mut bitstrm: Vec<bool> = bitify::fromvec(input.clone());
+        let mut bitstrm: Vec<bool> = bitcvt::frombytes(input.clone());
         bitstrm.truncate(bitstrm.len() - bitstrm.len() % bits as usize);
-        input = bitify::tovec(pad_float3s(bitstrm, bits));
+        input = bitcvt::tobytes(pad_float3s(bitstrm, bits));
     }
 
     if bits == 12 || bits == 16 {

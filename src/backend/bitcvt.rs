@@ -1,10 +1,15 @@
-/**                                 Bitifier                                  */
+/**                                Bitconvert                                 */
 /**
  * Copyright 2024 HaמuL
  * Function: Convert byte array to bitstream and vice versa
  */
 
-pub fn fromvec(bytes: Vec<u8>) -> Vec<bool> {
+/** frombytes
+ * Converts byte array to bitstream
+ * Parameters: Byte array
+ * Returns: Bitstream
+ */
+pub fn frombytes(bytes: Vec<u8>) -> Vec<bool> {
     let mut bitstream: Vec<bool> = Vec::new();
 
     for byte in bytes {
@@ -13,7 +18,12 @@ pub fn fromvec(bytes: Vec<u8>) -> Vec<bool> {
     return bitstream;
 }
 
-pub fn tovec(bitstream: Vec<bool>) -> Vec<u8> {
+/** tobytes
+ * Converts bitstream to byte array
+ * Parameters: Bitstream
+ * Returns: Byte array
+ */
+pub fn tobytes(bitstream: Vec<bool>) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     let mut byte: u8 = 0u8;
 
