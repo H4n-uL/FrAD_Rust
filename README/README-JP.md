@@ -31,7 +31,7 @@ mv target/release/frad /path/to/bin/frad
 export PATH=/path/to/bin:$PATH
 ```
 
-**警告： --release オプションを抜いてビルドすると実行速度がすごく遅くなるので注意してください。**
+**警告： --releaseオプションなしでビルドすると実行速度が極端に遅くなるので、必ず--releaseオプションと一緒にビルドしてください。**
 
 ## 外部リソース
 
@@ -39,11 +39,10 @@ export PATH=/path/to/bin:$PATH
 
 ### Cargoクレート
 
-1. byteorder
-2. flate2
-3. half
-4. libsoxr
-5. rustfft
+1. flate2
+2. half
+3. libsoxr
+4. rustfft
 
 ## 貢献方法
 

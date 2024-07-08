@@ -39,11 +39,10 @@ export PATH=/path/to/bin:$PATH
 
 ### Cargo crates
 
-1. byteorder
-2. flate2
-3. half
-4. libsoxr
-5. rustfft
+1. flate2
+2. half
+3. libsoxr
+4. rustfft
 
 ## How to contribute
 
