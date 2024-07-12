@@ -33,8 +33,8 @@ pub fn repair(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile = File::open(rfile).unwrap();
-    let mut writefile = File::create(wfile).unwrap();
+    let mut readfile: Box<dyn Read> = Box::new(File::open(rfile).unwrap());
+    let mut writefile: Box<dyn Write> = Box::new(File::create(wfile).unwrap());
 
     let mut asfh = ASFH::new();
 

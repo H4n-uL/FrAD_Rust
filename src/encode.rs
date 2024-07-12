@@ -7,7 +7,7 @@
 use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{stdout, ErrorKind, IsTerminal, Write}, path::Path};
+use std::{fs::File, io::{stdout, ErrorKind, IsTerminal, Read, Write}, path::Path};
 // use libsoxr::Soxr;
 
 /** overlap
@@ -109,8 +109,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile = if !rpipe { File::open(rfile).unwrap() } else { File::open(common::DEVNULL).unwrap() };
-    let mut writefile = if !wpipe { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
+    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::empty()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::sink()) };
 
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();

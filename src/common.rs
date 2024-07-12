@@ -4,15 +4,14 @@
  * Function: Common tools for FrAD
  */
 
-use std::{fs::File, io::Read};
+use std::io::Read;
 
 // Frame signature
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
 // Pipe and null device
-pub static PIPEIN: &[&str] = &["pipe:", "pipe:0", "-"];
-pub static PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-"];
-pub static DEVNULL: &str = if cfg!(windows) { "NUL" } else { "/dev/null" };
+pub static PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
+pub static PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
 
 // CRC-32 Table generator
 const fn gcrc32t() -> [u32; 256] {
@@ -87,7 +86,7 @@ pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
  * Parameters: File(&mut), Buffer(&mut), Pipe flag
  * Returns: Total bytes read
  */
-pub fn read_exact(file: &mut File, buf: &mut [u8], pipe: bool) -> usize {
+pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8], pipe: bool) -> usize {
     let mut total_read = 0;
     let mut stdin = std::io::stdin();
 

@@ -7,7 +7,7 @@
 use crate::{fourier, fourier::profiles::profile1, 
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{Write, ErrorKind}, path::Path};
+use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
 /** overlap
  * Overlaps the current frame with the previous fragment
@@ -38,7 +38,7 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
  * Parameters: Output file, PCM data, Pipe toggle
  * Returns: None
  */
-fn flush(mut file: &File, pcm: Vec<Vec<f64>>, pipe: bool) {
+fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, pipe: bool) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
     let pcm_bytes: Vec<u8> = pcm_flat.iter().map(|x| x.to_be_bytes()).flatten().collect();
     if pipe { std::io::stdout().lock().write_all(&pcm_bytes)
@@ -87,8 +87,8 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile = if !rpipe { File::open(rfile).unwrap() } else { File::open(common::DEVNULL).unwrap() };
-    let writefile = if !wpipe { File::create(wfile).unwrap() } else { File::create(common::DEVNULL).unwrap() };
+    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::empty()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::sink()) };
     let mut asfh = ASFH::new();
 
     let mut head = Vec::new();
@@ -97,13 +97,13 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         if head.len() == 0 {
             let mut buf = vec![0u8; 4];
             let readlen = common::read_exact(&mut readfile, &mut buf, rpipe);
-            if readlen == 0 { flush(&writefile, prev, wpipe); break; }
+            if readlen == 0 { flush(&mut writefile, prev, wpipe); break; }
             head = buf.to_vec();
         }
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf, rpipe);
-            if readlen == 0 { flush(&writefile, prev, wpipe); break; }
+            if readlen == 0 { flush(&mut writefile, prev, wpipe); break; }
             head.extend(buf);
             head = head[1..].to_vec();
             continue;
@@ -126,7 +126,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);
-        flush(&writefile, pcm, wpipe);
+        flush(&mut writefile, pcm, wpipe);
         head = Vec::new();
     }
 }

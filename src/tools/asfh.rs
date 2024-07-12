@@ -5,7 +5,7 @@
  */
 
 use crate::{common::{FRM_SIGN, crc16_ansi, crc32, read_exact}, fourier::profiles::profile1};
-use std::{fs::File, io::Read};
+use std::io::Read;
 
 /** encode_pfb
  * Encodes PFloat byte (containing necessary info for the frame)
@@ -144,7 +144,7 @@ impl ASFH {
      * Updates the ASFH from a file
      * Parameters: File, Pipe toggle
      */
-    pub fn update(&mut self, file: &mut File, pipe: bool) {
+    pub fn update(&mut self, file: &mut Box<dyn Read>, pipe: bool) {
         let mut fhead = FRM_SIGN.to_vec();
 
         let mut buf = vec![0u8; 5]; let _ = read_exact(file, &mut buf, pipe);
