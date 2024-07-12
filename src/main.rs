@@ -83,21 +83,16 @@ fn main() {
     }
     else if &action == &"help".to_string() {
         eprintln!("{}", BANNER);
-        if tools::cli::ENCODE_OPT.contains(&input.as_str()) {
-            eprintln!("{}", ENCODE_HELP);
-        }
-        else if tools::cli::DECODE_OPT.contains(&input.as_str()) {
-            eprintln!("{}", DECODE_HELP);
-        }
-        else if tools::cli::REPAIR_OPT.contains(&input.as_str()) {
-            eprintln!("{}", REPAIR_HELP);
-        }
-        else { eprintln!("------------------------------- Available actions ------------------------------
+        eprintln!("{}", 
+                 if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
+            else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
+            else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
+            else { "------------------------------- Available actions ------------------------------
 
     encode | Encode any audio formats to FrAD (alias: enc)
     decode | Encode FrAD to any audio formats (alias: dec)
-    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)"
-        );}
+    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)" }
+        );
         eprintln!();
     }
     else {
