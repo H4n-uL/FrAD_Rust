@@ -13,7 +13,7 @@ Float64 Big Endian(チャンネル数とサンプルレートは自由に指定)
 ```bash
 ffmpeg -i audio.flac -f f64be -ar <サンプルレート> -ac <チャンネル数> audio.pcm
 ...
-ffmpeg -f f64be -ar -ar <サンプルレート> -ac <チャンネル数> -i frad_res.pcm -c:a flac res.flac
+ffmpeg -f f64be -ar <サンプルレート> -ac <チャンネル数> -i frad_res.pcm -c:a flac res.flac
 ```
 
 ## インストール方法
