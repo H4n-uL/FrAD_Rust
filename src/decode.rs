@@ -4,7 +4,7 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{fourier, fourier::profiles::profile1, 
+use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
@@ -42,9 +42,9 @@ fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, pipe: bool) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
     let pcm_bytes: Vec<u8> = pcm_flat.iter().map(|x| x.to_be_bytes()).flatten().collect();
     if pipe { std::io::stdout().lock().write_all(&pcm_bytes)
-        .unwrap_or_else(|err| 
+        .unwrap_or_else(|err|
             if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
-        ); 
+        );
     }
     else { file.write_all(&pcm_bytes).unwrap(); }
 }
@@ -79,7 +79,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
                 let mut input = String::new();
                 std::io::stdin().read_line(&mut input).unwrap();
                 if input.trim().to_lowercase() == "y" { break; }
-                else if input.trim().to_lowercase() == "n" { 
+                else if input.trim().to_lowercase() == "n" {
                     eprintln!("Aborted.");
                     std::process::exit(0);
                 }

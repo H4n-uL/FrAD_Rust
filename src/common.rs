@@ -90,7 +90,7 @@ pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8], pipe: bool) -> usize
     let mut total_read = 0;
     let mut stdin = std::io::stdin();
 
-    let reader: &mut dyn Read = 
+    let reader: &mut dyn Read =
     if pipe { &mut stdin } else { file };
 
     while total_read < buf.len() {

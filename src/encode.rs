@@ -69,8 +69,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     && profile1::DEPTHS.contains(&bit_depth) == false
     { panic!("Invalid bit depth"); }
 
-    let segmax = 
-        if profile == 1 { *profile1::SMPLS_LI.iter().max().unwrap() } 
+    let segmax =
+        if profile == 1 { *profile1::SMPLS_LI.iter().max().unwrap() }
         else { u32::MAX };
     if buffersize > segmax { panic!("Samples per frame cannot exceed {}", segmax); }
 
@@ -96,7 +96,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
                 let mut input = String::new();
                 std::io::stdin().read_line(&mut input).unwrap();
                 if input.trim().to_lowercase() == "y" { break; }
-                else if input.trim().to_lowercase() == "n" { 
+                else if input.trim().to_lowercase() == "n" {
                     eprintln!("Aborted.");
                     std::process::exit(0);
                 }
@@ -141,7 +141,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         let fsize: u32 = frame.len() as u32;
 
         // Encoding
-        let (mut frad, bit_ind, chnl) = 
+        let (mut frad, bit_ind, chnl) =
         if profile == 1 { profile1::analogue(frame, bit_depth, srate, losslevel) }
         else { fourier::analogue(frame, bit_depth, little_endian) };
 
@@ -157,8 +157,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 
-        if wpipe { stdout().write(frad.as_slice()).unwrap(); } 
-        else { writefile.write(frad.as_slice()).unwrap_or_else(|err| 
+        if wpipe { stdout().write(frad.as_slice()).unwrap(); }
+        else { writefile.write(frad.as_slice()).unwrap_or_else(|err|
             if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
         ); }
     }

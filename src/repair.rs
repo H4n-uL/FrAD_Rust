@@ -26,7 +26,7 @@ pub fn repair(rfile: String, params: cli::CliParams) {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).unwrap();
             if input.trim().to_lowercase() == "y" { break; }
-            else if input.trim().to_lowercase() == "n" { 
+            else if input.trim().to_lowercase() == "n" {
                 eprintln!("Aborted.");
                 std::process::exit(0);
             }

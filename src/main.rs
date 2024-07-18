@@ -83,7 +83,7 @@ fn main() {
     }
     else if &action == &"help".to_string() {
         eprintln!("{}", BANNER);
-        eprintln!("{}", 
+        eprintln!("{}",
                  if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
             else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
             else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
