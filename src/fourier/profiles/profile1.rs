@@ -5,8 +5,7 @@
  * Dependencies: flate2, half
  */
 
-use super::super::backend::core_fast::{dct, idct};
-use super::tools::p1tools;
+use super::{super::backend::core_fast::{dct, idct}, tools::p1tools};
 use half::f16;
 
 use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
