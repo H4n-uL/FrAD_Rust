@@ -71,7 +71,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
     let segmax = 
         if profile == 1 { *profile1::SMPLS_LI.iter().max().unwrap() } 
-        else { (2u64.pow(32) - 1) as u32 };
+        else { u32::MAX };
     if buffersize > segmax { panic!("Samples per frame cannot exceed {}", segmax); }
 
     // Making sure the output file is set
