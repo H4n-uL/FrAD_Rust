@@ -52,7 +52,7 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
 
     let samples = freqs_flat.len() / channels as usize;
     let freqs: Vec<Vec<f64>> = (0..channels)
-        .map(|channel| {(0..samples).map(|sample| freqs_flat[sample * channels + channel]).collect()})
+        .map(|ch| {(0..samples).map(|smp| freqs_flat[smp * channels + ch]).collect()})
         .collect();
 
     let pcm: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
