@@ -70,11 +70,11 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     let (freqs, pns) = p1tools::quant(freqs, pcm[0].len() as i16, srate, level);
 
     let freqs_flat: Vec<i64> = (0..freqs[0].len())
-        .map(|i| freqs.iter().map(|inner| inner[i]).collect::<Vec<i64>>())
+        .map(|i| freqs.iter().map(move |inner| inner[i]))
         .into_iter().flatten().collect();
 
     let pns_flat: Vec<i64> = (0..pns[0].len())
-        .map(|i| pns.iter().map(|inner| f16::from_f64(inner[i] / 2_i64.pow(bits as u32-1) as f64).to_bits() as i64 ).collect::<Vec<i64>>())
+        .map(|i| pns.iter().map(move |inner| f16::from_f64(inner[i] / 2_i64.pow(bits as u32-1) as f64).to_bits() as i64 ))
         .into_iter().flatten().collect();
 
     let pns_glm = p1tools::exp_golomb_rice_encode(pns_flat);
@@ -120,8 +120,8 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
         .map(|i| freqs_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
         .collect();
     let mask: Vec<Vec<f64>> = (0..channels)
-    .map(|i| pns_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
-    .collect();
+        .map(|i| pns_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
+        .collect();
 
     freqs = p1tools::dequant(freqs, mask, channels as i16, srate);
 

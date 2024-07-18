@@ -6,7 +6,6 @@
 
 pub mod backend; pub mod profiles;
 use backend::{u8pack, core_fast::{dct, idct}};
-use crate::backend::trans::trans;
 
 // Bit depth table
 pub const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];
@@ -19,9 +18,16 @@ const FLOAT_DR: [i16; 6] = [5, 5, 8, 8, 11, 11];
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
 pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
-    let freqs: Vec<Vec<f64>> = trans(pcm).iter().map(|x| dct(x.to_vec())).collect();
+    let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
+        .map(|i| pcm.iter().map(|inner| inner[i]).collect())
+        .collect();
+
+    let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
-    let freqs_flat: Vec<f64> = trans(freqs).into_iter().flatten().collect();
+
+    let freqs_flat: Vec<f64> = (0..freqs[0].len())
+        .map(|i| freqs.iter().map(move |inner| inner[i]))
+        .into_iter().flatten().collect();
 
     let mut bit_depth_index = DEPTHS.iter().position(|&x| x == bits).unwrap();
     while freqs_flat.iter().max_by(|x, y| x.abs().partial_cmp(&y.abs()).unwrap()).unwrap().abs()
@@ -45,9 +51,13 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
     let channels = channels as usize;
 
     let samples = freqs_flat.len() / channels as usize;
-    let freqs: Vec<Vec<f64>> = trans((0..samples)
-        .map(|i| freqs_flat[i * channels..(i + 1) * channels].to_vec())
-        .collect());
-    let pcm: Vec<Vec<f64>> = trans(freqs.iter().map(|x| idct(x.to_vec())).collect());
-    return pcm;
+    let freqs: Vec<Vec<f64>> = (0..channels)
+        .map(|channel| {(0..samples).map(|sample| freqs_flat[sample * channels + channel]).collect()})
+        .collect();
+
+    let pcm: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
+    let pcm_interleaved: Vec<Vec<f64>> = (0..pcm[0].len())
+        .map(|i| pcm.iter().map(|inner| inner[i]).collect())
+        .collect();
+    return pcm_interleaved;
 }
