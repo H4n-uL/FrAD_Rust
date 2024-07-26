@@ -5,7 +5,7 @@
  */
 
 pub mod backend; pub mod profiles;
-use backend::{u8pack, core_fast::{dct, idct}};
+use backend::{u8pack, core::{dct, idct}};
 
 // Bit depth table
 pub const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];

@@ -5,7 +5,7 @@
  * Dependencies: flate2, half
  */
 
-use super::{super::backend::core_fast::{dct, idct}, tools::p1tools};
+use super::{super::backend::core::{dct, idct}, tools::p1tools};
 use half::f16;
 
 use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
@@ -61,7 +61,7 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
     let pcm = pad_pcm(pcm);
     let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
-        .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bits-1) as f64) / pcm.len() as f64).collect())
+        .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bits-1) as f64)).collect())
         .collect();
 
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
@@ -114,8 +114,6 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_glm).iter().map(|x| *x as f64).collect();
     let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(pns_glm).iter().map(|x| f16::from_bits(*x as u16).to_f64() * 2.0_f64.powi(bits as i32 - 1)).collect();
 
-    let samples = freqs_flat.len() / channels as usize;
-
     let mut freqs: Vec<Vec<f64>> = (0..channels)
         .map(|i| freqs_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
         .collect();
@@ -128,7 +126,7 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
 
     let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
-        .map(|i| pcm_trans.iter().map(|inner| inner[i] * samples as f64 / 2.0_f64.powi(bits as i32 - 1)).collect())
+        .map(|i| pcm_trans.iter().map(|inner| inner[i] / 2.0_f64.powi(bits as i32 - 1)).collect())
         .collect();
     return pcm;
 }

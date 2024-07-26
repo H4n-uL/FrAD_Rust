@@ -37,7 +37,7 @@ pub fn unecc(data: Vec<u8>, dlen: usize, codelen: usize) -> Vec<u8> {
     let mut decoded: Vec<u8> = Vec::new();
 
     for chunk in data.chunks(block_sz) {
-        decoded.extend(chunk.iter().take(dlen).cloned());
+        decoded.extend(chunk.iter().take(chunk.len() - codelen).cloned());
     }
 
     decoded
