@@ -83,18 +83,14 @@ pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
 
 /** read_exact
  * Reads a file or stdin to a buffer with exact size
- * Parameters: File(&mut), Buffer(&mut), Pipe flag
+ * Parameters: File(&mut), Buffer(&mut)
  * Returns: Total bytes read
  */
-pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8], pipe: bool) -> usize {
+pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
     let mut total_read = 0;
-    let mut stdin = std::io::stdin();
-
-    let reader: &mut dyn Read =
-    if pipe { &mut stdin } else { file };
 
     while total_read < buf.len() {
-        let read_size = reader.read(&mut buf[total_read..]).unwrap();
+        let read_size = file.read(&mut buf[total_read..]).unwrap();
         if read_size == 0 { break; }
         total_read += read_size;
     }

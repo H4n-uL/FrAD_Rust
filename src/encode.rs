@@ -109,8 +109,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
     }
 
-    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::empty()) };
-    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::sink()) };
+    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
@@ -124,7 +124,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         }
         let fbytes = rlen * channels as usize * 8;
         let mut pcm_buf = vec![0u8; fbytes];
-        let readlen = common::read_exact(&mut readfile, &mut pcm_buf, rpipe);
+        let readlen = common::read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
 
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)
