@@ -16,8 +16,11 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-frad encode path/to/audio.file -srate [sample rate] -chnl [channels]
-    --bits [bit depth] {kwargs...}
+{exe} encode path/to/audio.file
+    --sample-rate [sample rate]
+    --channels [channels]
+    --bits [bit depth]
+    {{kwargs...}}
 
 ----------------------------------- Options ------------------------------------
 
@@ -45,7 +48,8 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-frad decode path/to/audio.frad {kwargs...}
+{exe} decode path/to/audio.frad
+    {{kwargs...}}
 
 ----------------------------------- Options ------------------------------------
 
@@ -60,7 +64,9 @@ This action will repair any supported FrAD audio file with ECC protection.
 
 ------------------------------------ Usage -------------------------------------
 
-frad repair path/to/audio.frad --output path/to/audio_ecc.frad {kwargs...}
+{exe} repair path/to/audio.frad
+    --output path/to/audio_ecc.frad
+    {{kwargs...}}
 
 ----------------------------------- Options ------------------------------------
 
@@ -70,6 +76,7 @@ frad repair path/to/audio.frad --output path/to/audio_ecc.frad {kwargs...}
 
 /** Main function  */
 fn main() {
+    let executable = env::args().next().unwrap();
     let (action, input, params) = tools::cli::parse(env::args());
 
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
@@ -91,13 +98,13 @@ fn main() {
 
     encode | Encode any audio formats to FrAD (alias: enc)
     decode | Encode FrAD to any audio formats (alias: dec)
-    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)" }
+    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)" }.replace("{exe}", executable.as_str())
         );
         eprintln!();
     }
     else {
         eprintln!("Fourier Analogue-in-Digital Rust Reference");
-        eprintln!("Abstract syntax: frad [encode|decode|repair] <input> [kwargs...]");
-        eprintln!("type 'frad help' to get help.");
+        eprintln!("Abstract syntax: {executable} [encode|decode|repair] <input> [kwargs...]");
+        eprintln!("type '{executable} help' to get help.");
     }
 }
