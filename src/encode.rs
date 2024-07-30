@@ -7,7 +7,7 @@
 use crate::{fourier, fourier::profiles::profile1,
     common, tools::{asfh::ASFH, cli, ecc}};
 
-use std::{fs::File, io::{stdout, ErrorKind, IsTerminal, Read, Write}, path::Path};
+use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path};
 // use libsoxr::Soxr;
 
 /** overlap
@@ -157,9 +157,9 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 
-        if wpipe { stdout().write(frad.as_slice()).unwrap(); }
-        else { writefile.write(frad.as_slice()).unwrap_or_else(|err|
-            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
-        ); }
+        writefile.write_all(&frad).unwrap_or_else(|err|
+            { eprintln!("Error writing to stdout: {}", err);
+            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); } }
+        );
     }
 }
