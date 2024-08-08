@@ -58,8 +58,7 @@ This action supports pipe input/output.
 ----------------------------------- Options ------------------------------------
 
     --output      | Output file path (alias: o, out)
-    --ecc         | Check and fix errors, default: false (alias: e, enable-ecc)
-";
+    --ecc         | Check and fix errors, default: false (alias: e, enable-ecc)";
 
 const REPAIR_HELP: &str = "--------------------------------- Description ----------------------------------
 
