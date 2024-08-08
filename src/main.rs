@@ -153,7 +153,7 @@ fn main() {
     
 Type `{frad} help [action]` to get help for specific action." }.replace("{frad}", executable.as_str())
         );
-        eprintln!();
+        println!();
     }
     else {
         eprintln!("Fourier Analogue-in-Digital Rust Reference");
