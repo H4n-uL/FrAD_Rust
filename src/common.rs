@@ -4,7 +4,7 @@
  * Function: Common tools for FrAD
  */
 
-use std::io::Read;
+use std::{fs::File, io::{Read, Write}};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -96,4 +96,19 @@ pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
         total_read += read_size;
     }
     return total_read;
+}
+
+pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) -> () {
+    loop {
+        let mut buf: Vec<u8> = vec![0; bufsize];
+        let mut total_read = 0;
+
+        while total_read < buf.len() {
+            let read_size = readfile.read(&mut buf[total_read..]).unwrap();
+            if read_size == 0 { break; }
+            total_read += read_size;
+        }
+        if total_read == 0 { break; }
+        writefile.write_all(&buf[..total_read]).unwrap();
+    }
 }

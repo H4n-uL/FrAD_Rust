@@ -1,18 +1,28 @@
-# RUST #
-## Compiled sources
+#---------------- RUST ----------------#
+
+## Compiled sources ##
 /target
-## lock file
+
+## lock file ##
 Cargo.lock
 
-# macOS
+#------------ SYSTEM FILES ------------#
+
+## macOS ##
 .DS_Store
 
-# FrAD files
+#---------- GENERATED FILES -----------#
+
+## FrAD files ##
 *.frad
 *.fra
 *.dsin
 *.dsn
 
-# RAW PCM files
+## RAW PCM files ##
 *.pcm
 *.raw
+
+## Metadata ##
+*.json
+*.image

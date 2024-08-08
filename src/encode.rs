@@ -77,14 +77,17 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let mut wfile = wfile;
     if wfile.len() == 0 {
         let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-        let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
+        wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
+    }
+    if !(wfile.ends_with(".frad") || wfile.ends_with(".dsin")
+        || wfile.ends_with(".fra") || wfile.ends_with(".dsn")) {
         if [0, 4].contains(&profile) {
-            if wfile_prefix.len() <= 8 { wfile = format!("{}.fra", wfile_prefix); }
-            else { wfile = format!("{}.frad", wfile_prefix); }
+            if wfile.len() <= 8 { wfile = format!("{}.fra", wfile); }
+            else { wfile = format!("{}.frad", wfile); }
         }
         else {
-            if wfile_prefix.len() <= 8 { wfile = format!("{}.dsn", wfile_prefix); }
-            else { wfile = format!("{}.dsin", wfile_prefix); }
+            if wfile.len() <= 8 { wfile = format!("{}.dsn", wfile); }
+            else { wfile = format!("{}.dsin", wfile); }
         }
     }
 

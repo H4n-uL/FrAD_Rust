@@ -41,6 +41,7 @@ This action supports pipe input/output.
     --loss-level  | Lossy compression level, default: 0 (alias: lv, level)
                   |
     --meta        | Metadata in [key] [value] (alias: m, tag)
+    --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed (alias: img)";
 
 const DECODE_HELP: &str = "--------------------------------- Description ----------------------------------
@@ -91,6 +92,7 @@ This action will modify the metadata of the FrAD audio file.
 
     add -           Add metadata and image to the FrAD file
     --meta        | Metadata in [key] [value] (alias: m, tag)
+    --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed, replace if exists (alias: img)
 
     remove -        Remove metadata from the FrAD file
@@ -101,7 +103,11 @@ This action will modify the metadata of the FrAD audio file.
 
     overwrite -     Remove all metadata and rewrite whole header
     --meta        | Metadata in [key] [value] (alias: m, tag)
-    --image       | Image file path to embed (alias: img)";
+    --jsonmeta    | Metadata in JSON format (alias: jm)
+    --image       | Image file path to embed (alias: img)
+    
+    parse -         Parse metadata to JSON
+    --output      | Output file path, default: [input].json (alias: o, out)";
 
 /** Main function  */
 fn main() {
@@ -118,7 +124,7 @@ fn main() {
         repair::repair(input, params);
     }
     else if tools::cli::HEADER_OPT.contains(&action.as_str()) {
-        header::modify(input, metaaction, params.meta, params.image_path);
+        header::modify(input, metaaction, params);
     }
     else if &action == &"help".to_string() {
         println!("{}", BANNER);

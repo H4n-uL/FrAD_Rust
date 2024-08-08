@@ -4,7 +4,10 @@
  * Function: Simple CLI parser for FrAD Library
  */
 
-use std::{collections::VecDeque, env::Args};
+use std::{collections::VecDeque, env::Args, fs::read_to_string};
+
+use base64::{prelude::BASE64_STANDARD, Engine as _};
+use serde_json::{from_str, Value};
 
 // CLI Options
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
@@ -16,6 +19,7 @@ pub const META_ADD: &str = "add";
 pub const META_REMOVE: &str = "remove";
 pub const META_RMIMG: &str = "rm-img";
 pub const META_OVERWRITE: &str = "overwrite";
+pub const META_PARSE: &str = "parse";
 
 // CLI Parameters
 pub struct CliParams {
@@ -67,6 +71,29 @@ impl CliParams {
     pub fn set_ecc_rate(&mut self, dsize: String, csize: String) -> () { self.ecc_rate = [dsize.parse().unwrap(), csize.parse().unwrap()]; }
     pub fn set_overwrite(&mut self) -> () { self.overwrite = true; }
     pub fn set_meta(&mut self, meta: (String, String)) -> () { self.meta.push((meta.0, meta.1.as_bytes().to_vec())); }
+    pub fn set_meta_from_json(&mut self, meta_path: String) -> () {
+        let contents = match read_to_string(meta_path) { Ok(c) => c, Err(_) => { return; } };
+        let json_meta: Vec<Value> = match from_str(&contents) { Ok(m) => m, Err(_) => { return; } };
+    
+        for item in json_meta {
+            let key = item["key"].as_str().map(String::from);
+            let item_type = item["type"].as_str();
+            let value_str = item["value"].as_str();
+    
+            match (key, item_type, value_str) {
+                (Some(k), Some(t), Some(v)) => {
+                    let value = if t == "base64" {
+                        match BASE64_STANDARD.decode(v) {
+                            Ok(decoded) => decoded,
+                            Err(_) => { continue; }
+                        }
+                    } else { v.as_bytes().to_vec() };
+                    self.meta.push((k, value));
+                }
+                _ => { continue; }
+            }
+        }
+    }
     pub fn set_image(&mut self, image: String) -> () { self.image_path = image; }
 }
 
@@ -147,6 +174,9 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                 let value = args.pop_front().unwrap();
                 if metaaction == META_REMOVE { params.set_meta((value, String::new())); }
                 else { params.set_meta((value, args.pop_front().unwrap())); }
+            }
+            if ["jsonmeta", "jm"].contains(&key) {
+                params.set_meta_from_json(args.pop_front().unwrap());
             }
             if ["img", "image"].contains(&key) {
                 let value = args.pop_front().unwrap();
