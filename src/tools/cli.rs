@@ -13,7 +13,7 @@ use serde_json::{from_str, Value};
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
 pub const DECODE_OPT: [&str; 2] = ["decode", "dec"];
 pub const REPAIR_OPT: [&str; 4] = ["reecc", "re-ecc", "repair", "ecc"];
-pub const HEADER_OPT: [&str; 2] = ["meta", "metadata"];
+pub const METADATA_OPT: [&str; 2] = ["meta", "metadata"];
 
 pub const META_ADD: &str = "add";
 pub const META_REMOVE: &str = "remove";
@@ -110,7 +110,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
 
     let action = args.pop_front().unwrap();
     let mut metaaction = String::new();
-    if HEADER_OPT.contains(&action.as_str()) {
+    if METADATA_OPT.contains(&action.as_str()) {
         metaaction = args.pop_front().unwrap();
     }
     if args.len() < 1 { return (action, String::new(), String::new(), params); }
@@ -149,7 +149,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             if ["ecc", "enable-ecc", "e"].contains(&key) {
                 params.set_enable_ecc();
                 if !args.is_empty() {
-                    if let Ok(_) = args[0].parse::<f64>() {
+                    if let Ok(_) = args[0].parse::<u128>() {
                         let v1 = args.pop_front().unwrap();
                         let v2 = args.pop_front().unwrap();
                         params.set_ecc_rate(v1, v2);

@@ -78,9 +78,9 @@ This action will repair any supported FrAD audio file with ECC protection.
     --ecc         | ECC size ratio in --ecc [data size] [ecc code size]
                   | default: 96, 24 (alias: e, enable-ecc)";
 
-const HEADER_HELP: &str = "--------------------------------- Description ----------------------------------
+const METADATA_HELP: &str = "--------------------------------- Description ----------------------------------
 
-Header
+Metadata
 This action will modify the metadata of the FrAD audio file.
 
 ------------------------------------ Usage -------------------------------------
@@ -123,7 +123,7 @@ fn main() {
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
         repair::repair(input, params);
     }
-    else if tools::cli::HEADER_OPT.contains(&action.as_str()) {
+    else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);
     }
     else if &action == &"help".to_string() {
@@ -132,7 +132,7 @@ fn main() {
                  if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
             else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
             else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
-            else if tools::cli::HEADER_OPT.contains(&input.as_str()) { HEADER_HELP }
+            else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
             else { "------------------------------- Available actions ------------------------------
 
     encode | Encode any audio formats to FrAD    (alias: enc)
