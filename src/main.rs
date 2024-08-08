@@ -93,6 +93,9 @@ This action will modify the metadata of the FrAD audio file.
     --meta        | Metadata in [key] [value] (alias: m, tag)
     --image       | Image file path to embed, replace if exists (alias: img)
 
+    remove -        Remove metadata from the FrAD file
+    --meta        | Metadata key to remove (alias: m, tag)
+
     rm-img -        Remove image from the FrAD file
     No option for this action.
 

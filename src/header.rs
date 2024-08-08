@@ -6,7 +6,7 @@
 
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}};
 use tempfile::NamedTempFile;
-use crate::{common::SIGNATURE, tools::head};
+use crate::{common::SIGNATURE, tools::{cli, head}};
 
 /** modify
  * Modify the metadata of a FrAD file
@@ -15,10 +15,6 @@ use crate::{common::SIGNATURE, tools::head};
  */
 pub fn modify(file_name: String, modtype: String, mut meta: Vec<(String, Vec<u8>)>, img_path: String) {
     if file_name.len() == 0 { eprintln!("File path is required."); std::process::exit(1); }
-
-    let add = modtype == "add";
-    let remove_img = modtype == "remove-img";
-    let overwrite = modtype == "overwrite";
 
     let mut img = Vec::new();
     if img_path.len() > 0 {
@@ -55,23 +51,26 @@ pub fn modify(file_name: String, modtype: String, mut meta: Vec<(String, Vec<u8>
     let (mut meta_old, img_old) = head::parser(head_original);
     let (mut meta_new, mut img_new) = (Vec::new(), Vec::new());
 
-    if add {
-        if meta_old.len() > 0 { meta_new.append(&mut meta_old); }
-        meta_new.append(&mut meta);
-        if img_old.len() > 0 { img_new = img_old; }
-        if img.len() > 0 { img_new = img; }
-    }
-    else if remove_img {
-        meta_new = meta_old;
-        img_new = Vec::new();
-    }
-    else if overwrite {
-        meta_new = meta;
-        img_new = img;
-    }
-    else {
-        eprintln!("Invalid modification type.");
-        std::process::exit(1);
+    match modtype.as_str() {
+        cli::META_ADD => {
+            if meta_old.len() > 0 { meta_new.append(&mut meta_old); }
+            meta_new.append(&mut meta);
+            if img_old.len() > 0 { img_new = img_old; }
+            if img.len() > 0 { img_new = img; }
+        }
+        cli::META_REMOVE => {
+            meta_new = meta_old.into_iter().filter(|(title, _)| !meta.iter().any(|(t, _)| t == title)).collect();
+            img_new = img_old;
+        }
+        cli::META_RMIMG => {
+            meta_new = meta_old;
+            img_new = Vec::new();
+        }
+        cli::META_OVERWRITE => {
+            meta_new = meta;
+            img_new = img;
+        }
+        _ => { eprintln!("Invalid modification type."); std::process::exit(1); }
     }
 
     let head_new = head::builder(&meta_new, img_new);

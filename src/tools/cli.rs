@@ -12,6 +12,11 @@ pub const DECODE_OPT: [&str; 2] = ["decode", "dec"];
 pub const REPAIR_OPT: [&str; 4] = ["reecc", "re-ecc", "repair", "ecc"];
 pub const HEADER_OPT: [&str; 2] = ["meta", "metadata"];
 
+pub const META_ADD: &str = "add";
+pub const META_REMOVE: &str = "remove";
+pub const META_RMIMG: &str = "rm-img";
+pub const META_OVERWRITE: &str = "overwrite";
+
 // CLI Parameters
 pub struct CliParams {
     pub output: String,
@@ -140,7 +145,8 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             }
             if ["tag", "meta", "m"].contains(&key) {
                 let value = args.pop_front().unwrap();
-                params.set_meta((value, args.pop_front().unwrap()));
+                if metaaction == META_REMOVE { params.set_meta((value, String::new())); }
+                else { params.set_meta((value, args.pop_front().unwrap())); }
             }
             if ["img", "image"].contains(&key) {
                 let value = args.pop_front().unwrap();
