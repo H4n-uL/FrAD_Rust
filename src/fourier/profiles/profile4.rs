@@ -44,7 +44,7 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
 
     let samples = pcm_flat.len() / channels as usize;
 
-    return (0..channels)
-    .map(|ch| {(0..samples).map(|smp| pcm_flat[smp * channels + ch]).collect()})
+    return (0..samples)
+    .map(|smp| {(0..channels).map(|ch| pcm_flat[smp * channels + ch]).collect()})
     .collect();
 }
