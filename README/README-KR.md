@@ -31,7 +31,23 @@ mv target/release/frad /path/to/bin/frad
 export PATH=/path/to/bin:$PATH
 ```
 
-**경고: --release 옵션을 빼두고 빌드하면 실행 속도가 극도로 느려지므로 꼭 --release 옵션을 붙이고 빌드해주시기 바랍니다.**
+**경고: `--release`를 빼두고 빌드하면 실행 속도가 극도로 느려지므로 꼭 `--release`를 붙이고 빌드해주시기 바랍니다.**
+
+## 메타데이터 JSON 예시
+
+```json
+[
+    {"key": "키",                  "type": "string", "value": "값"},
+    {"key": "원작자",               "type": "string", "value": "한울"},
+    {"key": "키와 String타입 인코딩", "type": "string", "value": "UTF-8"},
+    {"key": "Base64 지원",         "type": "base64", "value": "QmFzZTY0IOyYiOyLnA=="},
+    {"key": "파일 지원",            "type": "base64", "value": "7LWc64yAIDI1NlRpQuq5jOyngCDsp4Dsm5A="},
+    {"key": "미지원 글자 없음",       "type": "string", "value": "유니코드에 있는 어떤 글자라도 호환됩니다!"},
+    {"key": "중복 키 지원",          "type": "string", "value": "중복 키를 넣으면?"},
+    {"key": "중복 키 지원",          "type": "string", "value": "짠!"},
+    {"key": "",                   "type": "string", "value": "키 없는 메타데이터도 지원"}
+]
+```
 
 ## 외부 리소스
 
