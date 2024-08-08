@@ -6,7 +6,8 @@
 
 use std::io::Read;
 
-// Frame signature
+// signatures
+pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
 // Pipe and null device

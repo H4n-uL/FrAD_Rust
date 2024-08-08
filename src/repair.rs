@@ -60,7 +60,7 @@ pub fn repair(rfile: String, params: cli::CliParams) {
         let _ = common::read_exact(&mut readfile, &mut frad);
 
         if asfh.ecc {
-            if asfh.profile == 0 && common::crc32(&frad) != asfh.crc32 ||
+            if [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
                 asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
             { frad = ecc::decode_rs(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
             else { frad = ecc::unecc(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }

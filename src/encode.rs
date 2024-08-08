@@ -4,8 +4,7 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{fourier, fourier::profiles::profile1,
-    common, tools::{asfh::ASFH, cli, ecc}};
+use crate::{common, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc, head}};
 
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path};
 // use libsoxr::Soxr;
@@ -79,7 +78,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     if wfile.len() == 0 {
         let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
         let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-        if profile == 0 {
+        if [0, 4].contains(&profile) {
             if wfile_prefix.len() <= 8 { wfile = format!("{}.fra", wfile_prefix); }
             else { wfile = format!("{}.frad", wfile_prefix); }
         }
@@ -115,6 +114,19 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
 
+    let mut img = Vec::new();
+    if params.image_path.len() > 0 {
+        match File::open(&params.image_path) {
+            Ok(mut imgfile) => { imgfile.read_to_end(&mut img).unwrap(); },
+            Err(_) => { eprintln!("Image not found"); }
+        }
+    }
+    let header = head::builder(&params.meta, img);
+    writefile.write_all(&header).unwrap_or_else(
+        |err| { eprintln!("Error writing to stdout: {}", err);
+        if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); } }
+    );
+
     loop { // Main encode loop
         let mut rlen = buffersize as usize;
 
@@ -143,6 +155,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         // Encoding
         let (mut frad, bit_ind, chnl) =
         if profile == 1 { profile1::analogue(frame, bit_depth, srate, losslevel) }
+        else if profile == 4 { profile4::analogue(frame, bit_depth, little_endian) }
         else { fourier::analogue(frame, bit_depth, little_endian) };
 
         if enable_ecc { // Creating Reed-Solomon error correction code

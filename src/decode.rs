@@ -4,8 +4,7 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{fourier, fourier::profiles::profile1,
-    common, tools::{asfh::ASFH, cli, ecc}};
+use crate::{common, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc}};
 
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
@@ -113,7 +112,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
 
         if asfh.ecc {
             if fix_error && (
-                asfh.profile == 0 && common::crc32(&frad) != asfh.crc32 ||
+                [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
                 asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
             ) { frad = ecc::decode_rs(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
             else { frad = ecc::unecc(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
@@ -121,6 +120,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
 
         let mut pcm =
         if asfh.profile == 1 { profile1::digital(frad, asfh.bit_depth, asfh.channels, asfh.srate) }
+        else if asfh.profile == 4 { profile4::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) }
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);

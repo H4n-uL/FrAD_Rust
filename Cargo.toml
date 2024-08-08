@@ -1,6 +1,6 @@
 [package]
 name = "frad"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["HaמuL"]
 license = "Archivist Licence"
 edition = "2021"
@@ -10,3 +10,4 @@ flate2 = "1.0.30"
 half = "2.4.1"
 libsoxr = "0.2.9"
 rustfft = "6.2.0"
+tempfile = "3.12.0"
