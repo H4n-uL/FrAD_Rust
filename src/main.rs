@@ -1,5 +1,5 @@
 mod backend; mod fourier; mod tools; mod common;
-mod encode; mod decode; mod repair;
+mod encode; mod decode; mod repair; mod header;
 
 use std::env;
 
@@ -16,7 +16,7 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-{exe} encode path/to/audio.file
+{frad} encode path/to/audio.file
     --sample-rate [sample rate]
     --channels [channels]
     --bits [bit depth]
@@ -37,8 +37,11 @@ This action supports pipe input/output.
     --le          | Little Endian Toggle (alias: little-endian)
     --overlap     | Overlap ratio in 1/{{value}} (alias: olap)
                   |
-    --profile     | FrAD Profile from 0 to 7, not recommended (alias: prf)
-    --loss-level  | Lossy compression level, default: 0 (alias: lv, level)";
+    --profile     | FrAD Profile from 0 to 7 (alias: prf)
+    --loss-level  | Lossy compression level, default: 0 (alias: lv, level)
+                  |
+    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --image       | Image file path to embed (alias: img)";
 
 const DECODE_HELP: &str = "--------------------------------- Description ----------------------------------
 
@@ -48,7 +51,7 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-{exe} decode path/to/audio.frad
+{frad} decode path/to/audio.frad
     {{kwargs...}}
 
 ----------------------------------- Options ------------------------------------
@@ -64,7 +67,7 @@ This action will repair any supported FrAD audio file with ECC protection.
 
 ------------------------------------ Usage -------------------------------------
 
-{exe} repair path/to/audio.frad
+{frad} repair path/to/audio.frad
     --output path/to/audio_ecc.frad
     {{kwargs...}}
 
@@ -74,10 +77,33 @@ This action will repair any supported FrAD audio file with ECC protection.
     --ecc         | ECC size ratio in --ecc [data size] [ecc code size]
                   | default: 96, 24 (alias: e, enable-ecc)";
 
+const HEADER_HELP: &str = "--------------------------------- Description ----------------------------------
+
+Header
+This action will modify the metadata of the FrAD audio file.
+
+------------------------------------ Usage -------------------------------------
+
+{frad} meta [meta-action] path/to/audio.frad
+    {{kwargs...}}
+    
+----------------------------------- Options ------------------------------------
+
+    add -           Add metadata and image to the FrAD file
+    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --image       | Image file path to embed, replace if exists (alias: img)
+
+    rm-img -        Remove image from the FrAD file
+    No option for this action.
+
+    overwrite -     Remove all metadata and rewrite whole header
+    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --image       | Image file path to embed (alias: img)";
+
 /** Main function  */
 fn main() {
     let executable = env::args().next().unwrap();
-    let (action, input, params) = tools::cli::parse(env::args());
+    let (action, metaaction, input, params) = tools::cli::parse(env::args());
 
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
         encode::encode(input, params);
@@ -88,17 +114,35 @@ fn main() {
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
         repair::repair(input, params);
     }
+    else if tools::cli::HEADER_OPT.contains(&action.as_str()) {
+        header::modify(input, metaaction, params.meta, params.image_path);
+    }
     else if &action == &"help".to_string() {
-        eprintln!("{}", BANNER);
-        eprintln!("{}",
+        println!("{}", BANNER);
+        println!("{}",
                  if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
             else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
             else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
+            else if tools::cli::HEADER_OPT.contains(&input.as_str()) { HEADER_HELP }
             else { "------------------------------- Available actions ------------------------------
 
-    encode | Encode any audio formats to FrAD (alias: enc)
-    decode | Encode FrAD to any audio formats (alias: dec)
-    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)" }.replace("{exe}", executable.as_str())
+    encode | Encode any audio formats to FrAD    (alias: enc)
+    decode | Encode FrAD to any audio formats    (alias: dec)
+    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)
+    meta   | Edit metadata on FrAD               (alias: metadata)
+
+------------------------------ Available profiles ------------------------------
+
+    Profile 0 - DCT Archiving, Recommended for extreme environments
+    Profile 1 - Compact file size, Low complexity
+    Profile 2 - In development
+    Profile 3 - (Reserved)
+    Profile 4 - PCM Archiving, Recommended for general use
+    Profile 5 - (Reserved)
+    Profile 6 - (Reserved)
+    Profile 7 - (Reserved)
+    
+Type `{frad} help [action]` to get help for specific action." }.replace("{frad}", executable.as_str())
         );
         eprintln!();
     }

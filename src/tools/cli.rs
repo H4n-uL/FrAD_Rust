@@ -4,12 +4,13 @@
  * Function: Simple CLI parser for FrAD Library
  */
 
-use std::env::Args;
+use std::{collections::VecDeque, env::Args};
 
 // CLI Options
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
 pub const DECODE_OPT: [&str; 2] = ["decode", "dec"];
 pub const REPAIR_OPT: [&str; 4] = ["reecc", "re-ecc", "repair", "ecc"];
+pub const HEADER_OPT: [&str; 2] = ["meta", "metadata"];
 
 // CLI Parameters
 pub struct CliParams {
@@ -24,7 +25,9 @@ pub struct CliParams {
     pub losslevel: u8,
     pub enable_ecc: bool,
     pub ecc_rate: [u8; 2],
-    pub overwrite: bool
+    pub overwrite: bool,
+    pub meta: Vec<(String, Vec<u8>)>,
+    pub image_path: String
 }
 
 impl CliParams {
@@ -36,12 +39,14 @@ impl CliParams {
             channels: 0,
             frame_size: 2048,
             little_endian: false,
-            profile: 0,
+            profile: 4,
             overlap: 16,
             losslevel: 0,
             enable_ecc: false,
             ecc_rate: [96, 24],
-            overwrite: false
+            overwrite: false,
+            meta: Vec::new(),
+            image_path: String::new()
         }
     }// i rly miss lombok
     pub fn set_output(&mut self, output: String) -> () { self.output = output; }
@@ -56,6 +61,8 @@ impl CliParams {
     pub fn set_enable_ecc(&mut self) -> () { self.enable_ecc = true; }
     pub fn set_ecc_rate(&mut self, dsize: String, csize: String) -> () { self.ecc_rate = [dsize.parse().unwrap(), csize.parse().unwrap()]; }
     pub fn set_overwrite(&mut self) -> () { self.overwrite = true; }
+    pub fn set_meta(&mut self, meta: (String, String)) -> () { self.meta.push((meta.0, meta.1.as_bytes().to_vec())); }
+    pub fn set_image(&mut self, image: String) -> () { self.image_path = image; }
 }
 
 /** parse
@@ -63,70 +70,84 @@ impl CliParams {
  * Parameters: arguments
  * Returns: Action, Input file name / Pipe, any other parameters
  */
-pub fn parse(args: Args) -> (String, String, CliParams) {
-    let mut args: Vec<String> = args.collect();
+pub fn parse(args: Args) -> (String, String, String, CliParams) {
+    let mut args: VecDeque<String> = args.collect();
     let mut params: CliParams = CliParams::new();
-    args.remove(0);
-    if args.len() < 1 { return (String::new(), String::new(), params); }
+    args.pop_front().unwrap();
+    if args.len() < 1 { return (String::new(), String::new(), String::new(), params); }
 
-    let action = args.remove(0);
-    if args.len() < 1 { return (action.to_string(), String::new(), params); }
-    let input = args.remove(0);
+    let action = args.pop_front().unwrap();
+    let mut metaaction = String::new();
+    if HEADER_OPT.contains(&action.as_str()) {
+        metaaction = args.pop_front().unwrap();
+    }
+    if args.len() < 1 { return (action, String::new(), String::new(), params); }
+    let input = args.pop_front().unwrap();
 
     while args.len() > 0 {
-        let key = args.remove(0);
+        let key = args.pop_front().unwrap();
 
         if key.starts_with("-") {
             let key = key.trim_start_matches("-");
 
             if ["output", "out", "o"].contains(&key) {
-                let value = args.remove(0);
-                params.set_output(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_output(value);
             }
             if ["bits", "bit", "b"].contains(&key) {
-                let value = args.remove(0);
-                params.set_bits(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_bits(value);
             }
             if ["srate", "sample-rate", "sr"].contains(&key) {
-                let value = args.remove(0);
-                params.set_srate(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_srate(value);
             }
             if ["chnl", "channels", "channel", "ch"].contains(&key) {
-                let value = args.remove(0);
-                params.set_channels(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_channels(value);
             }
             if ["frame-size", "fsize", "fr"].contains(&key) {
-                let value = args.remove(0);
-                params.set_frame_size(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_frame_size(value);
             }
             if ["overlap", "olap"].contains(&key) {
-                let value = args.remove(0);
-                params.set_overlap(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_overlap(value);
             }
             if ["ecc", "enable-ecc", "e"].contains(&key) {
                 params.set_enable_ecc();
-                if args.len() > 0 {
-                    let v1 = args.remove(0);
-                    let v2 = args.remove(0);
-                    params.set_ecc_rate(v1, v2);
+                if !args.is_empty() {
+                    if let Ok(_) = args[0].parse::<f64>() {
+                        let v1 = args.pop_front().unwrap();
+                        let v2 = args.pop_front().unwrap();
+                        params.set_ecc_rate(v1, v2);
+                    }
                 }
             }
             if ["le", "little-endian"].contains(&key) {
                 params.set_little_endian();
             }
             if ["profile", "prf", "p"].contains(&key) {
-                let value = args.remove(0);
-                params.set_profile(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_profile(value);
             }
             if ["losslevel", "level", "lv"].contains(&key) {
-                let value = args.remove(0);
-                params.set_losslevel(value.to_string());
+                let value = args.pop_front().unwrap();
+                params.set_losslevel(value);
             }
-            if ["y"].contains(&key) {
+            if ["y", "f"].contains(&key) {
                 params.set_overwrite();
+            }
+            if ["tag", "meta", "m"].contains(&key) {
+                let value = args.pop_front().unwrap();
+                params.set_meta((value, args.pop_front().unwrap()));
+            }
+            if ["img", "image"].contains(&key) {
+                let value = args.pop_front().unwrap();
+                params.set_image(value);
             }
         }
     }
 
-    return (action.to_string(), input.to_string(), params);
+    return (action, metaaction, input, params);
 }
