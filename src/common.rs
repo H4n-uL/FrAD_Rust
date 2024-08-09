@@ -145,11 +145,11 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
  * Parameters: Unnormalised sample, PCM format
  * Returns: Normalised sample
  */
-fn norm_into(x: f64, pcm_fmt: &PCMFormat) -> f64 {
+fn norm_into(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
     return if pcm_fmt.float() { x }
     else {
-        let y = x / 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1);
-        return if pcm_fmt.signed() { y } else { y - 1.0 };
+        x /= 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1);
+        return if pcm_fmt.signed() { x } else { x - 1.0 };
     };
 }
 
@@ -158,11 +158,11 @@ fn norm_into(x: f64, pcm_fmt: &PCMFormat) -> f64 {
  * Parameters: Normalised sample, PCM format
  * Returns: Denormalised sample
  */
-fn norm_from(x: f64, pcm_fmt: &PCMFormat) -> f64 {
+fn norm_from(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
     return if pcm_fmt.float() { x }
     else {
-        let y = if pcm_fmt.signed() { x } else { x + 1.0 };
-        return (y * 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1)).round();
+        x = if pcm_fmt.signed() { x } else { x + 1.0 };
+        return (x * 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1)).round();
     };
 }
 
@@ -251,23 +251,24 @@ pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
  * Parameters: f64, PCM format
  * Returns: Byte array
  */
-pub fn f64_to_any(x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
-    let y = norm_from(x, pcm_fmt);
+pub fn f64_to_any(mut x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
+    x = norm_from(x, pcm_fmt);
+
     return match pcm_fmt {
-        PCMFormat::F16(en) => from_f64!(f16, f16::from_f64(y), en).to_vec(),
-        PCMFormat::F32(en) => from_f64!(f32, y as f32, en).to_vec(),
-        PCMFormat::F64(en) => from_f64!(f64, y, en).to_vec(),
+        PCMFormat::F16(en) => from_f64!(f16, f16::from_f64(x), en).to_vec(),
+        PCMFormat::F32(en) => from_f64!(f32, x as f32, en).to_vec(),
+        PCMFormat::F64(en) => from_f64!(f64, x, en).to_vec(),
 
-        PCMFormat::I8 => (y as i8).to_ne_bytes().to_vec(),
-        PCMFormat::I16(en) => from_f64!(i16, y as i16, en).to_vec(),
-        PCMFormat::I24(en) => int32_to_24!(y as i32, en, true).to_vec(),
-        PCMFormat::I32(en) => from_f64!(i32, y as i32, en).to_vec(),
-        PCMFormat::I64(en) => from_f64!(i64, y as i64, en).to_vec(),
+        PCMFormat::I8 => (x as i8).to_ne_bytes().to_vec(),
+        PCMFormat::I16(en) => from_f64!(i16, x as i16, en).to_vec(),
+        PCMFormat::I24(en) => int32_to_24!(x as i32, en, true).to_vec(),
+        PCMFormat::I32(en) => from_f64!(i32, x as i32, en).to_vec(),
+        PCMFormat::I64(en) => from_f64!(i64, x as i64, en).to_vec(),
 
-        PCMFormat::U8 => (y as u8).to_ne_bytes().to_vec(),
-        PCMFormat::U16(en) => from_f64!(u16, y as u16, en).to_vec(),
-        PCMFormat::U24(en) => int32_to_24!(y as u32, en, false).to_vec(),
-        PCMFormat::U32(en) => from_f64!(u32, y as u32, en).to_vec(),
-        PCMFormat::U64(en) => from_f64!(u64, y as u64, en).to_vec(),
+        PCMFormat::U8 => (x as u8).to_ne_bytes().to_vec(),
+        PCMFormat::U16(en) => from_f64!(u16, x as u16, en).to_vec(),
+        PCMFormat::U24(en) => int32_to_24!(x as u32, en, false).to_vec(),
+        PCMFormat::U32(en) => from_f64!(u32, x as u32, en).to_vec(),
+        PCMFormat::U64(en) => from_f64!(u64, x as u64, en).to_vec(),
     };
 }
