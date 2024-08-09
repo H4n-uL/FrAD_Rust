@@ -16,7 +16,7 @@ use crate::{common::{move_all, SIGNATURE}, tools::{cli, head}};
  * Returns: FrAD file with modified metadata
  */
 pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
-    if file_name.len() == 0 { eprintln!("File path is required."); std::process::exit(1); }
+    if file_name.is_empty() { eprintln!("File path is required."); std::process::exit(1); }
 
     let mut head = vec![0u8; 64];
 
@@ -42,11 +42,11 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
         }
         let mut wfile = params.output;
 
-        if wfile.len() == 0 {
+        if wfile.is_empty() {
             let wfrf = Path::new(&file_name).file_name().unwrap().to_str().unwrap().to_string();
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         }
-        File::create(format!("{}.json", wfile)).unwrap().write_all(&serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
+        File::create(format!("{}.json", wfile)).unwrap().write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
         File::create(format!("{}.image", wfile)).unwrap().write_all(&img_old).unwrap();
         
         return ();
@@ -56,7 +56,7 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
     move_all(&mut rfile, temp.as_file_mut(), 1048576);
 
     let mut img = Vec::new();
-    if params.image_path.len() > 0 {
+    if !params.image_path.is_empty() {
         match File::open(&params.image_path) {
             Ok(mut imgfile) => { imgfile.read_to_end(&mut img).unwrap(); },
             Err(_) => { eprintln!("Image not found"); }
@@ -65,10 +65,10 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
 
     match modtype.as_str() {
         cli::META_ADD => {
-            if meta_old.len() > 0 { meta_new.append(&mut meta_old); }
+            if !meta_old.is_empty() { meta_new.append(&mut meta_old); }
             meta_new.extend(params.meta);
-            if img_old.len() > 0 { img_new = img_old; }
-            if img.len() > 0 { img_new = img; }
+            if !img_old.is_empty() { img_new = img_old; }
+            if !img.is_empty() { img_new = img; }
         }
         cli::META_REMOVE => {
             meta_new = meta_old.into_iter().filter(|(title, _)| !params.meta.iter().any(|(t, _)| t == title)).collect();

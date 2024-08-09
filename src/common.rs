@@ -56,7 +56,7 @@ const fn gcrc32t() -> [u32; 256] {
         }
         (table[i], i) = (crc, i + 1);
     }
-    table
+    return table;
 }
 
 // CRC-32 Table
@@ -90,7 +90,7 @@ const fn gcrc16t_ansi() -> [u16; 256] {
         table[i] = crc;
         i += 1;
     }
-    table
+    return table;
 }
 
 // CRC-16 ANSI Table
@@ -125,7 +125,7 @@ pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
     return total_read;
 }
 
-pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) -> () {
+pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
     loop {
         let mut buf: Vec<u8> = vec![0; bufsize];
         let mut total_read = 0;
@@ -185,7 +185,7 @@ macro_rules! int24_to_32 {
  * Returns: f64
  */
 pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
-    return if bytes.len() != pcm_fmt.bit_depth() as usize / 8 { 0.0 }
+    return if bytes.len() != pcm_fmt.bit_depth() / 8 { 0.0 }
     else {
         norm_into(match pcm_fmt {
             PCMFormat::F16(en) => to_f64!(f16, bytes, en).to_f64(),

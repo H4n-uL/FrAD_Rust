@@ -123,11 +123,8 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
         vec = input
             .chunks(8)
             .map(|bytes| {
-                let x =
-                    if be { f64::from_be_bytes(bytes.try_into().unwrap()) }
-                    else { f64::from_le_bytes(bytes.try_into().unwrap()) }
-                ;
-                f64::from(x)
+                if be { f64::from_be_bytes(bytes.try_into().unwrap()) }
+                else { f64::from_le_bytes(bytes.try_into().unwrap()) }
             })
             .collect();
     }

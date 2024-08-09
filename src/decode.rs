@@ -13,7 +13,7 @@ use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
  * Returns: Overlapped frame, Updated fragment
  */
 fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    if prev.len() != 0 {
+    if !prev.is_empty() {
         let fade_in: Vec<f64> = prev.iter().enumerate().map(|(i, _)| i as f64 / prev.len() as f64).collect();
         let fade_out: Vec<f64> = prev.iter().enumerate().map(|(i, _)| 1.0 - i as f64 / prev.len() as f64).collect();
         for c in 0..asfh.channels as usize {
@@ -38,7 +38,7 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
  */
 fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
-    let pcm_bytes: Vec<u8> = pcm_flat.iter().map(|x| x.to_be_bytes()).flatten().collect();
+    let pcm_bytes: Vec<u8> = pcm_flat.iter().flat_map(|x| x.to_be_bytes()).collect();
     file.write_all(&pcm_bytes)
     .unwrap_or_else(|err|
         if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
@@ -53,7 +53,7 @@ fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>) {
 pub fn decode(rfile: String, params: cli::CliParams) {
     let mut wfile = params.output;
     let fix_error = params.enable_ecc;
-    if rfile.len() == 0 { panic!("Input file must be given"); }
+    if rfile.is_empty() { panic!("Input file must be given"); }
 
     let mut rpipe = false;
     if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
@@ -63,7 +63,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
     if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
         if rfile == wfile { panic!("Input and output files cannot be the same"); }
-        if wfile.len() == 0 {
+        if wfile.is_empty() {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         }
@@ -91,7 +91,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
 
     let (mut srate, mut channels) = (0u32, 0i16);
     loop { // Main decode loop
-        if head.len() == 0 {
+        if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 { flush(&mut writefile, prev); break; }

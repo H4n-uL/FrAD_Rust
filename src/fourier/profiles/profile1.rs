@@ -22,7 +22,7 @@ pub const SMPLS: [(u32, [u32; 8]); 3] = [
 
 // Get sample count multiplier from value
 pub fn get_smpls_from_value(key: &u32) -> u32 {
-    SMPLS.iter().find(|&(_, v)| v.iter().find(|&&x| x == *key).is_some()).unwrap().0
+    return SMPLS.iter().find(|&(_, v)| v.iter().any(|&x| x == *key)).unwrap().0;
 }
 // Sample count list
 pub const SMPLS_LI: [u32; 24] = [
@@ -70,19 +70,16 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     let (freqs, pns) = p1tools::quant(freqs, pcm[0].len() as i16, srate, level);
 
     let freqs_flat: Vec<i64> = (0..freqs[0].len())
-        .map(|i| freqs.iter().map(move |inner| inner[i]))
-        .into_iter().flatten().collect();
+        .flat_map(|i| freqs.iter().map(move |inner| inner[i])).collect();
 
     let pns_flat: Vec<i64> = (0..pns[0].len())
-        .map(|i| pns.iter().map(move |inner| f16::from_f64(inner[i] / 2_i64.pow(bits as u32-1) as f64).to_bits() as i64 ))
-        .into_iter().flatten().collect();
+        .flat_map(|i| pns.iter().map(move |inner| f16::from_f64(inner[i] / 2_i64.pow(bits as u32-1) as f64).to_bits() as i64 )).collect();
 
     let pns_glm = p1tools::exp_golomb_rice_encode(pns_flat);
     let freqs_glm = p1tools::exp_golomb_rice_encode(freqs_flat);
 
     let frad: Vec<u8> = (pns_glm.len() as u32).to_be_bytes().to_vec()
-        .into_iter().chain(pns_glm.into_iter())
-        .chain(freqs_glm.into_iter()).collect();
+        .into_iter().chain(pns_glm).chain(freqs_glm).collect();
 
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::best());
     encoder.write_all(&frad).unwrap();
@@ -115,11 +112,9 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(pns_glm).iter().map(|x| f16::from_bits(*x as u16).to_f64() * 2.0_f64.powi(bits as i32 - 1)).collect();
 
     let mut freqs: Vec<Vec<f64>> = (0..channels)
-        .map(|i| freqs_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
-        .collect();
+        .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
     let mask: Vec<Vec<f64>> = (0..channels)
-        .map(|i| pns_flat.iter().skip(i).step_by(channels).map(|x| *x).collect())
-        .collect();
+        .map(|i| pns_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
     freqs = p1tools::dequant(freqs, mask, channels as i16, srate);
 

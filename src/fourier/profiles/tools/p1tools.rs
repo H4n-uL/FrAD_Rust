@@ -55,7 +55,7 @@ fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
 
     for i in 0..MOSLEN {
         let subfreqs = freqs[getbinrng(freqs.len(), srate, i)].to_vec();
-        if subfreqs.len() > 0 {
+        if !subfreqs.is_empty() {
             let sfq: f64 = subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64;
             mapped_freqs[i] = sfq.sqrt();
         }
@@ -117,7 +117,7 @@ pub fn dequant(pns_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16,
     masks = masks.iter().map(|x| x.iter().map(|y| y.max(0.0)).collect()).collect();
 
     for c in 0..channels as usize {
-        freqs[c] = pns_sgnl[c].iter().zip(mapping_from_opus(&masks[c], pns_sgnl[c].len(), srate)).map(|(x, y)| *x as f64 * y).collect();
+        freqs[c] = pns_sgnl[c].iter().zip(mapping_from_opus(&masks[c], pns_sgnl[c].len(), srate)).map(|(x, y)| { *x } * y).collect();
     }
 
     return freqs;
@@ -158,7 +158,7 @@ pub fn exp_golomb_rice_decode(data: Vec<u8>) -> Vec<i64> {
     let mut decoded: Vec<i64> = Vec::new();
     let mut data = bitcvt::frombytes(data.iter().skip(1).cloned().collect());
 
-    while data.len() > 0 {
+    while !data.is_empty() {
         let m = data.iter().position(|&x| x).unwrap_or(data.len());
         if m == data.len() { break; }
 

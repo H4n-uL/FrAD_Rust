@@ -16,7 +16,7 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
     let fsize = data.len() + prev.len();
     let olap = if olap > 0 { olap.max(2) } else { 0 };
 
-    if prev.len() != 0 {
+    if !prev.is_empty() {
         let mut ndata = Vec::new();
         ndata.extend(prev.iter().cloned());
         ndata.extend(data.iter().cloned());
@@ -24,7 +24,7 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
     }
 
     if profile == 1 || profile == 2 && olap > 0 {
-        let cutoff = data.len() - (fsize as usize / olap as usize);
+        let cutoff = data.len() - (fsize / olap as usize);
         prev = data[cutoff..].to_vec();
     }
     else { prev = Vec::new(); }
@@ -53,7 +53,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let losslevel = params.losslevel;
 
     let (mut rpipe, mut wpipe) = (false, false);
-    if rfile.len() == 0 { panic!("Input file must be given"); }
+    if rfile.is_empty() { panic!("Input file must be given"); }
     if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
     if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
@@ -62,8 +62,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     if srate == 0 { panic!("Sample rate must be given"); }
     if channels == 0 { panic!("Number of channels must be given"); }
 
-    if fourier::DEPTHS.contains(&bit_depth) == false
-    && profile1::DEPTHS.contains(&bit_depth) == false
+    if !fourier::DEPTHS.contains(&bit_depth)
+    && !profile1::DEPTHS.contains(&bit_depth)
     { panic!("Invalid bit depth"); }
 
     let segmax =
@@ -73,7 +73,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
     // Making sure the output file is set
     let mut wfile = wfile;
-    if wfile.len() == 0 {
+    if wfile.is_empty() {
         let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
         wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
     }
@@ -83,10 +83,8 @@ pub fn encode(rfile: String, params: cli::CliParams) {
             if wfile.len() <= 8 { wfile = format!("{}.fra", wfile); }
             else { wfile = format!("{}.frad", wfile); }
         }
-        else {
-            if wfile.len() <= 8 { wfile = format!("{}.dsn", wfile); }
-            else { wfile = format!("{}.dsin", wfile); }
-        }
+        else if wfile.len() <= 8 { wfile = format!("{}.dsn", wfile); }
+        else { wfile = format!("{}.dsin", wfile); }
     }
 
     if Path::new(&wfile).exists() && !params.overwrite {
@@ -116,7 +114,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
     let mut prev: Vec<Vec<f64>> = Vec::new();
 
     let mut img = Vec::new();
-    if params.image_path.len() > 0 {
+    if !params.image_path.is_empty() {
         match File::open(&params.image_path) {
             Ok(mut imgfile) => { imgfile.read_to_end(&mut img).unwrap(); },
             Err(_) => { eprintln!("Image not found"); }
@@ -133,8 +131,9 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         let mut rlen = buffersize as usize;
 
         if profile == 1 {
-            rlen = *profile1::SMPLS_LI.iter().find(|&&x| x >= buffersize).unwrap() as usize - prev.len();
-            if rlen <= 0 { rlen = *profile1::SMPLS_LI.iter().find(|&&x| x - prev.len() as u32 >= buffersize).unwrap() as usize - prev.len(); }
+            let li_val = *profile1::SMPLS_LI.iter().find(|&&x| x >= buffersize).unwrap() as usize;
+            rlen = if li_val < prev.len() 
+            { *profile1::SMPLS_LI.iter().find(|&&x| x >= prev.len() as u32).unwrap() as usize - prev.len() }  else { li_val }
         }
         let fbytes = rlen * channels as usize * pcm_format.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];

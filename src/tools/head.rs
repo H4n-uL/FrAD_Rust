@@ -58,12 +58,12 @@ fn image(data: Vec<u8>, pictype: Option<u8>) -> Vec<u8> {
 pub fn builder(meta: &Vec<(String, Vec<u8>)>, img: Vec<u8>) -> Vec<u8> {
     let mut blocks = Vec::new();
 
-    if meta.len() > 0 {
+    if !meta.is_empty() {
         for i in 0..meta.len() {
             blocks.extend(comment(&meta[i].0, &meta[i].1));
         }
     }
-    if img.len() > 0 {
+    if !img.is_empty() {
         blocks.extend(image(img, None));
     }
 

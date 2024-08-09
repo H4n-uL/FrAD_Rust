@@ -16,8 +16,8 @@ use std::{fs::File, io::{Read, Write}, path::Path};
 pub fn repair(rfile: String, params: cli::CliParams) {
     let wfile = params.output;
     let ecc_rate = params.ecc_rate;
-    if rfile.len() == 0 { panic!("Input file must be given"); }
-    if wfile.len() == 0 { panic!("Output file must be given"); }
+    if rfile.is_empty() { panic!("Input file must be given"); }
+    if wfile.is_empty() { panic!("Output file must be given"); }
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
 
     if Path::new(&wfile).exists() && !params.overwrite {
@@ -40,7 +40,7 @@ pub fn repair(rfile: String, params: cli::CliParams) {
 
     let mut head = Vec::new();
     loop {
-        if head.len() == 0 {
+        if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = readfile.read(&mut buf).unwrap();
             if readlen == 0 { break; }
@@ -73,7 +73,7 @@ pub fn repair(rfile: String, params: cli::CliParams) {
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 
-        writefile.write(frad.as_slice()).unwrap();
+        writefile.write_all(frad.as_slice()).unwrap();
         head = Vec::new();
     }
 }

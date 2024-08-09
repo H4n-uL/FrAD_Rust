@@ -16,7 +16,7 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
     let prf = profile << 5;
     let ecc = (enable_ecc as u8) << 4;
     let endian = (little_endian as u8) << 3;
-    return vec![(prf | ecc | endian | bits as u8) as u8];
+    return vec![(prf | ecc | endian | bits as u8)];
 }
 
 /** encode_css_prf1

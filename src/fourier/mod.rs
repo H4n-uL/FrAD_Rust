@@ -26,8 +26,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>,
     let channels = freqs.len();
 
     let freqs_flat: Vec<f64> = (0..freqs[0].len())
-        .map(|i| freqs.iter().map(move |inner| inner[i]))
-        .into_iter().flatten().collect();
+        .flat_map(|i| freqs.iter().map(move |inner| inner[i])).collect();
 
     let mut bit_depth_index = DEPTHS.iter().position(|&x| x == bits).unwrap();
     while freqs_flat.iter().max_by(|x, y| x.abs().partial_cmp(&y.abs()).unwrap()).unwrap().abs()
@@ -50,14 +49,14 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
     let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], !little_endian);
     let channels = channels as usize;
 
-    let samples = freqs_flat.len() / channels as usize;
+    let samples = freqs_flat.len() / channels;
     let freqs: Vec<Vec<f64>> = (0..channels)
         .map(|ch| {(0..samples).map(|smp| freqs_flat[smp * channels + ch]).collect()})
         .collect();
 
-    let pcm: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
-    let pcm_interleaved: Vec<Vec<f64>> = (0..pcm[0].len())
-        .map(|i| pcm.iter().map(|inner| inner[i]).collect())
+    let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
+    let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
+        .map(|i| pcm_trans.iter().map(|inner| inner[i]).collect())
         .collect();
-    return pcm_interleaved;
+    return pcm;
 }

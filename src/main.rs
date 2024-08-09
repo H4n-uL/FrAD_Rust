@@ -126,7 +126,7 @@ fn main() {
     else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);
     }
-    else if &action == &"help".to_string() {
+    else if action == *"help".to_string() {
         println!("{}", BANNER);
         println!("{}",
                  if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
