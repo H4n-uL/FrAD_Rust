@@ -67,6 +67,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         }
+        else if wfile.ends_with(".pcm") { wfile = wfile[..wfile.len() - 4].to_string(); }
 
         if Path::new(&wfile).exists() && !params.overwrite {
             eprintln!("Output file already exists, overwrite? (Y/N)");
