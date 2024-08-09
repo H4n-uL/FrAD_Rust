@@ -211,7 +211,7 @@ macro_rules! int24_to_32 {
  */
 macro_rules! int32_to_24 {
     ($x:expr, $endian:expr, $signed:expr) => {{
-        let (lo, hi) = if $signed { (-0x800000, 0x7FFFFF) } else { (0, 0xFFFFFF) };
+        let (lo, hi) = if $signed { (-0x800000, 0x7fffff) } else { (0, 0xffffff) };
         let y = $x.max(lo).min(hi);
         if $endian.eq(&Endian::Big) { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
         else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] }
