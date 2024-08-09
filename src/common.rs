@@ -211,10 +211,10 @@ macro_rules! int24_to_32 {
  */
 macro_rules! int32_to_24 {
     ($x:expr, $endian:expr, $signed:expr) => {{
-        let bytes = if $endian.eq(&Endian::Big) { $x.to_be_bytes() }
-        else { $x.to_le_bytes() };
-        if $endian.eq(&Endian::Big) { [bytes[1], bytes[2], bytes[3]] }
-        else { [bytes[0], bytes[1], bytes[2]] }
+        let (lo, hi) = if $signed { (-0x800000, 0x7FFFFF) } else { (0, 0xFFFFFF) };
+        let y = $x.max(lo).min(hi);
+        if $endian.eq(&Endian::Big) { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
+        else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] }
     }};
 }
 
@@ -267,7 +267,7 @@ pub fn f64_to_any(mut x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
 
         PCMFormat::U8 => (x as u8).to_ne_bytes().to_vec(),
         PCMFormat::U16(en) => from_f64!(u16, x as u16, en).to_vec(),
-        PCMFormat::U24(en) => int32_to_24!(x as u32, en, false).to_vec(),
+        PCMFormat::U24(en) => int32_to_24!(x as i32, en, false).to_vec(),
         PCMFormat::U32(en) => from_f64!(u32, x as u32, en).to_vec(),
         PCMFormat::U64(en) => from_f64!(u64, x as u64, en).to_vec(),
     };
