@@ -5,7 +5,6 @@
  */
 
 use crate::{common, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc}};
-
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
 /** overlap
@@ -66,8 +65,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         if rfile == wfile { panic!("Input and output files cannot be the same"); }
         if wfile.len() == 0 {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-            let wfile_prefix = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-            wfile = format!("{}.pcm", wfile_prefix);
+            wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         }
 
         if Path::new(&wfile).exists() && !params.overwrite {
@@ -83,13 +81,15 @@ pub fn decode(rfile: String, params: cli::CliParams) {
             }
         }
     }
+    let mut no: u32 = 0;
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
-    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
     let mut asfh = ASFH::new();
 
-    let mut head = Vec::new();
-    let mut prev = Vec::new();
+    let (mut head, mut prev) = (Vec::new(), Vec::new());
+
+    let (mut srate, mut channels) = (0u32, 0i16);
     loop { // Main decode loop
         if head.len() == 0 {
             let mut buf = vec![0u8; 4];
@@ -106,6 +106,17 @@ pub fn decode(rfile: String, params: cli::CliParams) {
             continue;
         }
         asfh.update(&mut readfile);
+
+        // if srate or channels changed
+        if srate != asfh.srate || channels != asfh.channels {
+            eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate);
+            if srate != 0 || channels != 0 {
+                flush(&mut writefile, prev); // flush
+                let name = format!("{}.{}.pcm", wfile, no);
+                writefile = if !wpipe { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
+            }
+            (srate, channels, prev, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
+        }
 
         let mut frad = vec![0u8; asfh.frmbytes as usize];
         let _ = common::read_exact(&mut readfile, &mut frad);
