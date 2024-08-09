@@ -6,15 +6,22 @@
 
 ## 入出力PCMフォーマット
 
-Float64 Big Endian(チャンネル数とサンプルレートは自由に指定)
+浮動小数点数
 
-フォーマット変換コマンド
+- f16be, f32be, f64be(デフォルト)
+- f16le, f32le, f64le
 
-```bash
-ffmpeg -i audio.flac -f f64be -ar <サンプルレート> -ac <チャンネル数> audio.pcm
-...
-ffmpeg -f f64be -ar <サンプルレート> -ac <チャンネル数> -i frad_res.pcm -c:a flac res.flac
-```
+符号付き整数
+
+- s8
+- s16be, s24be, s32be, s64be
+- s16le, s24le, s32le, s64le
+
+符号なし整数
+
+- u8
+- u16be, u24be, u32be, u64be
+- u16le, u24le, u32le, u64le
 
 ## インストール方法
 

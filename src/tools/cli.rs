@@ -4,10 +4,11 @@
  * Function: Simple CLI parser for FrAD Library
  */
 
-use std::{collections::VecDeque, env::Args, fs::read_to_string};
-
 use base64::{prelude::BASE64_STANDARD, Engine as _};
 use serde_json::{from_str, Value};
+use std::{collections::VecDeque, env::Args, fs::read_to_string};
+
+use crate::common::{Endian::{Big, Little}, PCMFormat};
 
 // CLI Options
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
@@ -24,6 +25,7 @@ pub const META_PARSE: &str = "parse";
 // CLI Parameters
 pub struct CliParams {
     pub output: String,
+    pub pcm: PCMFormat,
     pub bits: i16,
     pub srate: u32,
     pub channels: i16,
@@ -43,6 +45,7 @@ impl CliParams {
     pub fn new() -> CliParams {
         CliParams {
             output: String::new(),
+            pcm: PCMFormat::F64(Big),
             bits: 0,
             srate: 0,
             channels: 0,
@@ -95,6 +98,43 @@ impl CliParams {
         }
     }
     pub fn set_image(&mut self, image: String) -> () { self.image_path = image; }
+    pub fn set_pcm_format(&mut self, fmt: &str) -> () {
+        self.pcm = match fmt {
+            "s8" => PCMFormat::I8,
+            "u8" => PCMFormat::U8,
+
+            "s16be" => PCMFormat::I16(Big),
+            "s16le" => PCMFormat::I16(Little),
+            "u16be" => PCMFormat::U16(Big),
+            "u16le" => PCMFormat::U16(Little),
+
+            "s24be" => PCMFormat::I24(Big),
+            "s24le" => PCMFormat::I24(Little),
+            "u24be" => PCMFormat::U24(Big),
+            "u24le" => PCMFormat::U24(Little),
+
+            "s32be" => PCMFormat::I32(Big),
+            "s32le" => PCMFormat::I32(Little),
+            "u32be" => PCMFormat::U32(Big),
+            "u32le" => PCMFormat::U32(Little),
+
+            "s64be" => PCMFormat::I64(Big),
+            "s64le" => PCMFormat::I64(Little),
+            "u64be" => PCMFormat::U64(Big),
+            "u64le" => PCMFormat::U64(Little),
+
+            "f16be" => PCMFormat::F16(Big),
+            "f16le" => PCMFormat::F16(Little),
+
+            "f32be" => PCMFormat::F32(Big),
+            "f32le" => PCMFormat::F32(Little),
+
+            "f64be" => PCMFormat::F64(Big),
+            "f64le" => PCMFormat::F64(Little),
+
+            _ => PCMFormat::F64(Big)
+        };
+    }
 }
 
 /** parse
@@ -141,6 +181,10 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             if ["frame-size", "fsize", "fr"].contains(&key) {
                 let value = args.pop_front().unwrap();
                 params.set_frame_size(value);
+            }
+            if ["pcm", "format", "fmt"].contains(&key) {
+                let value = args.pop_front().unwrap();
+                params.set_pcm_format(&value);
             }
             if ["overlap", "olap"].contains(&key) {
                 let value = args.pop_front().unwrap();

@@ -6,15 +6,22 @@
 
 ## 입출력 PCM 포맷
 
-Float64 Big Endian(채널 수와 샘플 레이트는 자유롭게 지정)
+부동소수점
 
-포맷 변환 명령어
+- f16be, f32be, f64be(기본값)
+- f16le, f32le, f64le
 
-```bash
-ffmpeg -i audio.flac -f f64be -ar <샘플 레이트> -ac <채널 개수> audio.pcm
-...
-ffmpeg -f f64be -ar <샘플 레이트> -ac <채널 개수> -i frad_res.pcm -c:a flac res.flac
-```
+부호 있는 정수
+
+- s8
+- s16be, s24be, s32be, s64be
+- s16le, s24le, s32le, s64le
+
+부호 없는 정수
+
+- u8
+- u16be, u24be, u32be, u64be
+- u16le, u24le, u32le, u64le
 
 ## 설치 방법
 

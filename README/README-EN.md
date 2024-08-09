@@ -6,15 +6,22 @@ Rust implementation of [AAPM](https://mikhael-openworkspace.notion.site/Project-
 
 ## Input/Output PCM format
 
-Float64 Big Endian (channel count and sample rate are up to you)
+Floating-point
 
-Format conversion commands
+- f16be, f32be, f64be(Default)
+- f16le, f32le, f64le
 
-```bash
-ffmpeg -i audio.flac -f f64be -ar <sample rate> -ac <channel count> audio.pcm
-...
-ffmpeg -f f64be -ar <sample rate> -ac <channel count> -i frad_res.pcm -c:a flac res.flac
-```
+Signed Integer
+
+- s8
+- s16be, s24be, s32be, s64be
+- s16le, s24le, s32le, s64le
+
+Unsigned Integer
+
+- u8
+- u16be, u24be, u32be, u64be
+- u16le, u24le, u32le, u64le
 
 ## How to install
 

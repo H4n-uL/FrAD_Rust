@@ -4,6 +4,7 @@
  * Function: Common tools for FrAD
  */
 
+use half::f16;
 use std::{fs::File, io::{Read, Write}};
 
 // signatures
@@ -14,20 +15,46 @@ pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 pub static PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
 pub static PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
 
+
+#[derive(Clone, Copy)]
+pub enum PCMFormat {
+    F16(Endian), F32(Endian), F64(Endian),
+    I8, I16(Endian), I24(Endian), I32(Endian), I64(Endian),
+    U8, U16(Endian), U24(Endian), U32(Endian), U64(Endian),
+}
+
+impl PCMFormat {
+    pub fn bit_depth(&self) -> usize {
+        match self {
+            PCMFormat::I8 | PCMFormat::U8 => 8,
+            PCMFormat::F16(_) | PCMFormat::I16(_) | PCMFormat::U16(_) => 16,
+                                PCMFormat::I24(_) | PCMFormat::U24(_) => 24,
+            PCMFormat::F32(_) | PCMFormat::I32(_) | PCMFormat::U32(_) => 32,
+            PCMFormat::F64(_) | PCMFormat::I64(_) | PCMFormat::U64(_) => 64
+        }
+    }
+    pub fn float(&self) -> bool {
+        match self { PCMFormat::F16(_) | PCMFormat::F32(_) | PCMFormat::F64(_) => true, _ => false }
+    }
+    pub fn signed(&self) -> bool {
+        match self { PCMFormat::I8 | PCMFormat::I16(_) | PCMFormat::I24(_) | PCMFormat::I32(_) | PCMFormat::I64(_) => true, _ => false }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum Endian { Big, Little }
+
 // CRC-32 Table generator
 const fn gcrc32t() -> [u32; 256] {
     let mut table = [0u32; 256];
     let mut i = 0;
     while i < 256 {
-        let mut crc = i as u32;
-        let mut j = 0;
+        let (mut crc, mut j) = (i as u32, 0);
         while j < 8 {
-            if crc & 1 == 1 { crc = (crc >> 1) ^ 0xedb88320; }
-            else            { crc >>= 1; }
+            if crc & 1 == 1 { crc = (crc >> 1) ^ 0xedb88320; } else { crc >>= 1; }
             j += 1;
         }
-        table[i] = crc;
-        i += 1;
+        (table[i], i) = (crc, i + 1);
     }
     table
 }
@@ -111,4 +138,71 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) -> ()
         if total_read == 0 { break; }
         writefile.write_all(&buf[..total_read]).unwrap();
     }
+}
+
+/** norm_into
+ * Normalise integer sample beteween -1.0 and 1.0
+ * Parameters: unnormalised sample, PCM format
+ * Returns: Normalised sample
+ */
+fn norm_into(x: f64, pcm_fmt: &PCMFormat) -> f64 {
+    return if pcm_fmt.float() { x }
+    else {
+        let y = x / 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1);
+        return if pcm_fmt.signed() { y } else { y - 1.0 };
+    };
+}
+
+/** macro! to_f64
+ * Convert byte array to f64 with built-in Rust types
+ * Parameters: Type, Byte array, Endian
+ * Returns: f64
+ */
+macro_rules! to_f64 {
+    ($type:ty, $bytes:expr, $endian:expr) => {
+        if $endian.eq(&Endian::Big) { <$type>::from_be_bytes($bytes.try_into().unwrap()) }
+        else {  <$type>::from_le_bytes($bytes.try_into().unwrap()) }
+    };
+}
+
+/** macro! int24_to_32
+ * Convert 24-bit integer to 32-bit integer
+ * Parameters: Byte array, Endian, Signed flag
+ * Returns: 32-bit integer
+ */
+macro_rules! int24_to_32 {
+    ($bytes:expr, $endian:expr, $signed:expr) => {{
+        let sign_bit = if $endian.eq(&Endian::Big) { $bytes[0] } else { $bytes[2] } & 0x80;
+        let extra_byte = if !$signed || sign_bit == 0 { 0 } else { 0xFF };
+        if $endian.eq(&Endian::Big) { [extra_byte, $bytes[0], $bytes[1], $bytes[2]] }
+        else { [$bytes[0], $bytes[1], $bytes[2], extra_byte] }
+    }};
+}
+
+/** any_to_f64
+ * Convert single sample to f64 via PCM format
+ * Parameters: Byte array, PCM format
+ * Returns: f64
+ */
+pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
+    return if bytes.len() != pcm_fmt.bit_depth() as usize / 8 { 0.0 }
+    else {
+        norm_into(match pcm_fmt {
+            PCMFormat::F16(en) => to_f64!(f16, bytes, en).to_f64(),
+            PCMFormat::F32(en) => to_f64!(f32, bytes, en) as f64,
+            PCMFormat::F64(en) => to_f64!(f64, bytes, en),
+
+            PCMFormat::I8 => i8::from_ne_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I16(en) => to_f64!(i16, bytes, en) as f64,
+            PCMFormat::I24(en) => to_f64!(i32, int24_to_32!(bytes, en, true), en) as f64,
+            PCMFormat::I32(en) => to_f64!(i32, bytes, en) as f64,
+            PCMFormat::I64(en) => to_f64!(i64, bytes, en) as f64,
+
+            PCMFormat::U8 => u8::from_ne_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U16(en) => to_f64!(u16, bytes, en) as f64,
+            PCMFormat::U24(en) => to_f64!(u32, int24_to_32!(bytes, en, false), en) as f64,
+            PCMFormat::U32(en) => to_f64!(u32, bytes, en) as f64,
+            PCMFormat::U64(en) => to_f64!(u64, bytes, en) as f64,
+        }, pcm_fmt)
+    };
 }

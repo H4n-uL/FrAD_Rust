@@ -5,9 +5,7 @@
  */
 
 use crate::{common, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc, head}};
-
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path};
-// use libsoxr::Soxr;
 
 /** overlap
  * Overlaps the current frame with the previous fragment
@@ -129,6 +127,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
         |err| { eprintln!("Error writing to stdout: {}", err);
         if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );
+    let pcm_format = params.pcm;
 
     loop { // Main encode loop
         let mut rlen = buffersize as usize;
@@ -137,14 +136,13 @@ pub fn encode(rfile: String, params: cli::CliParams) {
             rlen = *profile1::SMPLS_LI.iter().find(|&&x| x >= buffersize).unwrap() as usize - prev.len();
             if rlen <= 0 { rlen = *profile1::SMPLS_LI.iter().find(|&&x| x - prev.len() as u32 >= buffersize).unwrap() as usize - prev.len(); }
         }
-        let fbytes = rlen * channels as usize * 8;
+        let fbytes = rlen * channels as usize * pcm_format.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
         let readlen = common::read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
 
-        let pcm: Vec<f64> = pcm_buf[..readlen].chunks(8)
-        .map(|bytes: &[u8]| f64::from(f64::from_be_bytes(bytes.try_into().unwrap())))
-        .collect();
+        let pcm: Vec<f64> = pcm_buf[..readlen].chunks(pcm_format.bit_depth() / 8)
+        .map(|bytes: &[u8]| common::any_to_f64(bytes, &pcm_format)).collect();
 
         let mut frame: Vec<Vec<f64>> = (0..buffersize)
         .take_while(|&i| (i as usize + 1) * channels as usize <= pcm.len())

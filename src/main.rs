@@ -11,7 +11,7 @@ const BANNER: &str =
 const ENCODE_HELP: &str = "--------------------------------- Description ----------------------------------
 
 Encode
-This action will encode your RAW f64be PCM audio file to FrAD format.
+This action will encode your RAW PCM audio file to FrAD format.
 This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
@@ -25,6 +25,7 @@ This action supports pipe input/output.
 ----------------------------------- Options ------------------------------------
 
     --sample-rate | Input sample rate, REQUIRED (alias: sr, srate)
+    --format      | Input format, default: f64be (alias: fmt, pcm)
     --channels    | Input hannels, REQUIRED (alias: ch, chnl, channel)
     --bits        | Bit depth, REQUIRED (alias: b, bit)
                   |
