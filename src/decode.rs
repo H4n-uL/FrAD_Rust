@@ -4,7 +4,7 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{common, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc}};
+use crate::{common::{self, f64_to_any, PCMFormat}, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
 /** overlap
@@ -36,9 +36,9 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
  * Parameters: Output file, PCM data
  * Returns: None
  */
-fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>) {
+fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat) {
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
-    let pcm_bytes: Vec<u8> = pcm_flat.iter().flat_map(|x| x.to_be_bytes()).collect();
+    let pcm_bytes: Vec<u8> = pcm_flat.iter().flat_map(|x| f64_to_any(*x, fmt)).collect();
     file.write_all(&pcm_bytes)
     .unwrap_or_else(|err|
         if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
@@ -90,17 +90,18 @@ pub fn decode(rfile: String, params: cli::CliParams) {
     let (mut head, mut prev) = (Vec::new(), Vec::new());
 
     let (mut srate, mut channels) = (0u32, 0i16);
+    let pcm_fmt = params.pcm;
     loop { // Main decode loop
         if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 { flush(&mut writefile, prev); break; }
+            if readlen == 0 { flush(&mut writefile, prev, &pcm_fmt); break; }
             head = buf.to_vec();
         }
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 { flush(&mut writefile, prev); break; }
+            if readlen == 0 { flush(&mut writefile, prev, &pcm_fmt); break; }
             head.extend(buf);
             head = head[1..].to_vec();
             continue;
@@ -111,7 +112,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         if srate != asfh.srate || channels != asfh.channels {
             eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate);
             if srate != 0 || channels != 0 {
-                flush(&mut writefile, prev); // flush
+                flush(&mut writefile, prev, &pcm_fmt); // flush
                 let name = format!("{}.{}.pcm", wfile, no);
                 writefile = if !wpipe { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
@@ -135,7 +136,7 @@ pub fn decode(rfile: String, params: cli::CliParams) {
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         (pcm, prev) = overlap(pcm, prev, &asfh);
-        flush(&mut writefile, pcm);
+        flush(&mut writefile, pcm, &pcm_fmt);
         head = Vec::new();
     }
 }

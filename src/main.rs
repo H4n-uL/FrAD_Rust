@@ -48,7 +48,7 @@ This action supports pipe input/output.
 const DECODE_HELP: &str = "--------------------------------- Description ----------------------------------
 
 Decode
-This action will decode any supported FrAD audio file to RAW f64be PCM format.
+This action will decode any supported FrAD audio file to RAW PCM format.
 This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
@@ -59,6 +59,7 @@ This action supports pipe input/output.
 ----------------------------------- Options ------------------------------------
 
     --output      | Output file path (alias: o, out)
+    --format      | Output format, default: f64be (alias: fmt, pcm)
     --ecc         | Check and fix errors, default: false (alias: e, enable-ecc)";
 
 const REPAIR_HELP: &str = "--------------------------------- Description ----------------------------------
