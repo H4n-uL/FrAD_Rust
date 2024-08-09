@@ -13,8 +13,8 @@ pub fn dct(x: Vec<f64>) -> Vec<f64> {
     let mut beta = vec![Complex::new(0.0, 0.0); 2 * n];
 
     for i in 0..n {
-        beta[i] = Complex::new(x[i], 0.0);
-        beta[2 * n - 1 - i] = Complex::new(x[i], 0.0);
+        beta[i] = Complex::new(x[i] / (2.0 * n as f64), 0.0);
+        beta[2 * n - 1 - i] = Complex::new(x[i] / (2.0 * n as f64), 0.0);
     }
 
     let mut planner = FftPlanner::new();
@@ -24,7 +24,7 @@ pub fn dct(x: Vec<f64>) -> Vec<f64> {
     let mut y = vec![0.0; n];
     for k in 0..n {
         let angle = -PI * k as f64 / (2.0 * n as f64);
-        y[k] = (beta[k].re * angle.cos() - beta[k].im * angle.sin()) / (2.0 * n as f64);
+        y[k] = beta[k].re * angle.cos() - beta[k].im * angle.sin();
     }
 
     return y;
