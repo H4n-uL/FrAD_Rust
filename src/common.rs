@@ -162,7 +162,7 @@ fn norm_from(x: f64, pcm_fmt: &PCMFormat) -> f64 {
     return if pcm_fmt.float() { x }
     else {
         let y = if pcm_fmt.signed() { x } else { x + 1.0 };
-        return y * 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1);
+        return (y * 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1)).round();
     };
 }
 
