@@ -15,6 +15,9 @@ pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];
 pub const DECODE_OPT: [&str; 2] = ["decode", "dec"];
 pub const REPAIR_OPT: [&str; 4] = ["reecc", "re-ecc", "repair", "ecc"];
 pub const METADATA_OPT: [&str; 2] = ["meta", "metadata"];
+pub const JSONMETA_OPT: [&str; 2] = ["jsonmeta", "jm"];
+pub const PROFILES_OPT: [&str; 2] = ["profiles", "prf"];
+pub const HELP_OPT: [&str; 3] = ["help", "h", "?"];
 
 pub const META_ADD: &str = "add";
 pub const META_REMOVE: &str = "remove";

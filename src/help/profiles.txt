@@ -1,0 +1,10 @@
+------------------------------ Available profiles ------------------------------
+
+    Profile 0 - DCT Archiving, Recommended for extreme environments
+    Profile 1 - Compact file size, Low complexity
+    Profile 2 - In development
+    Profile 3 - (Reserved)
+    Profile 4 - PCM Archiving, Recommended for general use
+    Profile 5 - (Reserved)
+    Profile 6 - (Reserved)
+    Profile 7 - (Reserved)

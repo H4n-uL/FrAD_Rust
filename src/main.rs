@@ -8,107 +8,13 @@ const BANNER: &str =
                              Original Author - HaמuL
 ";
 
-const ENCODE_HELP: &str = "--------------------------------- Description ----------------------------------
-
-Encode
-This action will encode your RAW PCM audio file to FrAD format.
-This action supports pipe input/output.
-
------------------------------------- Usage -------------------------------------
-
-{frad} encode <path/to/audio.pcm>
-    --sample-rate <sample rate>
-    --channels <channels>
-    --bits <bit depth>
-    [kwargs...]
-
------------------------------------ Options ------------------------------------
-
-    --sample-rate | Input sample rate, REQUIRED (alias: sr, srate)
-    --format      | Input format, default: f64be (alias: fmt, pcm)
-    --channels    | Input hannels, REQUIRED (alias: ch, chnl, channel)
-    --bits        | Bit depth, REQUIRED (alias: b, bit)
-                  |
-    --ecc         | Enable ECC, recommended.
-                  | ECC size ratio in --ecc <data size> <ecc code size>
-                  | default: 96, 24 (alias: e, enable-ecc)
-    --output      | Output file path (alias: o, out)
-                  |
-    --fsize       | Samples per frame, default: 2048 (alias: fr, frame-size)
-    --le          | Little Endian Toggle (alias: little-endian)
-    --overlap     | Overlap ratio in 1/<value> (alias: olap)
-                  |
-    --profile     | FrAD Profile from 0 to 7 (alias: prf)
-    --loss-level  | Lossy compression level, default: 0 (alias: lv, level)
-                  |
-    --meta        | Metadata in <key> <value> (alias: m, tag)
-    --jsonmeta    | Metadata in JSON format (alias: jm)
-    --image       | Image file path to embed (alias: img)";
-
-const DECODE_HELP: &str = "--------------------------------- Description ----------------------------------
-
-Decode
-This action will decode any supported FrAD audio file to RAW PCM format.
-This action supports pipe input/output.
-
------------------------------------- Usage -------------------------------------
-
-{frad} decode <path/to/audio.frad>
-    [kwargs...]
-
------------------------------------ Options ------------------------------------
-
-    --output      | Output file path (alias: o, out)
-    --format      | Output format, default: f64be (alias: fmt, pcm)
-    --ecc         | Check and fix errors, default: false (alias: e, enable-ecc)";
-
-const REPAIR_HELP: &str = "--------------------------------- Description ----------------------------------
-
-Repair
-This action will repair any supported FrAD audio file with ECC protection.
-
------------------------------------- Usage -------------------------------------
-
-{frad} repair <path/to/audio.frad>
-    --output <path/to/audio_ecc.frad>
-    [kwargs...]
-
------------------------------------ Options ------------------------------------
-
-    --output      | Output file path, REQUIRED (alias: o, out)
-    --ecc         | ECC size ratio in --ecc <data size> <ecc code size>
-                  | default: 96, 24 (alias: e, enable-ecc)";
-
-const METADATA_HELP: &str = "--------------------------------- Description ----------------------------------
-
-Metadata
-This action will modify the metadata of the FrAD audio file.
-
------------------------------------- Usage -------------------------------------
-
-{frad} meta <meta-action> <path/to/audio.frad>
-    [kwargs...]
-
------------------------------------ Options ------------------------------------
-
-    add -           Add metadata and image to the FrAD file
-    --meta        | Metadata in <key> <value> (alias: m, tag)
-    --jsonmeta    | Metadata in JSON format (alias: jm)
-    --image       | Image file path to embed, replace if exists (alias: img)
-
-    remove -        Remove metadata from the FrAD file
-    --meta        | Metadata key to remove (alias: m, tag)
-
-    rm-img -        Remove image from the FrAD file
-    No option for this action.
-
-    overwrite -     Remove all metadata and rewrite whole header
-    --meta        | Metadata in <key> <value> (alias: m, tag)
-    --jsonmeta    | Metadata in JSON format (alias: jm)
-    --image       | Image file path to embed (alias: img)
-
-    parse -         Parse metadata to JSON
-    --output      | Output file path, default: <input>.json (alias: o, out)";
+const GENERAL_HELP: &str = include_str!("help/general.txt");
+const ENCODE_HELP: &str = include_str!("help/encode.txt");
+const DECODE_HELP: &str = include_str!("help/decode.txt");
+const REPAIR_HELP: &str = include_str!("help/repair.txt");
+const METADATA_HELP: &str = include_str!("help/metadata.txt");
+const JSONMETA_HELP: &str = include_str!("help/jsonmeta.txt");
+const PROFILES_HELP: &str = include_str!("help/profiles.txt");
 
 /** Main function  */
 fn main() {
@@ -127,32 +33,16 @@ fn main() {
     else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);
     }
-    else if action == *"help".to_string() {
+    else if tools::cli::HELP_OPT.contains(&action.as_str()) {
         println!("{}", BANNER);
         println!("{}",
                  if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
             else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
             else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
             else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
-            else { "------------------------------- Available actions ------------------------------
-
-    encode | Encode any audio formats to FrAD    (alias: enc)
-    decode | Encode FrAD to any audio formats    (alias: dec)
-    repair | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)
-    meta   | Edit metadata on FrAD               (alias: metadata)
-
------------------------------- Available profiles ------------------------------
-
-    Profile 0 - DCT Archiving, Recommended for extreme environments
-    Profile 1 - Compact file size, Low complexity
-    Profile 2 - In development
-    Profile 3 - (Reserved)
-    Profile 4 - PCM Archiving, Recommended for general use
-    Profile 5 - (Reserved)
-    Profile 6 - (Reserved)
-    Profile 7 - (Reserved)
-
-Type `{frad} help <action>` to get help for specific action." }.replace("{frad}", executable.as_str())
+            else if tools::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
+            else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
+            else { GENERAL_HELP }.replace("{frad}", executable.as_str())
         );
         println!();
     }

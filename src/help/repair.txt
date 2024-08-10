@@ -1,0 +1,15 @@
+------------------------------------ Repair ------------------------------------
+
+Repair any supported FrAD audio file with ECC protection.
+
+Usage: {frad} repair <path/to/audio.frad>
+        --output <path/to/repaired.frad>
+        [kwargs...]
+
+Options:
+
+    --output <path/to/repaired.frad>
+        Output file path (REQUIRED, alias: o, out)
+    --ecc <data> <code>
+        Enable ECC and set size ratio in --ecc <data size> <ecc code size>
+        (default: 96 24, alias: e, enable-ecc)

@@ -1,0 +1,36 @@
+----------------------------------- Metadata -----------------------------------
+
+Modify or parse the metadata of the FrAD audio file.
+
+Usage: {frad} meta <meta-action> <path/to/audio.frad>
+    [kwargs...]
+
+Actions:
+
+    add       - Add metadata and image
+    remove    - Remove metadata
+    rm-img    - Remove image
+    overwrite - Remove all metadata and rewrite whole header
+    parse     - Parse metadata to JSON
+
+Options:
+
+    add & overwrite
+    --meta <key> <value>
+        Metadata in <key> <value> (alias: m, tag)
+    --jsonmeta <path/to/meta.json>
+        JSONMeta format file path to embed (alias: jm)
+        type `{frad} help jsonmeta` for JSONMeta format
+    --image <path/to/image.file>
+        Image file path to embed, replace if exists (alias: img)
+
+    remove
+    --meta <key>
+        Metadata key to remove (alias: m, tag)
+
+    rm-img
+    No option for this action.
+
+    parse
+    --output <path/to/meta.json>
+        Output file path (default: <input>.[json|image], alias: o, out)

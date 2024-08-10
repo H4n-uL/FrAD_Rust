@@ -1,0 +1,15 @@
+------------------------------------ Decode ------------------------------------
+
+Decode any supported FrAD audio file to RAW PCM format.
+This action supports pipe input/output.
+
+Usage: {frad} decode <path/to/audio.frad> [kwargs...]
+
+Options:
+
+    --format <PCM format>
+        Output format (default: f64be, alias: fmt, pcm)
+    --ecc
+        Check and fix errors (default: false, alias: e, enable-ecc)
+    --output <path/to/audio.pcm>
+        Output file path (alias: o, out)

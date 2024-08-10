@@ -1,0 +1,14 @@
+------------------------------- Available actions ------------------------------
+
+    encode   | Encode any audio formats to FrAD    (alias: enc)
+    decode   | Encode FrAD to any audio formats    (alias: dec)
+    repair   | Enable ECC protection / Repair file (alias: ecc, reecc, re-ecc)
+    meta     | Edit metadata on FrAD               (alias: metadata)
+
+---------------------------------- More helps ----------------------------------
+
+    jsonmeta | JSONMeta format help              (alias: jm)
+    profiles | FrAD Profiles help                (alias: prf)
+    help     | Show this help message            (alias: h, ?)
+
+Type `{frad} help <action>` to get help for specific action.

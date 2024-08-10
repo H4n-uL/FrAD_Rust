@@ -1,0 +1,51 @@
+------------------------------------ Encode ------------------------------------
+
+Encode your RAW PCM audio file to FrAD format.
+This action supports pipe input/output.
+
+Usage: {frad} encode <path/to/audio.pcm>
+        --sample-rate <Sample rate>
+        --channels <Channels>
+        --bits <Bit depth>
+        [kwargs...]
+
+Required settings:
+
+    --sample-rate <Sample rate>
+        Input sample rate (alias: sr, srate)
+    --channels <Channels>
+        Input channels (alias: ch, chnl, channel)
+    --bits <Bit depth>
+        Output bit depth (alias: b, bit)
+
+Optional settings:
+
+    --format <PCM format>
+        Input format, default: f64be (alias: fmt, pcm)
+
+    --ecc <data> <code>
+        Enable ECC and set size ratio in --ecc <data> <code>
+        (default: 96 24, alias: e, enable-ecc)
+
+    --output <path/to/audio.frad>
+        Output file path (default: <input>.frad, alias: o, out)
+
+    --fsize <Frame size>
+        Samples per frame (default: 2048, alias: fr, frame-size)
+    --little-endian
+        Little Endian Toggle (alias: le)
+
+    --profile <0-7>
+        FrAD Profile from 0 to 7 (alias: prf)
+    --loss-level <Level>
+        Lossy compression level (default: 0, alias: lv, level)
+    --overlap <ratio>
+        Overlap ratio in 1/<ratio> (alias: olap)
+
+    --meta <key> <value>
+        Metadata in <key> <value> (alias: m, tag)
+    --jsonmeta <path/to/meta.json>
+        JSONMeta format file path to embed (alias: jm)
+        type `{frad} help jsonmeta` for JSONMeta format
+    --image <path/to/image.file>
+        Image file path to embed (alias: img)
