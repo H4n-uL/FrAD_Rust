@@ -4,23 +4,23 @@ Encode your RAW PCM audio file to FrAD format.
 This action supports pipe input/output.
 
 Usage: {frad} encode <path/to/audio.pcm>
-        --sample-rate <Sample rate>
-        --channels <Channels>
-        --bits <Bit depth>
+        --sample-rate <sample rate>
+        --channels <channels>
+        --bits <bit depth>
         [kwargs...]
 
 Required settings:
 
-    --sample-rate <Sample rate>
+    --sample-rate <sample rate>
         Input sample rate (alias: sr, srate)
-    --channels <Channels>
+    --channels <channels>
         Input channels (alias: ch, chnl, channel)
-    --bits <Bit depth>
+    --bits <bit depth>
         Output bit depth (alias: b, bit)
 
 Optional settings:
 
-    --format <PCM format>
+    --format <pcm format>
         Input format, default: f64be (alias: fmt, pcm)
 
     --ecc <data> <code>
@@ -30,14 +30,14 @@ Optional settings:
     --output <path/to/audio.frad>
         Output file path (default: <input>.frad, alias: o, out)
 
-    --fsize <Frame size>
+    --fsize <frame size>
         Samples per frame (default: 2048, alias: fr, frame-size)
     --little-endian
         Little Endian Toggle (alias: le)
 
     --profile <0-7>
         FrAD Profile from 0 to 7 (alias: prf)
-    --loss-level <Level>
+    --loss-level <level>
         Lossy compression level (default: 0, alias: lv, level)
     --overlap <ratio>
         Overlap ratio in 1/<ratio> (alias: olap)

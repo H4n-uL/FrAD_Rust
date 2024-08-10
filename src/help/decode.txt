@@ -7,7 +7,7 @@ Usage: {frad} decode <path/to/audio.frad> [kwargs...]
 
 Options:
 
-    --format <PCM format>
+    --format <pcm format>
         Output format (default: f64be, alias: fmt, pcm)
     --ecc
         Check and fix errors (default: false, alias: e, enable-ecc)
