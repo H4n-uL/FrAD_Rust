@@ -132,7 +132,7 @@ pub fn encode(rfile: String, params: cli::CliParams) {
 
         if profile == 1 {
             let li_val = *profile1::SMPLS_LI.iter().find(|&&x| x >= buffersize).unwrap() as usize;
-            rlen = if li_val < prev.len() 
+            rlen = if li_val < prev.len()
             { *profile1::SMPLS_LI.iter().find(|&&x| x >= prev.len() as u32).unwrap() as usize - prev.len() }  else { li_val }
         }
         let fbytes = rlen * channels as usize * pcm_format.bit_depth() / 8;

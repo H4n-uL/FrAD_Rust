@@ -17,10 +17,10 @@ This action supports pipe input/output.
 ------------------------------------ Usage -------------------------------------
 
 {frad} encode path/to/audio.file
-    --sample-rate [sample rate]
-    --channels [channels]
-    --bits [bit depth]
-    {{kwargs...}}
+    --sample-rate <sample rate>
+    --channels <channels>
+    --bits <bit depth>
+    [kwargs...]
 
 ----------------------------------- Options ------------------------------------
 
@@ -54,7 +54,7 @@ This action supports pipe input/output.
 ------------------------------------ Usage -------------------------------------
 
 {frad} decode path/to/audio.frad
-    {{kwargs...}}
+    [kwargs...]
 
 ----------------------------------- Options ------------------------------------
 
@@ -71,7 +71,7 @@ This action will repair any supported FrAD audio file with ECC protection.
 
 {frad} repair path/to/audio.frad
     --output path/to/audio_ecc.frad
-    {{kwargs...}}
+    [kwargs...]
 
 ----------------------------------- Options ------------------------------------
 
@@ -86,9 +86,9 @@ This action will modify the metadata of the FrAD audio file.
 
 ------------------------------------ Usage -------------------------------------
 
-{frad} meta [meta-action] path/to/audio.frad
-    {{kwargs...}}
-    
+{frad} meta <meta-action> path/to/audio.frad
+    [kwargs...]
+
 ----------------------------------- Options ------------------------------------
 
     add -           Add metadata and image to the FrAD file
@@ -106,7 +106,7 @@ This action will modify the metadata of the FrAD audio file.
     --meta        | Metadata in [key] [value] (alias: m, tag)
     --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed (alias: img)
-    
+
     parse -         Parse metadata to JSON
     --output      | Output file path, default: [input].json (alias: o, out)";
 
@@ -151,7 +151,7 @@ fn main() {
     Profile 5 - (Reserved)
     Profile 6 - (Reserved)
     Profile 7 - (Reserved)
-    
+
 Type `{frad} help [action]` to get help for specific action." }.replace("{frad}", executable.as_str())
         );
         println!();

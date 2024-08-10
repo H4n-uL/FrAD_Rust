@@ -77,12 +77,12 @@ impl CliParams {
     pub fn set_meta_from_json(&mut self, meta_path: String) {
         let contents = match read_to_string(meta_path) { Ok(c) => c, Err(_) => { return; } };
         let json_meta: Vec<Value> = match from_str(&contents) { Ok(m) => m, Err(_) => { return; } };
-    
+
         for item in json_meta {
             let key = item["key"].as_str().map(String::from);
             let item_type = item["type"].as_str();
             let value_str = item["value"].as_str();
-    
+
             match (key, item_type, value_str) {
                 (Some(k), Some(t), Some(v)) => {
                     let value = if t == "base64" {

@@ -48,7 +48,7 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
         }
         File::create(format!("{}.json", wfile)).unwrap().write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
         File::create(format!("{}.image", wfile)).unwrap().write_all(&img_old).unwrap();
-        
+
         return;
     }
 
