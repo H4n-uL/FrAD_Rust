@@ -152,7 +152,7 @@ fn main() {
     Profile 6 - (Reserved)
     Profile 7 - (Reserved)
 
-Type `{frad} help [action]` to get help for specific action." }.replace("{frad}", executable.as_str())
+Type `{frad} help <action>` to get help for specific action." }.replace("{frad}", executable.as_str())
         );
         println!();
     }
