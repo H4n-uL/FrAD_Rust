@@ -28,7 +28,7 @@ fn getbinrng(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
 
 /** mask_thres_mos
  * Calculates the masking threshold for each subband
- * Parameters: DCT Array, Alpha value(constant... for now)
+ * Parameters: DCT Array, Spread alpha(Constant for now)
  * Returns: Masking threshold array
  */
 fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
@@ -37,8 +37,8 @@ fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
     for i in 0..MOSLEN {
         if MODIFIED_OPUS_SUBBANDS[i+1] == u32::MAX { thres[i] = f64::INFINITY; break; }
         let f = (MODIFIED_OPUS_SUBBANDS[i] as f64 + MODIFIED_OPUS_SUBBANDS[i + 1] as f64) / 2.0;
-        let abs = 3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4);
-        let abs = abs.min(96.0);
+        // Absolute Threshold of Hearing(in dB SPL)
+        let abs = (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)).min(96.0);
         thres[i] = freqs[i].powf(alpha).max(10.0_f64.powf((abs - 96.0) / 20.0));
     }
 
@@ -88,7 +88,7 @@ fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
 pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec<Vec<i64>>, Vec<Vec<f64>>) {
     let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
 
-    let mut pns_sgnl: Vec<Vec<i64>> = vec![vec![0; freqs[0].len()]; channels as usize];
+    let mut subband_sgnl: Vec<Vec<i64>> = vec![vec![0; freqs[0].len()]; channels as usize];
     let mut mask: Vec<Vec<f64>> = vec![vec![0.0; MOSLEN]; channels as usize];
 
     for c in 0..channels as usize {
@@ -100,11 +100,11 @@ pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec
         let thres = mapping_from_opus(&thres, freqs[0].len(), srate);
 
         for i in 0..freqs[c].len() {
-            pns_sgnl[c][i] = (freqs[c][i] / thres[i]).round() as i64;
+            subband_sgnl[c][i] = (freqs[c][i] / thres[i]).round() as i64;
         }
     }
 
-    return (pns_sgnl, mask);
+    return (subband_sgnl, mask);
 }
 
 /** dequant
@@ -112,12 +112,12 @@ pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec
  * Parameters: Quantised frequencies, Masking thresholds, Number of channels, Sample rate
  * Returns: Dequantised frequencies
  */
-pub fn dequant(pns_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
-    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; pns_sgnl[0].len()]; channels as usize];
+pub fn dequant(subband_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
+    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; subband_sgnl[0].len()]; channels as usize];
     masks = masks.iter().map(|x| x.iter().map(|y| y.max(0.0)).collect()).collect();
 
     for c in 0..channels as usize {
-        freqs[c] = pns_sgnl[c].iter().zip(mapping_from_opus(&masks[c], pns_sgnl[c].len(), srate)).map(|(x, y)| { *x } * y).collect();
+        freqs[c] = subband_sgnl[c].iter().zip(mapping_from_opus(&masks[c], subband_sgnl[c].len(), srate)).map(|(x, y)| { *x } * y).collect();
     }
 
     return freqs;
