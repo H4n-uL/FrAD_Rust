@@ -16,7 +16,7 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-{frad} encode path/to/audio.file
+{frad} encode <path/to/audio.pcm>
     --sample-rate <sample rate>
     --channels <channels>
     --bits <bit depth>
@@ -30,18 +30,18 @@ This action supports pipe input/output.
     --bits        | Bit depth, REQUIRED (alias: b, bit)
                   |
     --ecc         | Enable ECC, recommended.
-                  | ECC size ratio in --ecc [data size] [ecc code size]
+                  | ECC size ratio in --ecc <data size> <ecc code size>
                   | default: 96, 24 (alias: e, enable-ecc)
     --output      | Output file path (alias: o, out)
                   |
     --fsize       | Samples per frame, default: 2048 (alias: fr, frame-size)
     --le          | Little Endian Toggle (alias: little-endian)
-    --overlap     | Overlap ratio in 1/{{value}} (alias: olap)
+    --overlap     | Overlap ratio in 1/<value> (alias: olap)
                   |
     --profile     | FrAD Profile from 0 to 7 (alias: prf)
     --loss-level  | Lossy compression level, default: 0 (alias: lv, level)
                   |
-    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --meta        | Metadata in <key> <value> (alias: m, tag)
     --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed (alias: img)";
 
@@ -53,7 +53,7 @@ This action supports pipe input/output.
 
 ------------------------------------ Usage -------------------------------------
 
-{frad} decode path/to/audio.frad
+{frad} decode <path/to/audio.frad>
     [kwargs...]
 
 ----------------------------------- Options ------------------------------------
@@ -69,14 +69,14 @@ This action will repair any supported FrAD audio file with ECC protection.
 
 ------------------------------------ Usage -------------------------------------
 
-{frad} repair path/to/audio.frad
-    --output path/to/audio_ecc.frad
+{frad} repair <path/to/audio.frad>
+    --output <path/to/audio_ecc.frad>
     [kwargs...]
 
 ----------------------------------- Options ------------------------------------
 
     --output      | Output file path, REQUIRED (alias: o, out)
-    --ecc         | ECC size ratio in --ecc [data size] [ecc code size]
+    --ecc         | ECC size ratio in --ecc <data size> <ecc code size>
                   | default: 96, 24 (alias: e, enable-ecc)";
 
 const METADATA_HELP: &str = "--------------------------------- Description ----------------------------------
@@ -86,13 +86,13 @@ This action will modify the metadata of the FrAD audio file.
 
 ------------------------------------ Usage -------------------------------------
 
-{frad} meta <meta-action> path/to/audio.frad
+{frad} meta <meta-action> <path/to/audio.frad>
     [kwargs...]
 
 ----------------------------------- Options ------------------------------------
 
     add -           Add metadata and image to the FrAD file
-    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --meta        | Metadata in <key> <value> (alias: m, tag)
     --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed, replace if exists (alias: img)
 
@@ -103,12 +103,12 @@ This action will modify the metadata of the FrAD audio file.
     No option for this action.
 
     overwrite -     Remove all metadata and rewrite whole header
-    --meta        | Metadata in [key] [value] (alias: m, tag)
+    --meta        | Metadata in <key> <value> (alias: m, tag)
     --jsonmeta    | Metadata in JSON format (alias: jm)
     --image       | Image file path to embed (alias: img)
 
     parse -         Parse metadata to JSON
-    --output      | Output file path, default: [input].json (alias: o, out)";
+    --output      | Output file path, default: <input>.json (alias: o, out)";
 
 /** Main function  */
 fn main() {
