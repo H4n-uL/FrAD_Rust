@@ -26,9 +26,8 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
         let olap = asfh.olap.max(2);
         prev = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
     }
-    else { prev = Vec::new(); }
-
-    (frame, prev)
+    else { return (frame, Vec::new()); }
+    return (frame, prev);
 }
 
 /** flush
