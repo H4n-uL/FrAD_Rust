@@ -6,7 +6,7 @@
 
 use crate::fourier::profiles::profile1;
 use half::f16;
-use std::{fs::File, io::{Read, Write}, sync::LazyLock};
+use std::{fs::File, io::{Read, Write}};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -16,18 +16,17 @@ pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
 pub const PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
 
-pub const SEGMAX: LazyLock<[u32; 8]> = LazyLock::new(|| {
-    [
-        u32::MAX, // Profile 0
-        *profile1::SMPLS_LI.iter().max().unwrap(), // Profile 1
-        0, // Profile 2
-        0, // Profile 3
-        u32::MAX, // Profile 4
-        0, // Profile 5
-        0, // Profile 6
-        0, // Profile 7
-    ]
-});
+pub const SEGMAX: [u32; 8] =
+[
+    u32::MAX, // Profile 0
+    profile1::MAX_SMPL, // Profile 1
+    0, // Profile 2
+    0, // Profile 3
+    u32::MAX, // Profile 4
+    0, // Profile 5
+    0, // Profile 6
+    0, // Profile 7
+];
 
 
 #[derive(Clone, Copy)]
