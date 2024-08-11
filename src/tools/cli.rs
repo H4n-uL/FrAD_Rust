@@ -38,7 +38,7 @@ pub struct CliParams {
     pub overlap: u8,
     pub losslevel: u8,
     pub enable_ecc: bool,
-    pub ecc_rate: [u8; 2],
+    pub ecc_ratio: [u8; 2],
     pub overwrite: bool,
     pub meta: Vec<(String, Vec<u8>)>,
     pub image_path: String
@@ -58,7 +58,7 @@ impl CliParams {
             overlap: 16,
             losslevel: 0,
             enable_ecc: false,
-            ecc_rate: [96, 24],
+            ecc_ratio: [96, 24],
             overwrite: false,
             meta: Vec::new(),
             image_path: String::new()
@@ -74,7 +74,7 @@ impl CliParams {
     pub fn set_overlap(&mut self, overlap: String) { self.overlap = overlap.parse().unwrap(); }
     pub fn set_losslevel(&mut self, losslevel: String) { self.losslevel = losslevel.parse().unwrap(); }
     pub fn set_enable_ecc(&mut self) { self.enable_ecc = true; }
-    pub fn set_ecc_rate(&mut self, dsize: String, csize: String) { self.ecc_rate = [dsize.parse().unwrap(), csize.parse().unwrap()]; }
+    pub fn set_ecc_rate(&mut self, dsize: String, csize: String) { self.ecc_ratio = [dsize.parse().unwrap(), csize.parse().unwrap()]; }
     pub fn set_overwrite(&mut self) { self.overwrite = true; }
     pub fn set_meta(&mut self, meta: (String, String)) { self.meta.push((meta.0, meta.1.as_bytes().to_vec())); }
     pub fn set_meta_from_json(&mut self, meta_path: String) {

@@ -4,8 +4,9 @@
  * Function: Common tools for FrAD
  */
 
+use crate::fourier::profiles::profile1;
 use half::f16;
-use std::{fs::File, io::{Read, Write}};
+use std::{fs::File, io::{Read, Write}, sync::LazyLock};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -14,6 +15,19 @@ pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 // Pipe and null device
 pub static PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
 pub static PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
+
+pub static SEGMAX: LazyLock<[u32; 8]> = LazyLock::new(|| {
+    [
+        u32::MAX, // Profile 0
+        *profile1::SMPLS_LI.iter().max().unwrap(), // Profile 1
+        0, // Profile 2
+        0, // Profile 3
+        u32::MAX, // Profile 4
+        0, // Profile 5
+        0, // Profile 6
+        0, // Profile 7
+    ]
+});
 
 
 #[derive(Clone, Copy)]

@@ -127,8 +127,8 @@ pub fn decode(rfile: String, params: cli::CliParams) {
             if fix_error && (
                 [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
                 asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
-            ) { frad = ecc::decode_rs(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
-            else { frad = ecc::unecc(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
+            ) { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
+            else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
         }
 
         let mut pcm =

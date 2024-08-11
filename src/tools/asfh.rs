@@ -78,7 +78,7 @@ pub struct ASFH {
 
     // Profile 0
     pub channels: i16,
-    pub ecc_rate: [u8; 2],
+    pub ecc_ratio: [u8; 2],
     pub srate: u32,
     pub fsize: u32,
     pub crc32: [u8; 4],
@@ -99,7 +99,7 @@ impl ASFH {
             endian: false,
             bit_depth: 0,
             channels: 0,
-            ecc_rate: [0; 2],
+            ecc_ratio: [0; 2],
             srate: 0,
             fsize: 0,
             olap: 0,
@@ -123,13 +123,13 @@ impl ASFH {
             fhead.extend(encode_css_prf1(self.channels, self.srate, self.fsize));
             fhead.push(self.olap);
             if self.ecc {
-                fhead.extend(self.ecc_rate.to_vec());
+                fhead.extend(self.ecc_ratio.to_vec());
                 fhead.extend(crc16_ansi(&frad).to_vec());
             }
         }
         else {
             fhead.push((self.channels - 1) as u8);
-            fhead.extend(self.ecc_rate.to_vec());
+            fhead.extend(self.ecc_ratio.to_vec());
             fhead.extend(self.srate.to_be_bytes().to_vec());
             fhead.extend([0u8; 8].to_vec());
             fhead.extend(self.fsize.to_be_bytes().to_vec());
@@ -161,7 +161,7 @@ impl ASFH {
             if self.ecc {
                 buf = vec![0u8; 4]; let _ = file.read(&mut buf).unwrap();
                 fhead.extend(buf);
-                self.ecc_rate = [fhead[0xc], fhead[0xd]];
+                self.ecc_ratio = [fhead[0xc], fhead[0xd]];
                 self.crc16 = fhead[0xe..0x10].try_into().unwrap();
             }
         }
@@ -169,7 +169,7 @@ impl ASFH {
             buf = vec![0u8; 23]; let _ = read_exact(file, &mut buf);
             fhead.extend(buf);
             self.channels = fhead[0x9] as i16 + 1;
-            self.ecc_rate = [fhead[0xa], fhead[0xb]];
+            self.ecc_ratio = [fhead[0xa], fhead[0xb]];
             self.srate = u32::from_be_bytes(fhead[0xc..0x10].try_into().unwrap());
 
             self.fsize = u32::from_be_bytes(fhead[0x18..0x1c].try_into().unwrap());

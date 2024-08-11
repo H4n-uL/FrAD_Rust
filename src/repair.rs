@@ -15,7 +15,7 @@ use std::{fs::File, io::{Read, Write}, path::Path};
  */
 pub fn repair(rfile: String, params: cli::CliParams) {
     let wfile = params.output;
-    let ecc_rate = params.ecc_rate;
+    let ecc_ratio = params.ecc_ratio;
     if rfile.is_empty() { panic!("Input file must be given"); }
     if wfile.is_empty() { panic!("Output file must be given"); }
     if rfile == wfile { panic!("Input and output files cannot be the same"); }
@@ -62,14 +62,14 @@ pub fn repair(rfile: String, params: cli::CliParams) {
         if asfh.ecc {
             if [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
                 asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
-            { frad = ecc::decode_rs(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
-            else { frad = ecc::unecc(frad, asfh.ecc_rate[0] as usize, asfh.ecc_rate[1] as usize); }
+            { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
+            else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
         }
 
-        frad = ecc::encode_rs(frad, ecc_rate[0] as usize, ecc_rate[1] as usize);
+        frad = ecc::encode_rs(frad, ecc_ratio[0] as usize, ecc_ratio[1] as usize);
 
         // Writing to file
-        (asfh.ecc, asfh.ecc_rate) = (true, ecc_rate);
+        (asfh.ecc, asfh.ecc_ratio) = (true, ecc_ratio);
 
         let frad: Vec<u8> = asfh.write_vec(frad);
 
