@@ -39,7 +39,7 @@ impl EncodeParameters {
     pub fn from_cli(rfile: String, mut params: cli::CliParams) -> EncodeParameters {
         let mut wfile = params.output;
         let profile = params.profile;
-    
+
         let (mut rpipe, mut wpipe) = (false, false);
         if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
         if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
