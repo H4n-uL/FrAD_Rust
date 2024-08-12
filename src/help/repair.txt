@@ -1,6 +1,7 @@
 ------------------------------------ Repair ------------------------------------
 
 Repair any supported FrAD audio file with ECC protection.
+This action supports pipe input/output.
 
 Usage: {frad} repair <path/to/audio.frad>
         --output <path/to/repaired.frad>

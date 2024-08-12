@@ -4,7 +4,8 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{common::{self, SEGMAX}, fourier::{ self, profiles::{profile1, profile4} }, tools::{asfh::ASFH, cli, ecc, head}};
+use crate::{common::{self, LOSSLESS, COMPACT, SEGMAX}, fourier::{ self, profiles::{profile1, profile4} },
+    tools::{asfh::ASFH, cli, ecc, head, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
 /** EncodeParameters
@@ -57,7 +58,7 @@ impl EncodeParameters {
         }
         if !(wfile.ends_with(".frad") || wfile.ends_with(".dsin")
             || wfile.ends_with(".fra") || wfile.ends_with(".dsn")) {
-            if [0, 4].contains(&profile) {
+            if LOSSLESS.contains(&profile) {
                 if wfile.len() <= 8 { wfile = format!("{}.fra", wfile); }
                 else { wfile = format!("{}.frad", wfile); }
             }
@@ -121,7 +122,7 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
         data = ndata;
     }
 
-    if profile == 1 || profile == 2 && olap > 0 {
+    if COMPACT.contains(&profile) && olap > 0 {
         let cutoff = data.len() - (fsize / olap as usize);
         prev = data[cutoff..].to_vec();
     }
@@ -134,7 +135,7 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
  * Parameters: Input file, CLI parameters
  * Returns: Encoded FrAD frames on File or stdout
  */
-pub fn encode(mut encparam: EncodeParameters) {
+pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
     let mut asfh = ASFH::new();
     let mut prev: Vec<Vec<f64>> = Vec::new();
 
@@ -143,6 +144,8 @@ pub fn encode(mut encparam: EncodeParameters) {
         |err| { eprintln!("Error writing to stdout: {}", err);
         if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );
+
+    let mut log = LogObj::new(loglevel, 0.5);
 
     loop { // Main encode loop
         // 1. Encoding parameter verification
@@ -153,8 +156,9 @@ pub fn encode(mut encparam: EncodeParameters) {
         // 2. Reading PCM data
         let mut rlen = encparam.frame_size as usize;
         if encparam.profile == 1 {
+            // Read length = smallest value in SMPLS_LI bigger than frame size and previous fragment size
             let li_val = *profile1::SMPLS_LI.iter().find(|&&x| x >= encparam.frame_size).unwrap() as usize;
-            rlen = if li_val < prev.len() // if frame size is smaller than previous fragment, use the one bigger than it.
+            rlen = if li_val < prev.len()
             { *profile1::SMPLS_LI.iter().find(|&&x| x >= prev.len() as u32).unwrap() as usize - prev.len() } else { li_val - prev.len() };
         }
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
@@ -170,6 +174,7 @@ pub fn encode(mut encparam: EncodeParameters) {
         .take_while(|&i| (i as usize + 1) * encparam.channels as usize <= pcm.len())
         .map(|i| pcm[i as usize * (encparam.channels as usize)..(i + 1) as usize * (encparam.channels as usize)].to_vec())
         .collect();
+        let samples = frame.len();
 
         // 3.5. Overlapping for Profile 1
         (frame, prev) = overlap(frame, prev, encparam.overlap, encparam.profile);
@@ -191,16 +196,20 @@ pub fn encode(mut encparam: EncodeParameters) {
             frad = ecc::encode_rs(frad, encparam.ecc_ratio[0] as usize, encparam.ecc_ratio[1] as usize);
         }
 
-        // Writing to file
+        // 5. Writing to file
         (asfh.bit_depth, asfh.channels, asfh.endian, asfh.profile) = (bit_ind, chnl, encparam.little_endian, encparam.profile);
         (asfh.srate, asfh.fsize, asfh.olap) = (encparam.srate, fsize, encparam.overlap);
         (asfh.ecc, asfh.ecc_ratio) = (encparam.enable_ecc, encparam.ecc_ratio);
         // i rly wish i dont need to do this
 
         let frad: Vec<u8> = asfh.write_vec(frad);
+        encparam.writefile.write_all(&frad).unwrap_or_else(|err| {
+            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
+            else { panic!("Error writing to stdout: {}", err); }
+        });
 
-        encparam.writefile.write_all(&frad).unwrap_or_else(|err|
-            { if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
-        );
+        log.update(frad.len(), samples, asfh.srate);
+        log.logging(false);
     }
+    log.logging(true);
 }

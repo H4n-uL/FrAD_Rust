@@ -4,7 +4,7 @@
  * Function: Repair or Apply ECC to FrAD stream
  */
 
-use crate::{common, tools::{asfh::ASFH, cli, ecc}};
+use crate::{common::{self, LOSSLESS, COMPACT}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{Read, Write}, path::Path};
 
 /** repair
@@ -13,67 +13,90 @@ use std::{fs::File, io::{Read, Write}, path::Path};
  * Returns: Repaired FrAD stream on File
  * Note: Pipe is not supported
  */
-pub fn repair(rfile: String, params: cli::CliParams) {
-    let wfile = params.output;
+pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
+    let mut wfile = params.output;
     let ecc_ratio = params.ecc_ratio;
     if rfile.is_empty() { panic!("Input file must be given"); }
-    if wfile.is_empty() { panic!("Output file must be given"); }
-    if rfile == wfile { panic!("Input and output files cannot be the same"); }
 
-    if Path::new(&wfile).exists() && !params.overwrite {
-        eprintln!("Output file already exists, overwrite? (Y/N)");
-        loop {
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
-            if input.trim().to_lowercase() == "y" { break; }
-            else if input.trim().to_lowercase() == "n" {
-                eprintln!("Aborted.");
-                std::process::exit(0);
+    let mut rpipe = false;
+    if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
+    else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
+
+    let mut wpipe = false;
+    if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
+    else {
+        if rfile == wfile { panic!("Input and output files cannot be the same"); }
+        if wfile.is_empty() {
+            let wfrf = Path::new(&rfile).file_name().unwrap().to_string_lossy().split(".").map(|s| s.to_string()).collect::<Vec<String>>();
+            wfile = [wfrf[..wfrf.len() - 1].join("."), "recov".to_string(), wfrf[wfrf.len() - 1].clone()].join(".");
+        }
+
+        if Path::new(&wfile).exists() && !params.overwrite {
+            eprintln!("Output file already exists, overwrite? (Y/N)");
+            loop {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if input.trim().to_lowercase() == "y" { break; }
+                else if input.trim().to_lowercase() == "n" {
+                    eprintln!("Aborted.");
+                    std::process::exit(0);
+                }
             }
         }
     }
 
-    let mut readfile: Box<dyn Read> = Box::new(File::open(rfile).unwrap());
-    let mut writefile: Box<dyn Write> = Box::new(File::create(wfile).unwrap());
+    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let mut asfh = ASFH::new();
-
-    let mut head = Vec::new();
+    let (mut asfh, mut head, mut prevlen) = (ASFH::new(), Vec::new(), 0);
+    let mut log = LogObj::new(loglevel, 0.5);
     loop {
+        // 1. Reading the header
         if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { break; }
+            if readlen == 0 { log.update(0, prevlen, asfh.srate); break; }
             head = buf.to_vec();
         }
+        // all the way until hitting the header or EOF
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { break; }
+            if readlen == 0 { log.update(0, prevlen, asfh.srate); writefile.write_all(&head).unwrap(); break; }
             head.extend(buf);
+            writefile.write_all(&[head[0]]).unwrap();
             head = head[1..].to_vec();
             continue;
         }
+        // 2. Reading the frame
         asfh.update(&mut readfile);
+        let samples = if asfh.olap < 2 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
+        (asfh.fsize as usize * (asfh.olap as usize - 1)) / asfh.olap as usize };
+        prevlen = asfh.fsize as usize - samples;
 
+        // 3. Reading the frame data
         let mut frad = vec![0u8; asfh.frmbytes as usize];
         let _ = common::read_exact(&mut readfile, &mut frad);
 
+        // 4. Repairing the frame
         if asfh.ecc {
-            if [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
-                asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
+            if LOSSLESS.contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
+            COMPACT.contains(&asfh.profile) && common::crc16_ansi(&frad) != asfh.crc16
             { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
             else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
         }
 
+        // 5. Applying ECC
         frad = ecc::encode_rs(frad, ecc_ratio[0] as usize, ecc_ratio[1] as usize);
 
-        // Writing to file
+        // 6. Writing to file
         (asfh.ecc, asfh.ecc_ratio) = (true, ecc_ratio);
-
         let frad: Vec<u8> = asfh.write_vec(frad);
-
         writefile.write_all(frad.as_slice()).unwrap();
         head = Vec::new();
+
+        log.update(asfh.frmbytes as usize, samples, asfh.srate);
+        log.logging(false);
     }
+    log.logging(true);
 }

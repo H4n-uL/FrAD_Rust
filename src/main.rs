@@ -21,15 +21,16 @@ fn main() {
     let executable = env::args().next().unwrap();
     let (action, metaaction, input, params) = tools::cli::parse(env::args());
 
+    let loglevel = params.loglevel;
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
         let encparam = EncodeParameters::from_cli(input, params);
-        encode::encode(encparam);
+        encode::encode(encparam, loglevel);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
-        decode::decode(input, params);
+        decode::decode(input, params, loglevel);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
-        repair::repair(input, params);
+        repair::repair(input, params, loglevel);
     }
     else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);

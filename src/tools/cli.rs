@@ -41,7 +41,8 @@ pub struct CliParams {
     pub ecc_ratio: [u8; 2],
     pub overwrite: bool,
     pub meta: Vec<(String, Vec<u8>)>,
-    pub image_path: String
+    pub image_path: String,
+    pub loglevel: u8,
 }
 
 impl CliParams {
@@ -61,7 +62,8 @@ impl CliParams {
             ecc_ratio: [96, 24],
             overwrite: false,
             meta: Vec::new(),
-            image_path: String::new()
+            image_path: String::new(),
+            loglevel: 0,
         }
     }// i rly miss lombok
     pub fn set_output(&mut self, output: String) { self.output = output; }
@@ -138,6 +140,7 @@ impl CliParams {
             _ => PCMFormat::F64(Big)
         };
     }
+    pub fn set_loglevel(&mut self, loglevel: String) { self.loglevel = loglevel.parse().unwrap(); }
 }
 
 /** parse
@@ -226,6 +229,13 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             if ["img", "image"].contains(&key) {
                 let value = args.pop_front().unwrap();
                 params.set_image(value);
+            }
+            if ["log", "v"].contains(&key) {
+                if !args.is_empty() && args[0].parse::<u8>().is_ok() {
+                    let value = args.pop_front().unwrap();
+                    params.set_loglevel(value);
+                }
+                else { params.set_loglevel("1".to_string()); }
             }
         }
     }

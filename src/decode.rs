@@ -4,7 +4,8 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{common::{self, f64_to_any, PCMFormat}, fourier::{self, profiles::{profile1, profile4}}, tools::{asfh::ASFH, cli, ecc}};
+use crate::{common::{self, f64_to_any, PCMFormat, LOSSLESS, COMPACT}, fourier::{self, profiles::{profile1, profile4}},
+    tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
 /** overlap
@@ -22,7 +23,7 @@ fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (V
             }
         }
     }
-    if asfh.profile == 1 && asfh.olap != 0 {
+    if COMPACT.contains(&asfh.profile) && asfh.olap != 0 {
         let olap = asfh.olap.max(2);
         prev = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
     }
@@ -49,7 +50,7 @@ fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat) {
  * Parameters: Input file, CLI parameters
  * Returns: Decoded PCM on File or stdout
  */
-pub fn decode(rfile: String, params: cli::CliParams) {
+pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut wfile = params.output;
     let fix_error = params.enable_ecc;
     if rfile.is_empty() { panic!("Input file must be given"); }
@@ -91,24 +92,40 @@ pub fn decode(rfile: String, params: cli::CliParams) {
 
     let (mut srate, mut channels) = (0u32, 0i16);
     let pcm_fmt = params.pcm;
+
+    let mut log = LogObj::new(loglevel, 0.5);
+
     loop { // Main decode loop
+        // 1. Reading the header
         if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 { flush(&mut writefile, prev, &pcm_fmt); break; }
+            if readlen == 0 {
+                log.update(0, prev.len(), asfh.srate);
+                flush(&mut writefile, prev.clone(), &pcm_fmt); break;
+            }
             head = buf.to_vec();
         }
+        // all the way until hitting the header or EOF
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 { flush(&mut writefile, prev, &pcm_fmt); break; }
+            if readlen == 0 {
+                log.update(0, prev.len(), asfh.srate);
+                flush(&mut writefile, prev.clone(), &pcm_fmt); break;
+            }
             head.extend(buf);
             head = head[1..].to_vec();
             continue;
         }
+        // 2. Reading the frame
         asfh.update(&mut readfile);
 
-        // if srate or channels changed
+        // 3. Reading the frame data
+        let mut frad = vec![0u8; asfh.frmbytes as usize];
+        let _ = common::read_exact(&mut readfile, &mut frad);
+
+        // 3.5. Checking if ASFH info has changed
         if srate != asfh.srate || channels != asfh.channels {
             eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate);
             if srate != 0 || channels != 0 {
@@ -119,24 +136,29 @@ pub fn decode(rfile: String, params: cli::CliParams) {
             (srate, channels, prev, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
         }
 
-        let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = common::read_exact(&mut readfile, &mut frad);
-
+        // 4. Fixing errors
         if asfh.ecc {
             if fix_error && (
-                [0, 4].contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
-                asfh.profile == 1 && common::crc16_ansi(&frad) != asfh.crc16
+                LOSSLESS.contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
+                COMPACT.contains(&asfh.profile) && common::crc16_ansi(&frad) != asfh.crc16
             ) { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
             else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
         }
 
+        // 5. Decoding the frame
         let mut pcm =
         if asfh.profile == 1 { profile1::digital(frad, asfh.bit_depth, asfh.channels, asfh.srate) }
         else if asfh.profile == 4 { profile4::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) }
         else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
+        // 6. Overlapping
         (pcm, prev) = overlap(pcm, prev, &asfh);
+        let samples = pcm.len();
+        // 7. Writing to output
         flush(&mut writefile, pcm, &pcm_fmt);
         head = Vec::new();
+
+        log.update(asfh.frmbytes as usize, samples, asfh.srate); log.logging(false);
     }
+    log.logging(true);
 }
