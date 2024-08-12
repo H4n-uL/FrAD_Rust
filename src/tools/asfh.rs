@@ -4,7 +4,7 @@
  * Function: Audio Stream Frame Header tools
  */
 
-use crate::{common::{FRM_SIGN, crc16_ansi, crc32, read_exact}, fourier::profiles::profile1};
+use crate::{common::{crc16_ansi, crc32, read_exact, FRM_SIGN, COMPACT}, fourier::profiles::profile1};
 use std::io::Read;
 
 /** encode_pfb
@@ -119,7 +119,7 @@ impl ASFH {
         fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth)[0]);
 
-        if self.profile == 1 {
+        if COMPACT.contains(&self.profile) {
             fhead.extend(encode_css_prf1(self.channels, self.srate, self.fsize));
             fhead.push(self.olap);
             if self.ecc {
@@ -153,7 +153,7 @@ impl ASFH {
         self.frmbytes = u32::from_be_bytes(fhead[0x4..0x8].try_into().unwrap()) as u64;
         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(fhead[0x8]);
 
-        if self.profile == 1 {
+        if COMPACT.contains(&self.profile) {
             buf = vec![0u8; 3]; let _ = read_exact(file, &mut buf);
             fhead.extend(buf);
             (self.channels, self.srate, self.fsize) = decode_css_prf1(fhead[0x9..0xb].to_vec());

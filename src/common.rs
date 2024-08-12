@@ -28,6 +28,8 @@ pub const SEGMAX: [u32; 8] =
     0, // Profile 7
 ];
 
+pub const LOSSLESS: [u8; 2] = [0, 4]; // LOSSLESS profiles header
+pub const COMPACT: [u8; 2] = [1, 2];  // Compact profiles header
 
 #[derive(Clone, Copy)]
 pub enum PCMFormat {
