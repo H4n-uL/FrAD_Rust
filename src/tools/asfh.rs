@@ -112,7 +112,7 @@ impl ASFH {
      * Makes a frame from audio frame and metadata
      * Parameters: Audio frame
      */
-    pub fn write_vec(&self, frad: Vec<u8>) -> Vec<u8> {
+    pub fn write_vec(&mut self, frad: Vec<u8>) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
 
         fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
@@ -136,6 +136,7 @@ impl ASFH {
         }
 
         let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
+        self.total_bytes = frad.len() as u128;
         return frad;
     }
 
