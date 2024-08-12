@@ -75,6 +75,7 @@ impl LogObj {
     }
     pub fn logging(&mut self, force: bool) {
         if !force && self.last_logging.elapsed() < self.log_interval { return; }
+        if self.level == 0 { return; }
         self.last_logging = Instant::now();
         let total_duration: f64 = self.duration.iter().map(|(k, v)| *v as f64 / *k as f64).sum();
         let total_bits: f64 = self.bitrate.values().sum::<u128>() as f64 * 8.0;
