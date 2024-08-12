@@ -16,12 +16,12 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
     34400, 40800, 48000, u32::MAX
 ];
 
-/** getbinrng
+/** get_bin_range
  * Gets the range of bins for a subband
  * Parameters: Length of the DCT Array, Signal sample rate, Subband index
  * Returns: Range of bins
  */
-fn getbinrng(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
+fn get_bin_range(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
     let start = (MODIFIED_OPUS_SUBBANDS[i] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     let end = (MODIFIED_OPUS_SUBBANDS[i + 1] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     return start.min(len)..end.min(len);
@@ -54,7 +54,7 @@ pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     let mut mapped_freqs = [0.0; MOSLEN].to_vec();
 
     for i in 0..MOSLEN {
-        let subfreqs = freqs[getbinrng(freqs.len(), srate, i)].to_vec();
+        let subfreqs = freqs[get_bin_range(freqs.len(), srate, i)].to_vec();
         if !subfreqs.is_empty() {
             let sfq: f64 = subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64;
             mapped_freqs[i] = sfq.sqrt();
@@ -69,15 +69,17 @@ pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
  * Parameters: MOS-Mapped frequencies, Length of the DCT Array, Sample rate
  * Returns: Inverse-mapped frequencies
  */
-pub fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
-    let mut mapped_freqs = vec![0.0; freqs_len];
+pub fn mapping_from_opus(mapped_freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
+    let mut freqs = vec![0.0; freqs_len];
 
-    for i in 0..MOSLEN {
-        let subfreqs = &mut mapped_freqs[getbinrng(freqs_len, srate, i)];
-        for j in 0..subfreqs.len() { subfreqs[j] = freqs[i]; }
+    for i in 0..MOSLEN-1 {
+        let start = get_bin_range(freqs_len, srate, i).start;
+        let end = get_bin_range(freqs_len, srate, i + 1).start;
+        let subfreqs: Vec<f64> = (start..end).map(|x| mapped_freqs[i] + (x - start) as f64 * (mapped_freqs[i + 1] - mapped_freqs[i]) / (end - start) as f64).collect();
+        freqs[start..end].copy_from_slice(&subfreqs);
     }
 
-    return mapped_freqs;
+    return freqs;
 }
 
 /** quant
