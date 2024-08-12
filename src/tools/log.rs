@@ -82,12 +82,15 @@ impl LogObj {
         let encoding_time = self.start_time.elapsed().as_secs_f64();
         let speed = if encoding_time > 0.0 { total_duration / encoding_time } else { 0.0 };
 
+        let mut x = String::new();
+
         if self.level == 1 {
-            eprint!("size={}B time={} bitrate={}bits/s speed={:.1}x    \r",
+            x = format!("size={}B time={} bitrate={}bits/s speed={:.1}x    \r",
                 format_bytes(self.total_size as f64),
                 format_time(total_duration),
                 format_bytes(bitrate), speed
             );
         }
+        if force { eprintln!("{}", x); } else { eprint!("{}", x); }
     }
 }
