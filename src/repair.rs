@@ -4,7 +4,7 @@
  * Function: Repair or Apply ECC to FrAD stream
  */
 
-use crate::{common::{self, LOSSLESS, COMPACT}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
+use crate::{common, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{Read, Write}, path::Path};
 
 /** repair

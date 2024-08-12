@@ -4,7 +4,7 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{common::{self, LOSSLESS, COMPACT, SEGMAX}, fourier::{ self, profiles::{profile1, profile4} },
+use crate::{common, fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX},
     tools::{asfh::ASFH, cli, ecc, head, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
@@ -155,11 +155,11 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
 
         // 2. Reading PCM data
         let mut rlen = encparam.frame_size as usize;
-        if encparam.profile == 1 {
+        if COMPACT.contains(&encparam.profile) {
             // Read length = smallest value in SMPLS_LI bigger than frame size and previous fragment size
-            let li_val = *profile1::SMPLS_LI.iter().find(|&&x| x >= encparam.frame_size).unwrap() as usize;
+            let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= encparam.frame_size as u32).min().unwrap() as usize;
             rlen = if li_val < prev.len()
-            { *profile1::SMPLS_LI.iter().find(|&&x| x >= prev.len() as u32).unwrap() as usize - prev.len() } else { li_val - prev.len() };
+            { *compact::SAMPLES_LI.iter().filter(|&x| *x >= prev.len() as u32).min().unwrap() as usize - prev.len() } else { li_val - prev.len() };
         }
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
@@ -182,7 +182,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
 
         // 4. Encoding
         if !(
-            fourier::DEPTHS.contains(&encparam.bit_depth) ||
+            profile0::DEPTHS.contains(&encparam.bit_depth) ||
             profile1::DEPTHS.contains(&encparam.bit_depth) ||
             profile4::DEPTHS.contains(&encparam.bit_depth)
         ) { panic!("Invalid bit depth"); }
@@ -190,7 +190,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
         let (mut frad, bit_ind, chnl) =
         if encparam.profile == 1 { profile1::analogue(frame, encparam.bit_depth, encparam.srate, encparam.loss_level) }
         else if encparam.profile == 4 { profile4::analogue(frame, encparam.bit_depth, encparam.little_endian) }
-        else { fourier::analogue(frame, encparam.bit_depth, encparam.little_endian) };
+        else { profile0::analogue(frame, encparam.bit_depth, encparam.little_endian) };
 
         if encparam.enable_ecc { // Creating Reed-Solomon error correction code
             frad = ecc::encode_rs(frad, encparam.ecc_ratio[0] as usize, encparam.ecc_ratio[1] as usize);

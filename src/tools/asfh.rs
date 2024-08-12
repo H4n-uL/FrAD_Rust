@@ -4,7 +4,7 @@
  * Function: Audio Stream Frame Header tools
  */
 
-use crate::{common::{crc16_ansi, crc32, read_exact, FRM_SIGN, COMPACT}, fourier::profiles::profile1};
+use crate::{common::{crc16_ansi, crc32, read_exact, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
 use std::io::Read;
 
 /** encode_pfb
@@ -19,17 +19,17 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
     return vec![(prf | ecc | endian | bits as u8)];
 }
 
-/** encode_css_prf1
- * Encodes Channel-Srate-Smpcount byte for Profile 1
+/** encode_css
+ * Encodes Channel-Srate-Smpcount byte for Compact Profiles
  * Parameters: Channel count, Sample rate, Sample count
  * Returns: Encoded CSS
  */
-fn encode_css_prf1(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
+fn encode_css(channels: i16, srate: u32, fsize: u32) -> Vec<u8> {
     let chnl = (channels as u16 - 1) << 10;
-    let srate = (profile1::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
-    let fsize = *profile1::SMPLS_LI.iter().find(|&&x| x >= fsize).unwrap();
-    let mult = profile1::get_smpls_from_value(&fsize);
-    let px = (profile1::SMPLS.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
+    let srate = (compact::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
+    let fsize = *compact::SAMPLES_LI.iter().find(|&&x| x >= fsize).unwrap();
+    let mult = compact::get_samples_from_value(&fsize);
+    let px = (compact::SAMPLES.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
     let fsize = ((fsize as f64 / mult as f64).log2() as u16) << 1;
     return (chnl | srate | px | fsize).to_be_bytes().to_vec();
 }
@@ -47,17 +47,17 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
     return (prf, ecc, endian, bits as i16);
 }
 
-/** decode_css_prf1
- * Decodes Channel-Srate-Smpcount byte for Profile 1
+/** decode_css
+ * Decodes Channel-Srate-Smpcount byte for Compact Profiles
  * Parameters: Encoded CSS
  * Returns: Channel count, Sample rate, Sample count
  */
-fn decode_css_prf1(css: Vec<u8>) -> (i16, u32, u32) {
+fn decode_css(css: Vec<u8>) -> (i16, u32, u32) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
     let chnl = (css_int >> 10) as i16 + 1;
-    let srate = profile1::SRATES[(css_int >> 6) as usize & 0b1111];
+    let srate = compact::SRATES[(css_int >> 6) as usize & 0b1111];
 
-    let fsize_prefix = profile1::SMPLS[(css_int >> 4) as usize & 0b11].0;
+    let fsize_prefix = compact::SAMPLES[(css_int >> 4) as usize & 0b11].0;
     let fsize = fsize_prefix * 2u32.pow(((css_int >> 1) & 0b111) as u32);
 
     return (chnl, srate, fsize);
@@ -120,7 +120,7 @@ impl ASFH {
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth)[0]);
 
         if COMPACT.contains(&self.profile) {
-            fhead.extend(encode_css_prf1(self.channels, self.srate, self.fsize));
+            fhead.extend(encode_css(self.channels, self.srate, self.fsize));
             fhead.push(self.olap);
             if self.ecc {
                 fhead.extend(self.ecc_ratio.to_vec());
@@ -156,7 +156,7 @@ impl ASFH {
         if COMPACT.contains(&self.profile) {
             buf = vec![0u8; 3]; let _ = read_exact(file, &mut buf);
             fhead.extend(buf);
-            (self.channels, self.srate, self.fsize) = decode_css_prf1(fhead[0x9..0xb].to_vec());
+            (self.channels, self.srate, self.fsize) = decode_css(fhead[0x9..0xb].to_vec());
             self.olap = fhead[0xb];
             if self.ecc {
                 buf = vec![0u8; 4]; let _ = file.read(&mut buf).unwrap();

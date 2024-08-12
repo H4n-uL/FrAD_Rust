@@ -4,7 +4,7 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{common::{self, f64_to_any, PCMFormat, LOSSLESS, COMPACT}, fourier::{self, profiles::{profile1, profile4}},
+use crate::{common::{self, f64_to_any, PCMFormat}, fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
@@ -149,7 +149,7 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         let mut pcm =
         if asfh.profile == 1 { profile1::digital(frad, asfh.bit_depth, asfh.channels, asfh.srate) }
         else if asfh.profile == 4 { profile4::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) }
-        else { fourier::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
+        else { profile0::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         // 6. Overlapping
         (pcm, prev) = overlap(pcm, prev, &asfh);
