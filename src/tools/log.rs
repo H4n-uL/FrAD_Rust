@@ -86,12 +86,12 @@ impl LogObj {
         let mut x = String::new();
 
         if self.level == 1 {
-            x = format!("size={}B time={} bitrate={}bits/s speed={:.1}x    \r",
+            x = format!("size={}B time={} bitrate={}bits/s speed={:.1}x",
                 format_bytes(self.total_size as f64),
                 format_time(total_duration),
                 format_bytes(bitrate), speed
             );
         }
-        if force { eprintln!("{}", x); } else { eprint!("{}", x); }
+        if force { eprintln!("{}    \r", x); } else { eprint!("{}    \r", x); }
     }
 }
