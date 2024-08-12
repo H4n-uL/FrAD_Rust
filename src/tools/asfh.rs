@@ -68,6 +68,7 @@ fn decode_css(css: Vec<u8>) -> (i16, u32, u32) {
  */
 pub struct ASFH {
     // Audio Stream Frame Header
+    pub total_bytes: u128,
     pub frmbytes: u64,
 
     // PFloat byte
@@ -86,13 +87,12 @@ pub struct ASFH {
     // Profile 1
     pub olap: u8,
     pub crc16: [u8; 2],
-
-    pub headlen: usize
 }
 
 impl ASFH {
     pub fn new() -> ASFH {
         ASFH {
+            total_bytes: 0,
             frmbytes: 0,
             profile: 0,
             ecc: false,
@@ -105,7 +105,6 @@ impl ASFH {
             olap: 0,
             crc32: [0; 4],
             crc16: [0; 2],
-            headlen: 0
         }
     }
 
@@ -182,6 +181,6 @@ impl ASFH {
             self.frmbytes = u64::from_be_bytes(fhead[fhead.len()-8..].try_into().unwrap());
         }
 
-        self.headlen = fhead.len();
+        self.total_bytes = fhead.len() as u128 + self.frmbytes as u128;
     }
 }

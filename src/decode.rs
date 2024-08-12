@@ -158,7 +158,7 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         flush(&mut writefile, pcm, &pcm_fmt);
         head = Vec::new();
 
-        log.update(asfh.frmbytes as usize, samples, asfh.srate); log.logging(false);
+        log.update(asfh.total_bytes, samples, asfh.srate); log.logging(false);
     }
     log.logging(true);
 }

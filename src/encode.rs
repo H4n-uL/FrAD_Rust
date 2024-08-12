@@ -208,7 +208,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
             else { panic!("Error writing to stdout: {}", err); }
         });
 
-        log.update(frad.len(), samples, asfh.srate);
+        log.update(frad.len() as u128, samples, asfh.srate);
         log.logging(false);
     }
     log.logging(true);

@@ -95,7 +95,7 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
         writefile.write_all(frad.as_slice()).unwrap();
         head = Vec::new();
 
-        log.update(asfh.frmbytes as usize, samples, asfh.srate);
+        log.update(asfh.total_bytes, samples, asfh.srate);
         log.logging(false);
     }
     log.logging(true);
