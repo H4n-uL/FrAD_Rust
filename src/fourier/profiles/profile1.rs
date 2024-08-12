@@ -6,7 +6,6 @@
  */
 
 use super::{super::backend::core::{dct, idct}, tools::p1tools};
-use half::f16;
 
 use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
 use std::io::prelude::*;
@@ -80,19 +79,31 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
-    let (freqs, pns) = p1tools::quant(freqs, pcm[0].len() as i16, srate, level);
+    let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
 
-    let freqs_flat: Vec<i64> = (0..freqs[0].len())
-        .flat_map(|i| freqs.iter().map(move |inner| inner[i])).collect();
+    // Subband masking and quantisation
+    let mut subband_sgnl: Vec<Vec<i64>> = vec![vec![0; freqs[0].len()]; channels as usize];
+    let mut thres: Vec<Vec<i64>> = vec![vec![0; p1tools::MOSLEN]; channels as usize];
 
-    let pns_flat: Vec<i64> = (0..pns[0].len())
-        .flat_map(|i| pns.iter().map(move |inner| f16::from_f64(inner[i] / 2_i64.pow(bits as u32-1) as f64).to_bits() as i64 )).collect();
+    for c in 0..channels as usize {
+        let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
+        let mapping = p1tools::mapping_to_opus(&absfreqs, srate);
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::ALPHA).iter().map(|x| x * const_factor).collect();
+        thres[c] = thres_channel.iter().map(|x| (x * 2.0_f64.powi(16 - bits as i32)).round() as i64).collect();
 
-    let pns_glm = p1tools::exp_golomb_rice_encode(pns_flat);
-    let freqs_glm = p1tools::exp_golomb_rice_encode(freqs_flat);
+        let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
 
-    let frad: Vec<u8> = (pns_glm.len() as u32).to_be_bytes().to_vec()
-        .into_iter().chain(pns_glm).chain(freqs_glm).collect();
+        let masked: Vec<i64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y).round() as i64).collect();
+        subband_sgnl[c] = masked;
+    }
+
+    let freqs_flat: Vec<i64> = (0..subband_sgnl[0].len()).flat_map(|i| subband_sgnl.iter().map(move |inner| inner[i])).collect();
+    let freqs_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(freqs_flat);
+
+    let thres_flat: Vec<i64> = (0..thres[0].len()).flat_map(|i| thres.iter().map(move |inner| inner[i])).collect();
+    let thres_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(thres_flat);
+
+    let frad: Vec<u8> = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect();
 
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::best());
     encoder.write_all(&frad).unwrap();
@@ -116,20 +127,27 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
         buf
     };
 
-    let pns_len = u32::from_be_bytes(frad[0..4].try_into().unwrap()) as usize;
+    let thres_len = u32::from_be_bytes(frad[0..4].try_into().unwrap()) as usize;
 
-    let pns_glm = frad[4..4+pns_len].to_vec();
-    let freqs_glm = frad[4+pns_len..].to_vec();
+    let thres_gol = frad[4..4+thres_len].to_vec();
+    let freqs_gol = frad[4+thres_len..].to_vec();
 
-    let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_glm).iter().map(|x| *x as f64).collect();
-    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(pns_glm).iter().map(|x| f16::from_bits(*x as u16).to_f64() * 2.0_f64.powi(bits as i32 - 1)).collect();
+    let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_gol).iter().map(|x| *x as f64).collect();
+    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 2.0_f64.powi(16 - bits as i32)).collect();
 
-    let mut freqs: Vec<Vec<f64>> = (0..channels)
+    let subband_sgnl: Vec<Vec<f64>> = (0..channels)
         .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
-    let mask: Vec<Vec<f64>> = (0..channels)
+    let masks: Vec<Vec<f64>> = (0..channels)
         .map(|i| pns_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
-    freqs = p1tools::dequant(freqs, mask, channels as i16, srate);
+    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; subband_sgnl[0].len()]; channels as usize];
+
+    for c in 0..channels as usize {
+        freqs[c] = subband_sgnl[c].iter()
+            .zip(p1tools::mapping_from_opus(&masks[c], subband_sgnl[c].len(), srate))
+            .map(|(x, y)| p1tools::dequant(*x) * y)
+            .collect();
+    }
 
     let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
 

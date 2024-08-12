@@ -6,14 +6,15 @@
 
 use crate::backend::bitcvt;
 
-const ALPHA: f64 = 0.8;
+pub const ALPHA: f64 = 0.8;
+const QUANT_ALPHA: f64 = 0.75;
+pub const MOSLEN: usize = MODIFIED_OPUS_SUBBANDS.len() - 1;
 const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
     0,     200,   400,   600,   800,   1000,  1200,  1400,
     1600,  2000,  2400,  2800,  3200,  4000,  4800,  5600,
     6800,  8000,  9600,  12000, 15600, 20000, 24000, 28800,
     34400, 40800, 48000, u32::MAX
 ];
-const MOSLEN: usize = MODIFIED_OPUS_SUBBANDS.len() - 1;
 
 /** getbinrng
  * Gets the range of bins for a subband
@@ -31,11 +32,10 @@ fn getbinrng(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
  * Parameters: DCT Array, Spread alpha(Constant for now)
  * Returns: Masking threshold array
  */
-fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
+pub fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
     let mut thres = vec![0.0; MOSLEN];
 
     for i in 0..MOSLEN {
-        if MODIFIED_OPUS_SUBBANDS[i+1] == u32::MAX { thres[i] = f64::INFINITY; break; }
         let f = (MODIFIED_OPUS_SUBBANDS[i] as f64 + MODIFIED_OPUS_SUBBANDS[i + 1] as f64) / 2.0;
         // Absolute Threshold of Hearing(in dB SPL)
         let abs = (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)).min(96.0);
@@ -50,7 +50,7 @@ fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
  * Parameters: DCT Array, Sample rate
  * Returns: Power-averages of the subbands
  */
-fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
+pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     let mut mapped_freqs = [0.0; MOSLEN].to_vec();
 
     for i in 0..MOSLEN {
@@ -69,7 +69,7 @@ fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
  * Parameters: MOS-Mapped frequencies, Length of the DCT Array, Sample rate
  * Returns: Inverse-mapped frequencies
  */
-fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
+pub fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
     let mut mapped_freqs = vec![0.0; freqs_len];
 
     for i in 0..MOSLEN {
@@ -81,47 +81,18 @@ fn mapping_from_opus(freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
 }
 
 /** quant
- * Quantises the frequencies
- * Parameters: DCT Array, Number of channels, Sample rate, Quantisation level
- * Returns: Quantised frequencies and Masking thresholds
+ * Non-linear quantisation function
+ * Parameters: f64 value to quantise
+ * Returns: Quantised value
  */
-pub fn quant(freqs: Vec<Vec<f64>>, channels: i16, srate: u32, level: u8) -> (Vec<Vec<i64>>, Vec<Vec<f64>>) {
-    let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
-
-    let mut subband_sgnl: Vec<Vec<i64>> = vec![vec![0; freqs[0].len()]; channels as usize];
-    let mut mask: Vec<Vec<f64>> = vec![vec![0.0; MOSLEN]; channels as usize];
-
-    for c in 0..channels as usize {
-        let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
-        let thres: Vec<f64> = mask_thres_mos(
-            &mapping_to_opus(&absfreqs, srate), ALPHA
-        ).iter().map(|x| x * const_factor).collect();
-        mask[c] = thres.clone();
-        let thres = mapping_from_opus(&thres, freqs[0].len(), srate);
-
-        for i in 0..freqs[c].len() {
-            subband_sgnl[c][i] = (freqs[c][i] / thres[i]).round() as i64;
-        }
-    }
-
-    return (subband_sgnl, mask);
-}
+pub fn quant(x: f64) -> f64 { return x.signum() * x.abs().powf(QUANT_ALPHA); }
 
 /** dequant
- * Dequantises the frequencies
- * Parameters: Quantised frequencies, Masking thresholds, Number of channels, Sample rate
- * Returns: Dequantised frequencies
+ * Non-linear dequantisation function
+ * Parameters: f64 value to dequantise
+ * Returns: Dequantised value
  */
-pub fn dequant(subband_sgnl: Vec<Vec<f64>>, mut masks: Vec<Vec<f64>>, channels: i16, srate: u32) -> Vec<Vec<f64>> {
-    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; subband_sgnl[0].len()]; channels as usize];
-    masks = masks.iter().map(|x| x.iter().map(|y| y.max(0.0)).collect()).collect();
-
-    for c in 0..channels as usize {
-        freqs[c] = subband_sgnl[c].iter().zip(mapping_from_opus(&masks[c], subband_sgnl[c].len(), srate)).map(|(x, y)| { *x } * y).collect();
-    }
-
-    return freqs;
-}
+pub fn dequant(y: f64) -> f64 { return y.signum() * y.abs().powf(1.0 / QUANT_ALPHA); }
 
 /** exp_golomb_rice_encode
  * Encodes any integer array with Exponential Golomb-Rice Encoding
