@@ -12,7 +12,8 @@ use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, proces
  * Struct containing all parameters for encoding
  */
 pub struct EncodeParameters {
-    readfile: Box<dyn Read>, writefile: Box<dyn Write>,
+    rfilename: String, wfilename: String,
+    rpipe: bool, wpipe: bool,
     srate: u32, channels: u8, bit_depth: i16,
     pcmfmt: common::PCMFormat,
     enable_ecc: bool, ecc_ratio: [u8; 2],
@@ -25,8 +26,8 @@ pub struct EncodeParameters {
 impl EncodeParameters {
     pub fn _new() -> EncodeParameters {
         EncodeParameters {
-            readfile: Box::new(std::io::stdin()),
-            writefile: Box::new(std::io::stdout()),
+            rfilename: String::new(), wfilename: String::new(),
+            rpipe: false, wpipe: false,
             srate: 48000, channels: 2, bit_depth: 0,
             pcmfmt: common::PCMFormat::F64(common::Endian::Big),
             enable_ecc: false, ecc_ratio: [96, 24],
@@ -95,8 +96,8 @@ impl EncodeParameters {
         }
 
         EncodeParameters {
-            readfile: if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) },
-            writefile: if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) },
+            rfilename: rfile, wfilename: wfile,
+            rpipe: rpipe, wpipe: wpipe,
             srate: params.srate, channels: params.channels as u8, bit_depth: params.bits,
             pcmfmt: params.pcm, enable_ecc: params.enable_ecc, ecc_ratio: params.ecc_ratio,
             frame_size: params.frame_size, little_endian: params.little_endian,
@@ -134,12 +135,15 @@ fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u8, 
  * Parameters: Input file, CLI parameters
  * Returns: Encoded FrAD frames on File or stdout
  */
-pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
+pub fn encode(encparam: EncodeParameters, loglevel: u8) {
     let mut asfh = ASFH::new();
     let mut overlap_fragment: Vec<Vec<f64>> = Vec::new();
 
+    let mut readfile: Box<dyn Read> = if !encparam.rpipe { Box::new(File::open(encparam.rfilename).unwrap()) } else { Box::new(std::io::stdin()) };
+    let mut writefile: Box<dyn Write> = if !encparam.wpipe { Box::new(File::open(encparam.wfilename).unwrap()) } else { Box::new(std::io::stdout()) };
+
     let header = head::builder(&encparam.metadata, encparam.image);
-    encparam.writefile.write_all(&header).unwrap_or_else(
+    writefile.write_all(&header).unwrap_or_else(
         |err| { eprintln!("Error writing to stdout: {}", err);
         if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );
@@ -162,7 +166,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
         }
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
-        let readlen = common::read_exact(&mut encparam.readfile, &mut pcm_buf);
+        let readlen = common::read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
 
         // 3. RAW PCM bitstream to f64 PCM
@@ -203,7 +207,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
         // i rly wish i dont need to do this
 
         let frad: Vec<u8> = asfh.write_vec(frad);
-        encparam.writefile.write_all(&frad).unwrap_or_else(|err| {
+        writefile.write_all(&frad).unwrap_or_else(|err| {
             if err.kind() == ErrorKind::BrokenPipe { exit(0); }
             else { panic!("Error writing to stdout: {}", err); }
         });
