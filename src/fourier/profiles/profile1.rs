@@ -51,7 +51,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
         let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
         let mapping = p1tools::mapping_to_opus(&absfreqs, srate);
         let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * const_factor).collect();
-        thres[c] = thres_channel.iter().map(|x| (x * 2.0_f64.powi(16 - bits as i32)).round() as i64).collect();
+        thres[c] = thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bits as i32)).round() as i64).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         let masked: Vec<i64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y).round() as i64).collect();
@@ -94,7 +94,7 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let freqs_gol = frad[4+thres_len..].to_vec();
 
     let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_gol).iter().map(|x| *x as f64).collect();
-    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 2.0_f64.powi(16 - bits as i32)).collect();
+    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 3.0_f64.sqrt().powi(16 - bits as i32)).collect();
 
     let subband_sgnl: Vec<Vec<f64>> = (0..channels)
         .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
