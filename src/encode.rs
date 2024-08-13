@@ -107,27 +107,26 @@ impl EncodeParameters {
 }
 
 /** overlap
- * Overlaps the current frame with the previous fragment
- * Parameters: Current frame, Previous frame fragment, Overlap rate, Profile
- * Returns: Overlapped frame, Updated fragment
+ * Overlaps the current frame with the overlap fragment
+ * Parameters: Current frame, Overlap fragment, Overlap rate, Profile
+ * Returns: Overlapped frame, Next overlap fragment
  */
-fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    let fsize = data.len() + prev.len();
+fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let olap = if olap > 0 { olap.max(2) } else { 0 };
 
-    if !prev.is_empty() {
-        let mut ndata = Vec::new();
-        ndata.extend(prev.iter().cloned());
-        ndata.extend(data.iter().cloned());
-        data = ndata;
+    if !overlap_fragment.is_empty() {
+        let mut nframe = Vec::new();
+        nframe.extend(overlap_fragment.iter().cloned());
+        nframe.extend(frame.iter().cloned());
+        frame = nframe;
     }
 
+    let mut next_overlap = Vec::new();
     if COMPACT.contains(&profile) && olap > 0 {
-        let cutoff = data.len() - (fsize / olap as usize);
-        prev = data[cutoff..].to_vec();
+        let cutoff = (frame.len() * (olap as usize - 1)) / olap as usize;
+        next_overlap = frame[cutoff..].to_vec();
     }
-    else { prev = Vec::new(); }
-    return (data, prev);
+    return (frame, next_overlap);
 }
 
 /** encode
@@ -137,7 +136,7 @@ fn overlap(mut data: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, olap: u8, profile: 
  */
 pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
     let mut asfh = ASFH::new();
-    let mut prev: Vec<Vec<f64>> = Vec::new();
+    let mut overlap_fragment: Vec<Vec<f64>> = Vec::new();
 
     let header = head::builder(&encparam.metadata, encparam.image);
     encparam.writefile.write_all(&header).unwrap_or_else(
@@ -156,10 +155,10 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
         // 2. Reading PCM data
         let mut rlen = encparam.frame_size as usize;
         if COMPACT.contains(&encparam.profile) {
-            // Read length = smallest value in SMPLS_LI bigger than frame size and previous fragment size
+            // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
             let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= encparam.frame_size as u32).min().unwrap() as usize;
-            rlen = if li_val < prev.len()
-            { *compact::SAMPLES_LI.iter().filter(|&x| *x >= prev.len() as u32).min().unwrap() as usize - prev.len() } else { li_val - prev.len() };
+            rlen = if li_val < overlap_fragment.len()
+            { *compact::SAMPLES_LI.iter().filter(|&x| *x >= overlap_fragment.len() as u32).min().unwrap() as usize - overlap_fragment.len() } else { li_val - overlap_fragment.len() };
         }
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
@@ -177,7 +176,7 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
         let samples = frame.len();
 
         // 3.5. Overlapping for Profile 1
-        (frame, prev) = overlap(frame, prev, encparam.overlap, encparam.profile);
+        (frame, overlap_fragment) = overlap(frame, overlap_fragment, encparam.overlap, encparam.profile);
         let fsize: u32 = frame.len() as u32;
 
         // 4. Encoding

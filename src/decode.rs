@@ -9,26 +9,26 @@ use crate::{common::{self, f64_to_any, PCMFormat}, fourier::profiles::{profile0,
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
 /** overlap
- * Overlaps the current frame with the previous fragment
- * Parameters: Current frame, Previous frame fragment, ASFH
- * Returns: Overlapped frame, Updated fragment
+ * Overlaps the current frame with the overlap fragment
+ * Parameters: Current frame, Overlap fragment, ASFH
+ * Returns: Overlapped frame, Next overlap fragment
  */
-fn overlap(mut frame: Vec<Vec<f64>>, mut prev: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    if !prev.is_empty() {
-        let fade_in: Vec<f64> = prev.iter().enumerate().map(|(i, _)| i as f64 / prev.len() as f64).collect();
-        let fade_out: Vec<f64> = prev.iter().enumerate().map(|(i, _)| 1.0 - i as f64 / prev.len() as f64).collect();
+fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
+    if  overlap_fragment.is_empty() {
+        let fade_in: Vec<f64> = overlap_fragment.iter().enumerate().map(|(i, _)| i as f64 / overlap_fragment.len() as f64).collect();
+        let fade_out: Vec<f64> = overlap_fragment.iter().enumerate().map(|(i, _)| 1.0 - i as f64 / overlap_fragment.len() as f64).collect();
         for c in 0..asfh.channels as usize {
-            for i in 0..prev.len() {
-                frame[i][c] = frame[i][c] * fade_in[i] + prev[i][c] * fade_out[i];
+            for i in 0..overlap_fragment.len() {
+                frame[i][c] = frame[i][c] * fade_in[i] + overlap_fragment[i][c] * fade_out[i];
             }
         }
     }
+    let mut next_overlap = Vec::new();
     if COMPACT.contains(&asfh.profile) && asfh.olap != 0 {
         let olap = asfh.olap.max(2);
-        prev = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
+        next_overlap = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
     }
-    else { return (frame, Vec::new()); }
-    return (frame, prev);
+    return (frame, next_overlap);
 }
 
 /** flush
@@ -88,7 +88,7 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
     let mut asfh = ASFH::new();
 
-    let (mut head, mut prev) = (Vec::new(), Vec::new());
+    let (mut head, mut overlap_fragment) = (Vec::new(), Vec::new());
 
     let (mut srate, mut channels) = (0u32, 0i16);
     let pcm_fmt = params.pcm;
@@ -101,8 +101,8 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
             let mut buf = vec![0u8; 4];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
-                log.update(0, prev.len(), asfh.srate);
-                flush(&mut writefile, prev.clone(), &pcm_fmt); break;
+                log.update(0, overlap_fragment.len(), asfh.srate);
+                flush(&mut writefile, overlap_fragment.clone(), &pcm_fmt); break;
             }
             head = buf.to_vec();
         }
@@ -111,8 +111,8 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
             let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
-                log.update(0, prev.len(), asfh.srate);
-                flush(&mut writefile, prev.clone(), &pcm_fmt); break;
+                log.update(0, overlap_fragment.len(), asfh.srate);
+                flush(&mut writefile, overlap_fragment.clone(), &pcm_fmt); break;
             }
             head.extend(buf);
             head = head[1..].to_vec();
@@ -129,11 +129,11 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         if srate != asfh.srate || channels != asfh.channels {
             eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate);
             if srate != 0 || channels != 0 {
-                flush(&mut writefile, prev, &pcm_fmt); // flush
+                flush(&mut writefile, overlap_fragment, &pcm_fmt); // flush
                 let name = format!("{}.{}.pcm", wfile, no);
                 writefile = if !wpipe { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
-            (srate, channels, prev, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
+            (srate, channels, overlap_fragment, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
         }
 
         // 4. Fixing errors
@@ -152,7 +152,7 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         else { profile0::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
 
         // 6. Overlapping
-        (pcm, prev) = overlap(pcm, prev, &asfh);
+        (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
         let samples = pcm.len();
         // 7. Writing to output
         flush(&mut writefile, pcm, &pcm_fmt);

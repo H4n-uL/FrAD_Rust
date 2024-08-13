@@ -48,21 +48,21 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let (mut asfh, mut head, mut prevlen) = (ASFH::new(), Vec::new(), 0);
+    let (mut asfh, mut head, mut olap_fragment_len) = (ASFH::new(), Vec::new(), 0);
     let mut log = LogObj::new(loglevel, 0.5);
     loop {
         // 1. Reading the header
         if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(0, prevlen, asfh.srate); break; }
+            if readlen == 0 { log.update(0, olap_fragment_len, asfh.srate); break; }
             head = buf.to_vec();
         }
         // all the way until hitting the header or EOF
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(0, prevlen, asfh.srate); writefile.write_all(&head).unwrap(); break; }
+            if readlen == 0 { log.update(0, olap_fragment_len, asfh.srate); writefile.write_all(&head).unwrap(); break; }
             head.extend(buf);
             writefile.write_all(&[head[0]]).unwrap();
             head = head[1..].to_vec();
@@ -72,7 +72,7 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
         asfh.update(&mut readfile);
         let samples = if asfh.olap < 2 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
         (asfh.fsize as usize * (asfh.olap as usize - 1)) / asfh.olap as usize };
-        prevlen = asfh.fsize as usize - samples;
+        olap_fragment_len = asfh.fsize as usize - samples;
 
         // 3. Reading the frame data
         let mut frad = vec![0u8; asfh.frmbytes as usize];
