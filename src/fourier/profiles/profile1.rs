@@ -50,11 +50,10 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     for c in 0..channels as usize {
         let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
         let mapping = p1tools::mapping_to_opus(&absfreqs, srate);
-        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::ALPHA).iter().map(|x| x * const_factor).collect();
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * const_factor).collect();
         thres[c] = thres_channel.iter().map(|x| (x * 2.0_f64.powi(16 - bits as i32)).round() as i64).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
-
         let masked: Vec<i64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y).round() as i64).collect();
         subband_sgnl[c] = masked;
     }

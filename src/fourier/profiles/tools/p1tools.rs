@@ -6,7 +6,7 @@
 
 use crate::backend::bitcvt;
 
-pub const ALPHA: f64 = 0.8;
+pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
 pub const MOSLEN: usize = MODIFIED_OPUS_SUBBANDS.len() - 1;
 const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
@@ -15,6 +15,25 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
     6800,  8000,  9600,  12000, 15600, 20000, 24000, 28800,
     34400, 40800, 48000, u32::MAX
 ];
+
+/** linspace
+ * Generates a linear spaced vector
+ * Parameters: Start value, Stop value, Number of values
+ * Returns: Linear spaced vector
+ */
+fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
+    if num == 0 { return vec![]; }
+    if num == 1 { return vec![start]; }
+    let step = (stop - start) / (num - 1) as f64;
+
+    let mut result = Vec::with_capacity(num);
+    for i in 0..num {
+        let value = if i == num - 1 { stop }
+        else { start + step * i as f64 };
+        result.push(value);
+    }
+    return result;
+}
 
 /** get_bin_range
  * Gets the range of bins for a subband
@@ -75,8 +94,7 @@ pub fn mapping_from_opus(mapped_freqs: &[f64], freqs_len: usize, srate: u32) -> 
     for i in 0..MOSLEN-1 {
         let start = get_bin_range(freqs_len, srate, i).start;
         let end = get_bin_range(freqs_len, srate, i + 1).start;
-        let subfreqs: Vec<f64> = (start..end).map(|x| mapped_freqs[i] + (x - start) as f64 * (mapped_freqs[i + 1] - mapped_freqs[i]) / (end - start) as f64).collect();
-        freqs[start..end].copy_from_slice(&subfreqs);
+        freqs[start..end].copy_from_slice(&linspace(mapped_freqs[i], mapped_freqs[i + 1], end - start));
     }
 
     return freqs;
