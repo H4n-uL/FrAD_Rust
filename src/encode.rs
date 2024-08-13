@@ -186,10 +186,11 @@ pub fn encode(mut encparam: EncodeParameters, loglevel: u8) {
             profile4::DEPTHS.contains(&encparam.bit_depth)
         ) { panic!("Invalid bit depth"); }
 
-        let (mut frad, bit_ind, chnl) =
-        if encparam.profile == 1 { profile1::analogue(frame, encparam.bit_depth, encparam.srate, encparam.loss_level) }
-        else if encparam.profile == 4 { profile4::analogue(frame, encparam.bit_depth, encparam.little_endian) }
-        else { profile0::analogue(frame, encparam.bit_depth, encparam.little_endian) };
+        let (mut frad, bit_ind, chnl) = match encparam.profile {
+            1 => profile1::analogue(frame, encparam.bit_depth, encparam.srate, encparam.loss_level),
+            4 => profile4::analogue(frame, encparam.bit_depth, encparam.little_endian),
+            _ => profile0::analogue(frame, encparam.bit_depth, encparam.little_endian)
+        };
 
         if encparam.enable_ecc { // Creating Reed-Solomon error correction code
             frad = ecc::encode_rs(frad, encparam.ecc_ratio[0] as usize, encparam.ecc_ratio[1] as usize);
