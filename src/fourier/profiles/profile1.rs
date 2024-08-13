@@ -32,10 +32,10 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
     let pcm = pad_pcm(pcm);
     let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
-        .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bits-1) as f64)).collect())
+        .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bit_depth - 1) as f64)).collect())
         .collect();
 
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
@@ -51,7 +51,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
         let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
         let mapping = p1tools::mapping_to_opus(&absfreqs, srate);
         let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * const_factor).collect();
-        thres[c] = thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bits as i32)).round() as i64).collect();
+        thres[c] = thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bit_depth as i32)).round() as i64).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         let masked: Vec<i64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y).round() as i64).collect();
@@ -70,7 +70,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
     encoder.write_all(&frad).unwrap();
     let frad = encoder.finish().unwrap();
 
-    return (frad, DEPTHS.iter().position(|&x| x == bits).unwrap() as i16, channels as i16);
+    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16);
 }
 
 /** digital
@@ -78,8 +78,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, srate: u32, level: u8) -> (Vec<u8
  * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate(for dequantisation)
  * Returns: f64 PCM
  */
-pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f64>> {
-    let channels = channels as usize;
+pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -> Vec<Vec<f64>> {
+    let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
 
     let mut decoder = ZlibDecoder::new(&frad[..]);
     let frad = {
@@ -93,13 +93,11 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let thres_gol = frad[4..4+thres_len].to_vec();
     let freqs_gol = frad[4+thres_len..].to_vec();
 
+    let thres_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 3.0_f64.sqrt().powi(16 - bit_depth as i32)).collect();
     let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_gol).iter().map(|x| *x as f64).collect();
-    let pns_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 3.0_f64.sqrt().powi(16 - bits as i32)).collect();
 
-    let subband_sgnl: Vec<Vec<f64>> = (0..channels)
-        .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
-    let masks: Vec<Vec<f64>> = (0..channels)
-        .map(|i| pns_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let masks: Vec<Vec<f64>> = (0..channels) .map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let subband_sgnl: Vec<Vec<f64>> = (0..channels) .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
     let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; subband_sgnl[0].len()]; channels as usize];
 
@@ -113,7 +111,7 @@ pub fn digital(frad: Vec<u8>, bits: i16, channels: i16, srate: u32) -> Vec<Vec<f
     let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
 
     let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
-        .map(|i| pcm_trans.iter().map(|inner| inner[i] / 2.0_f64.powi(bits as i32 - 1)).collect())
+        .map(|i| pcm_trans.iter().map(|inner| inner[i] / 2.0_f64.powi(bit_depth as i32 - 1)).collect())
         .collect();
     return pcm;
 }
