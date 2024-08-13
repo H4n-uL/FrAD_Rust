@@ -140,7 +140,7 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
     let mut overlap_fragment: Vec<Vec<f64>> = Vec::new();
 
     let mut readfile: Box<dyn Read> = if !encparam.rpipe { Box::new(File::open(encparam.rfilename).unwrap()) } else { Box::new(std::io::stdin()) };
-    let mut writefile: Box<dyn Write> = if !encparam.wpipe { Box::new(File::open(encparam.wfilename).unwrap()) } else { Box::new(std::io::stdout()) };
+    let mut writefile: Box<dyn Write> = if !encparam.wpipe { Box::new(File::create(encparam.wfilename).unwrap()) } else { Box::new(std::io::stdout()) };
 
     let header = head::builder(&encparam.metadata, encparam.image);
     writefile.write_all(&header).unwrap_or_else(
