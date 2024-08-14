@@ -4,7 +4,7 @@ mod encode; mod decode; mod repair; mod header;
 use {encode::EncodeParameters, std::env};
 
 const BANNER: &str =
-"                    Fourier Analogue-in-Digital Rust Reference
+"                   Fourier Analogue-in-Digital Rust Reference
                              Original Author - HaמuL
 ";
 
