@@ -4,7 +4,7 @@
  * Function: Quantisation and Dequantisation tools for Profile 1
  */
 
-use crate::backend::bitcvt;
+use crate::backend::{bitcvt, linspace};
 
 pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
@@ -15,25 +15,6 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
     6800,  8000,  9600,  12000, 15600, 20000, 24000, 28800,
     34400, 40800, 48000, u32::MAX
 ];
-
-/** linspace
- * Generates a linear spaced vector
- * Parameters: Start value, Stop value, Number of values
- * Returns: Linear spaced vector
- */
-fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
-    if num == 0 { return vec![]; }
-    if num == 1 { return vec![start]; }
-    let step = (stop - start) / (num - 1) as f64;
-
-    let mut result = Vec::with_capacity(num);
-    for i in 0..num {
-        let value = if i == num - 1 { stop }
-        else { start + step * i as f64 };
-        result.push(value);
-    }
-    return result;
-}
 
 /** get_bin_range
  * Gets the range of bins for a subband
