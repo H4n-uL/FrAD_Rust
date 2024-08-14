@@ -4,7 +4,8 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{common::{self, f64_to_any, PCMFormat}, fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
+use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
+    fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 
@@ -14,9 +15,9 @@ use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
  * Returns: Overlapped frame, Next overlap fragment
  */
 fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    if  overlap_fragment.is_empty() {
-        let fade_in: Vec<f64> = overlap_fragment.iter().enumerate().map(|(i, _)| i as f64 / overlap_fragment.len() as f64).collect();
-        let fade_out: Vec<f64> = overlap_fragment.iter().enumerate().map(|(i, _)| 1.0 - i as f64 / overlap_fragment.len() as f64).collect();
+    if !overlap_fragment.is_empty() {
+        let fade_in: Vec<f64> = linspace(0.0, 1.0, overlap_fragment.len());
+        let fade_out: Vec<f64> = linspace(1.0, 0.0, overlap_fragment.len());
         for c in 0..asfh.channels as usize {
             for i in 0..overlap_fragment.len() {
                 frame[i][c] = frame[i][c] * fade_in[i] + overlap_fragment[i][c] * fade_out[i];
