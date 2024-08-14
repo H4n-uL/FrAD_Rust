@@ -19,15 +19,17 @@ fn format_time(n: f64) -> String {
     let minutes = ((n % 3600.0 / 60.0) % 60.0) as u8;
     let seconds = (n % 60.0) as f64;
 
-    if julian > 0 { return format!("J{}.{:03}:{:02}:{:02}:{:06.3}", julian, days, hours, minutes, seconds); }
-    else if days > 0 { return format!("{}:{:02}:{:02}:{:06.3}", days, hours, minutes, seconds); }
-    else if hours > 0 { return format!("{}:{:02}:{:06.3}", hours, minutes, seconds); }
-    else if minutes > 0 { return format!("{}:{:06.3}", minutes, seconds); }
-    else if seconds >= 1.0 { return format!("{:.3} s", seconds); }
-    else if seconds >= 0.001 { return format!("{:.3} ms", seconds * 1000.0); }
-    else if seconds >= 0.000001 { return format!("{:.3} µs", seconds * 1000000.0); }
-    else if seconds > 0.0 { return format!("{:.3} ns", seconds * 1000000.0); }
-    else { return "0".to_string(); }
+    return {
+        if julian > 0 { format!("J{}.{:03}:{:02}:{:02}:{:06.3}", julian, days, hours, minutes, seconds) }
+        else if days > 0 { format!("{}:{:02}:{:02}:{:06.3}", days, hours, minutes, seconds) }
+        else if hours > 0 { format!("{}:{:02}:{:06.3}", hours, minutes, seconds) }
+        else if minutes > 0 { format!("{}:{:06.3}", minutes, seconds) }
+        else if seconds >= 1.0 { format!("{:.3} s", seconds) }
+        else if seconds >= 0.001 { format!("{:.3} ms", seconds * 1000.0) }
+        else if seconds >= 0.000001 { format!("{:.3} µs", seconds * 1000000.0) }
+        else if seconds > 0.0 { format!("{:.3} ns", seconds * 1000000.0) }
+        else { "0".to_string() }
+    };
 }
 
 /** format_bytes
@@ -40,6 +42,18 @@ fn format_bytes(n: f64) -> String {
     let exp = (n as f64).log10().floor() as u8 / 3;
     let unit = ["", "k", "M", "G", "T", "P", "E", "Z", "Y"];
     format!("{:.3} {}", n as f64 / 1000.0f64.powi(exp as i32), unit[exp as usize])
+}
+
+/** format_speed
+ * Formats speed in x to short and easy-to-read format
+ * Parameters: Speed in x
+ * Returns: Formatted speed string
+ */
+fn format_speed(n: f64) -> String {
+    if n >= 100.0 { format!("{:.0}", n) }
+    else if n >= 10.0 { format!("{:.1}", n) }
+    else if n >= 1.0 { format!("{:.2}", n) }
+    else { format!("{:.3}", n) }
 }
 
 /** LogObj
@@ -86,10 +100,11 @@ impl LogObj {
         let mut x = String::new();
 
         if self.level == 1 {
-            x = format!("size={}B time={} bitrate={}bits/s speed={:.1}x",
+            x = format!("size={}B time={} bitrate={}bits/s speed={}x",
                 format_bytes(self.total_size as f64),
                 format_time(total_duration),
-                format_bytes(bitrate), speed
+                format_bytes(bitrate),
+                format_speed(speed)
             );
         }
         if force { eprintln!("{}    \r", x); } else { eprint!("{}    \r", x); }
