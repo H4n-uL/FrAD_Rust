@@ -1,7 +1,7 @@
 mod backend; mod fourier; mod tools; mod common;
 mod encode; mod decode; mod repair; mod header;
 
-use {encode::EncodeParameters, std::env};
+use {encode::EncodeParameters, std::{env, path::Path}};
 
 const BANNER: &str =
 "                   Fourier Analogue-in-Digital Rust Reference
@@ -18,7 +18,8 @@ const PROFILES_HELP: &str = include_str!("help/profiles.txt");
 
 /** Main function  */
 fn main() {
-    let executable = env::args().next().unwrap();
+    let exepath = env::args().next().unwrap();
+    let executable = Path::new(&exepath).file_name().unwrap().to_str().unwrap();
     let (action, metaaction, input, params) = tools::cli::parse(env::args());
 
     let loglevel = params.loglevel;
@@ -44,13 +45,13 @@ fn main() {
             else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
             else if tools::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
             else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
-            else { GENERAL_HELP }.replace("{frad}", executable.as_str())
+            else { GENERAL_HELP }.replace("{frad}", executable)
         );
         println!();
     }
     else {
         eprintln!("Fourier Analogue-in-Digital Rust Reference");
-        eprintln!("Abstract syntax: {executable} [encode|decode|repair] <input> [kwargs...]");
+        eprintln!("Abstract syntax: {exepath} [encode|decode|repair] <input> [kwargs...]");
         eprintln!("type '{executable} help' to get help.");
     }
 }
