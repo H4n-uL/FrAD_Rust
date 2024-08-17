@@ -44,24 +44,24 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (V
     let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
 
     // Subband masking and quantisation
-    let mut subband_sgnl: Vec<Vec<i64>> = vec![vec![0; freqs[0].len()]; channels as usize];
-    let mut thres: Vec<Vec<i64>> = vec![vec![0; p1tools::MOSLEN]; channels as usize];
+    let mut freqs_masked: Vec<Vec<f64>> = vec![vec![0.0; freqs[0].len()]; channels as usize];
+    let mut thresholds: Vec<Vec<f64>> = vec![vec![0.0; p1tools::MOSLEN]; channels as usize];
 
     for c in 0..channels as usize {
         let absfreqs = freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>();
         let mapping = p1tools::mapping_to_opus(&absfreqs, srate);
         let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * const_factor).collect();
-        thres[c] = thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bit_depth as i32)).round() as i64).collect();
+        thresholds[c] = thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bit_depth as i32))).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
-        let masked: Vec<i64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y).round() as i64).collect();
-        subband_sgnl[c] = masked;
+        let masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y)).collect();
+        freqs_masked[c] = masked;
     }
 
-    let freqs_flat: Vec<i64> = (0..subband_sgnl[0].len()).flat_map(|i| subband_sgnl.iter().map(move |inner| inner[i])).collect();
+    let freqs_flat: Vec<i64> = (0..freqs_masked[0].len()).flat_map(|i| freqs_masked.iter().map(move |inner| inner[i].round() as i64)).collect();
     let freqs_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(freqs_flat);
 
-    let thres_flat: Vec<i64> = (0..thres[0].len()).flat_map(|i| thres.iter().map(move |inner| inner[i])).collect();
+    let thres_flat: Vec<i64> = (0..thresholds[0].len()).flat_map(|i| thresholds.iter().map(move |inner| inner[i].round() as i64)).collect();
     let thres_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(thres_flat);
 
     let frad: Vec<u8> = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect();
@@ -96,14 +96,14 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -
     let thres_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 3.0_f64.sqrt().powi(16 - bit_depth as i32)).collect();
     let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_gol).iter().map(|x| *x as f64).collect();
 
-    let masks: Vec<Vec<f64>> = (0..channels) .map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
-    let subband_sgnl: Vec<Vec<f64>> = (0..channels) .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let thresholds: Vec<Vec<f64>> = (0..channels) .map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let freqs_masked: Vec<Vec<f64>> = (0..channels) .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
-    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; subband_sgnl[0].len()]; channels as usize];
+    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; freqs_masked[0].len()]; channels as usize];
 
     for c in 0..channels as usize {
-        freqs[c] = subband_sgnl[c].iter()
-            .zip(p1tools::mapping_from_opus(&masks[c], subband_sgnl[c].len(), srate))
+        freqs[c] = freqs_masked[c].iter()
+            .zip(p1tools::mapping_from_opus(&thresholds[c], freqs_masked[c].len(), srate))
             .map(|(x, y)| p1tools::dequant(*x) * y)
             .collect();
     }
