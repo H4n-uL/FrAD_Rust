@@ -42,9 +42,5 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
     let pcm_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], !little_endian);
     let channels = channels as usize;
 
-    let samples = pcm_flat.len() / channels;
-
-    return (0..samples)
-    .map(|smp| {(0..channels).map(|ch| pcm_flat[smp * channels + ch]).collect()})
-    .collect();
+    return pcm_flat.chunks(channels).map(|chunk| chunk.to_vec()).collect();
 }

@@ -5,6 +5,7 @@
  * Dependencies: flate2, half
  */
 
+use crate::backend::Transpose;
 use super::{super::backend::core::{dct, idct}, compact::SAMPLES_LI, tools::p1tools};
 
 use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
@@ -34,9 +35,7 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
  */
 pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
     let pcm = pad_pcm(pcm);
-    let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
-        .map(|i| pcm.iter().map(|inner| inner[i] * 2.0_f64.powf((bit_depth - 1) as f64)).collect())
-        .collect();
+    let pcm_trans: Vec<Vec<f64>> = pcm.trans().iter().map(|x| x.iter().map(|y| y * 2.0_f64.powi(bit_depth as i32 - 1)).collect()).collect();
 
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
@@ -93,11 +92,13 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -
     let thres_gol = frad[4..4+thres_len].to_vec();
     let freqs_gol = frad[4+thres_len..].to_vec();
 
-    let thres_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x| *x as f64 / 3.0_f64.sqrt().powi(16 - bit_depth as i32)).collect();
+    let thres_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).iter().map(|x|
+        *x as f64 / 3.0_f64.sqrt().powi(16 - bit_depth as i32)
+    ).collect();
     let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(freqs_gol).iter().map(|x| *x as f64).collect();
 
-    let thresholds: Vec<Vec<f64>> = (0..channels) .map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
-    let freqs_masked: Vec<Vec<f64>> = (0..channels) .map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let thresholds: Vec<Vec<f64>> = (0..channels).map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
+    let freqs_masked: Vec<Vec<f64>> = (0..channels).map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
     let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; freqs_masked[0].len()]; channels as usize];
 
@@ -108,10 +109,7 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -
             .collect();
     }
 
-    let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
-
-    let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
-        .map(|i| pcm_trans.iter().map(|inner| inner[i] / 2.0_f64.powi(bit_depth as i32 - 1)).collect())
-        .collect();
-    return pcm;
+    return freqs.iter().map(|x|
+        idct(x.to_vec()).iter().map(|y| y / 2.0_f64.powi(bit_depth as i32 - 1)).collect()
+    ).collect::<Vec<Vec<f64>>>().trans();
 }

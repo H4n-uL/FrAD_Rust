@@ -4,6 +4,7 @@
  * Function: FrAD Profile 0 encoding and decoding core
  */
 
+use crate::backend::Transpose;
 use super::super::backend::{u8pack, core::{dct, idct}};
 
 // Bit depth table
@@ -17,15 +18,10 @@ const FLOAT_DR: [i16; 6] = [5, 5, 8, 8, 11, 11];
 * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 */
 pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
-    let pcm_trans: Vec<Vec<f64>> = (0..pcm[0].len())
-        .map(|i| pcm.iter().map(|inner| inner[i]).collect())
-        .collect();
-
-    let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
-    let freqs_flat: Vec<f64> = (0..freqs[0].len())
-        .flat_map(|i| freqs.iter().map(move |inner| inner[i])).collect();
+    let freqs_flat: Vec<f64> = (0..freqs[0].len()).flat_map(|i| freqs.iter().map(move |inner| inner[i])).collect();
 
     let mut bit_depth_index = DEPTHS.iter().position(|&x| x == bit_depth).unwrap();
     while freqs_flat.iter().max_by(|x, y| x.abs().partial_cmp(&y.abs()).unwrap()).unwrap().abs()
@@ -48,14 +44,6 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian
     let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], !little_endian);
     let channels = channels as usize;
 
-    let samples = freqs_flat.len() / channels;
-    let freqs: Vec<Vec<f64>> = (0..channels)
-        .map(|ch| {(0..samples).map(|smp| freqs_flat[smp * channels + ch]).collect()})
-        .collect();
-
-    let pcm_trans: Vec<Vec<f64>> = freqs.iter().map(|x| idct(x.to_vec())).collect();
-    let pcm: Vec<Vec<f64>> = (0..pcm_trans[0].len())
-        .map(|i| pcm_trans.iter().map(|inner| inner[i]).collect())
-        .collect();
-    return pcm;
+    return freqs_flat.chunks(channels).map(|chunk| chunk.to_vec()).collect::<Vec<Vec<f64>>>().trans()
+    .into_iter().map(idct).collect::<Vec<Vec<f64>>>().trans();
 }

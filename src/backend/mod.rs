@@ -24,3 +24,17 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     }
     return result;
 }
+
+/** Transpose
+ * Trait for 2D vector transposition
+ */
+pub trait Transpose<T> {
+    fn trans(&self) -> Vec<Vec<T>> where T: Clone;
+}
+
+impl<T: Clone> Transpose<T> for Vec<Vec<T>> {
+    fn trans(&self) -> Vec<Vec<T>> {
+        if self.is_empty() || self[0].is_empty() { return Vec::new(); }
+        return (0..self[0].len()).map(|i| self.iter().map(|inner| inner[i].clone()).collect()).collect();
+    }
+}
