@@ -11,23 +11,23 @@ use std::{collections::HashMap, time::{Duration, Instant}};
  * Parameters: Time in seconds
  * Returns: Formatted time string
  */
-fn format_time(n: f64) -> String {
-    if n < 0.0 { return format!("-{}", format_time(n)); }
-    let julian = (n / 31557600.0) as u8;
-    let days = ((n % 31557600.0 / 86400.0) % 365.25) as u16;
-    let hours = ((n % 86400.0 / 3600.0) % 24.0) as u8;
-    let minutes = ((n % 3600.0 / 60.0) % 60.0) as u8;
-    let seconds = (n % 60.0) as f64;
+fn format_time(mut n: f64) -> String {
+    if n < 0.0 { return format!("-{}", format_time(-n)); }
+    
+    let julian = (n / 31557600.0) as u16; n = n % 31557600.0;
+    let days = (n / 86400.0) as u16; n = n % 86400.0;
+    let hours = (n / 3600.0) as u8; n = n % 3600.0;
+    let minutes = (n / 60.0) as u8; n = n % 60.0;
 
     return {
-        if julian > 0 { format!("J{}.{:03}:{:02}:{:02}:{:06.3}", julian, days, hours, minutes, seconds) }
-        else if days > 0 { format!("{}:{:02}:{:02}:{:06.3}", days, hours, minutes, seconds) }
-        else if hours > 0 { format!("{}:{:02}:{:06.3}", hours, minutes, seconds) }
-        else if minutes > 0 { format!("{}:{:06.3}", minutes, seconds) }
-        else if seconds >= 1.0 { format!("{:.3} s", seconds) }
-        else if seconds >= 0.001 { format!("{:.3} ms", seconds * 1000.0) }
-        else if seconds >= 0.000001 { format!("{:.3} µs", seconds * 1000000.0) }
-        else if seconds > 0.0 { format!("{:.3} ns", seconds * 1000000.0) }
+        if julian > 0 { format!("J{}.{:03}:{:02}:{:02}:{:06.3}", julian, days, hours, minutes, n) }
+        else if days > 0 { format!("{}:{:02}:{:02}:{:06.3}", days, hours, minutes, n) }
+        else if hours > 0 { format!("{}:{:02}:{:06.3}", hours, minutes, n) }
+        else if minutes > 0 { format!("{}:{:06.3}", minutes, n) }
+        else if n >= 1.0 { format!("{:.3} s", n) }
+        else if n >= 0.001 { format!("{:.3} ms", n * 1000.0) }
+        else if n >= 0.000001 { format!("{:.3} µs", n * 1000000.0) }
+        else if n > 0.0 { format!("{:.3} ns", n * 1000000000.0) }
         else { "0".to_string() }
     };
 }

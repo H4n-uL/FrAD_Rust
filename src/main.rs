@@ -11,6 +11,7 @@ const BANNER: &str =
 const GENERAL_HELP: &str = include_str!("help/general.txt");
 const ENCODE_HELP: &str = include_str!("help/encode.txt");
 const DECODE_HELP: &str = include_str!("help/decode.txt");
+const PLAY_HELP: &str = include_str!("help/play.txt");
 const REPAIR_HELP: &str = include_str!("help/repair.txt");
 const METADATA_HELP: &str = include_str!("help/metadata.txt");
 const JSONMETA_HELP: &str = include_str!("help/jsonmeta.txt");
@@ -27,7 +28,8 @@ fn main() {
         let encparam = EncodeParameters::from_cli(input, params);
         encode::encode(encparam, loglevel);
     }
-    else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
+    else if tools::cli::DECODE_OPT.contains(&action.as_str())
+        || tools::cli::PLAY_OPT.contains(&action.as_str()) {
         decode::decode(input, params, loglevel);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
@@ -39,9 +41,10 @@ fn main() {
     else if tools::cli::HELP_OPT.contains(&action.as_str()) {
         println!("{}", BANNER);
         println!("{}",
-                 if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
+            if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
             else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
             else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
+            else if tools::cli::PLAY_OPT.contains(&input.as_str()) { PLAY_HELP }
             else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
             else if tools::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
             else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }

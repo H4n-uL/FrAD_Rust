@@ -8,6 +8,7 @@ use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
     fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
+use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 
 /** overlap
  * Overlaps the current frame with the overlap fragment
@@ -38,6 +39,7 @@ fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASF
  * Returns: None
  */
 fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat) {
+    if pcm.is_empty() { return; }
     let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
     let pcm_bytes: Vec<u8> = pcm_flat.iter().flat_map(|x| f64_to_any(*x, fmt)).collect();
     file.write_all(&pcm_bytes)
@@ -46,12 +48,27 @@ fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat) {
     );
 }
 
+/** flush_play
+ * Flushes the PCM data to the playback sink
+ * Parameters: Sink, PCM data, Sample rate
+ * Returns: None
+ */
+fn flush_play(sink: &mut Sink, pcm: Vec<Vec<f64>>, srate: u32) {
+    if pcm.is_empty() { return; }
+    let source = SamplesBuffer::new(
+        pcm[0].len() as u16,
+        srate,
+        pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
+    );
+    sink.append(source);
+}
+
 /** decode
  * Decodes any found FrAD frames in the input file to f64be PCM
  * Parameters: Input file, CLI parameters
  * Returns: Decoded PCM on File or stdout
  */
-pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
+pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     let mut wfile = params.output;
     let fix_error = params.enable_ecc;
     if rfile.is_empty() { panic!("Input file must be given"); }
@@ -84,9 +101,14 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         }
     }
     let mut no: u32 = 0;
+    let play = params.play;
+
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let mut sink = Sink::try_new(&stream_handle).unwrap();
+    sink.set_speed(params.speed as f32);
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
-    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
+    let mut writefile: Box<dyn Write> = if !wpipe && !play { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
     let mut asfh = ASFH::new();
 
     let (mut head, mut overlap_fragment) = (Vec::new(), Vec::new());
@@ -94,29 +116,22 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
     let (mut srate, mut channels) = (0u32, 0i16);
     let pcm_fmt = params.pcm;
 
+    if play { loglevel = 0; }
     let mut log = LogObj::new(loglevel, 0.5);
 
     loop { // Main decode loop
         // 1. Reading the header
-        if head.is_empty() {
-            let mut buf = vec![0u8; 4];
-            let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 {
-                log.update(0, overlap_fragment.len(), asfh.srate);
-                flush(&mut writefile, overlap_fragment.clone(), &pcm_fmt); break;
-            }
-            head = buf.to_vec();
-        }
-        // all the way until hitting the header or EOF
         if head != common::FRM_SIGN {
-            let mut buf = vec![0u8; 1];
+            let mut buf = vec![0u8; if head.is_empty() { 4 } else { 1 }];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
                 log.update(0, overlap_fragment.len(), asfh.srate);
-                flush(&mut writefile, overlap_fragment.clone(), &pcm_fmt); break;
+                if play { flush_play(&mut sink, overlap_fragment, srate); }
+                else { flush(&mut writefile, overlap_fragment, &pcm_fmt); }
+                break;
             }
-            head.extend(buf);
-            head = head[1..].to_vec();
+            if head.is_empty() { head = buf.to_vec(); }
+            else { head = head.iter().chain(buf.iter()).skip(1).cloned().collect(); }
             continue;
         }
         // 2. Reading the frame
@@ -128,11 +143,12 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
 
         // 3.5. Checking if ASFH info has changed
         if srate != asfh.srate || channels != asfh.channels {
-            eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate);
+            if !play { eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate); }
             if srate != 0 || channels != 0 {
-                flush(&mut writefile, overlap_fragment, &pcm_fmt); // flush
+                if play { flush_play(&mut sink, overlap_fragment, srate); }
+                else { flush(&mut writefile, overlap_fragment, &pcm_fmt); } // flush
                 let name = format!("{}.{}.pcm", wfile, no);
-                writefile = if !wpipe { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
+                writefile = if !wpipe && !play { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
             (srate, channels, overlap_fragment, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
         }
@@ -156,10 +172,12 @@ pub fn decode(rfile: String, params: cli::CliParams, loglevel: u8) {
         (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
         let samples = pcm.len();
         // 7. Writing to output
-        flush(&mut writefile, pcm, &pcm_fmt);
+        if play { flush_play(&mut sink, pcm, srate); }
+        else { flush(&mut writefile, pcm, &pcm_fmt); }
         head = Vec::new();
 
         log.update(asfh.total_bytes, samples, asfh.srate); log.logging(false);
     }
     log.logging(true);
+    if play { sink.sleep_until_end(); }
 }

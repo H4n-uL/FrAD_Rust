@@ -1,0 +1,15 @@
+------------------------------------- Play -------------------------------------
+
+Play FrAD files, not decoding to any other format.
+
+Usage: fourier play <path/to/audio.frad> [kwargs...]
+
+Options:
+
+    --ecc
+        Check and fix errors (default: false, alias: e, enable-ecc)
+
+    --keys <key>
+        Keys for playback, exclusive with --speed (alias: k, key)
+    --speed <float>
+        Playback speed, exclusive with --keys (alias: spd)

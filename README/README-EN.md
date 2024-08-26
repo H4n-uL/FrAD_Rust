@@ -64,10 +64,13 @@ Metadata JSON
 
 ### Cargo crates
 
-1. flate2
-2. half
-3. libsoxr
-4. rustfft
+1. base64
+2. flate2
+3. half
+4. rodio
+5. rustfft
+6. serde_json
+7. tempfile
 
 ## How to contribute
 

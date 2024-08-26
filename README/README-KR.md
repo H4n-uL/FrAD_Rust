@@ -62,10 +62,13 @@ export PATH=/path/to/bin:$PATH
 
 ### Cargo 크레이트
 
-1. flate2
-2. half
-3. libsoxr
-4. rustfft
+1. base64
+2. flate2
+3. half
+4. rodio
+5. rustfft
+6. serde_json
+7. tempfile
 
 ## 기여 방법
 
