@@ -4,7 +4,7 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{common, fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX},
+use crate::{common, fourier::{self, profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX},
     tools::{asfh::ASFH, cli, ecc, head, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
@@ -184,12 +184,7 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         let fsize: u32 = frame.len() as u32;
 
         // 4. Encoding
-        if !(
-            profile0::DEPTHS.contains(&encparam.bit_depth) ||
-            profile1::DEPTHS.contains(&encparam.bit_depth) ||
-            profile4::DEPTHS.contains(&encparam.bit_depth)
-        ) { panic!("Invalid bit depth"); }
-
+        if !fourier::BIT_DEPTHS[encparam.profile as usize].contains(&encparam.bit_depth) { panic!("Invalid bit depth"); }
         let (mut frad, bit_ind, chnl) = match encparam.profile {
             1 => profile1::analogue(frame, encparam.bit_depth, encparam.srate, encparam.loss_level),
             4 => profile4::analogue(frame, encparam.bit_depth, encparam.little_endian),

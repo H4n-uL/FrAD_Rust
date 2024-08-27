@@ -12,7 +12,7 @@ use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
 use std::io::prelude::*;
 
 // Bit depth table
-pub const DEPTHS: [i16; 7] = [8, 12, 16, 24, 32, 48, 64];
+pub const DEPTHS: [i16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
 
 /** pad_pcm
  * Pads the PCM to the nearest sample count greater than the original

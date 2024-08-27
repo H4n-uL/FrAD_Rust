@@ -7,9 +7,9 @@
 use super::super::backend::u8pack;
 
 // Bit depth table
-pub const DEPTHS: [i16; 6] = [12, 16, 24, 32, 48, 64];
+pub const DEPTHS: [i16; 8] = [12, 16, 24, 32, 48, 64, 128, 0];
 // Dynamic ranges for preventing overflow
-const FLOAT_DR: [i16; 6] = [5, 5, 8, 8, 11, 11];
+const FLOAT_DR: [i16; 8] = [5, 5, 8, 8, 11, 11, 15, 0];
 
 /** analogue
  * Encodes PCM to FrAD

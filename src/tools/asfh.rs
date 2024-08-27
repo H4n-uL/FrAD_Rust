@@ -66,6 +66,7 @@ fn decode_css(css: Vec<u8>) -> (i16, u32, u32) {
 /** ASFH
  * Audio Stream Frame Header
  */
+#[derive(Clone, Copy)]
 pub struct ASFH {
     // Audio Stream Frame Header
     pub total_bytes: u128,
@@ -106,6 +107,11 @@ impl ASFH {
             crc32: [0; 4],
             crc16: [0; 2],
         }
+    }
+
+    pub fn eq(&self, other: &ASFH) -> bool {
+        return self.profile == other.profile && self.bit_depth == other.bit_depth &&
+            self.channels == other.channels && self.srate == other.srate && self.olap == other.olap;
     }
 
     /** write_vec

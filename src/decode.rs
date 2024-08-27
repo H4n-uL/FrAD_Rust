@@ -5,7 +5,7 @@
  */
 
 use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
-    fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
+    fourier::{self, profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS}},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
@@ -109,11 +109,9 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe && !play { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
-    let mut asfh = ASFH::new();
+    let (mut asfh, mut info) = (ASFH::new(), ASFH::new());
 
     let (mut head, mut overlap_fragment) = (Vec::new(), Vec::new());
-
-    let (mut srate, mut channels) = (0u32, 0i16);
     let pcm_fmt = params.pcm;
 
     if play { loglevel = 0; }
@@ -126,7 +124,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
                 log.update(0, overlap_fragment.len(), asfh.srate);
-                if play { flush_play(&mut sink, overlap_fragment, srate); }
+                if play { flush_play(&mut sink, overlap_fragment, asfh.srate); }
                 else { flush(&mut writefile, overlap_fragment, &pcm_fmt); }
                 break;
             }
@@ -142,15 +140,22 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         let _ = common::read_exact(&mut readfile, &mut frad);
 
         // 3.5. Checking if ASFH info has changed
-        if srate != asfh.srate || channels != asfh.channels {
-            if !play { eprintln!("Track {}: {} channel{}, {} Hz", no, asfh.channels, if asfh.channels > 1 { "s" } else { "" }, asfh.srate); }
-            if srate != 0 || channels != 0 {
-                if play { flush_play(&mut sink, overlap_fragment, srate); }
+        if !asfh.eq(&info) {
+            if no != 0 { log.logging(true); }
+            if !play {
+                eprintln!("Track {}: Profile {}", no, asfh.profile);
+                eprintln!("{}b@{} Hz / {} channel{}",
+                    fourier::BIT_DEPTHS[asfh.profile as usize][asfh.bit_depth as usize],
+                    asfh.srate, asfh.channels, if asfh.channels > 1 { "s" } else { "" }
+                );
+            }
+            if info.srate != 0 || info.channels != 0 {
+                if play { flush_play(&mut sink, overlap_fragment, info.srate); }
                 else { flush(&mut writefile, overlap_fragment, &pcm_fmt); } // flush
                 let name = format!("{}.{}.pcm", wfile, no);
                 writefile = if !wpipe && !play { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
-            (srate, channels, overlap_fragment, no) = (asfh.srate, asfh.channels, Vec::new(), no + 1); // and create new file
+            (info, overlap_fragment, no) = (asfh, Vec::new(), no + 1); // and create new file
         }
 
         // 4. Fixing errors
@@ -172,7 +177,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
         let samples = pcm.len();
         // 7. Writing to output
-        if play { flush_play(&mut sink, pcm, srate); }
+        if play { flush_play(&mut sink, pcm, asfh.srate); }
         else { flush(&mut writefile, pcm, &pcm_fmt); }
         head = Vec::new();
 
