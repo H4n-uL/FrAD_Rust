@@ -131,7 +131,8 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
 
         // 2.5. Force flush
         if force_flush {
-            flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
+            flush(play, &mut writefile, &mut sink, overlap_fragment.clone(), &pcm_fmt, asfh.srate);
+            log.update(asfh.total_bytes, overlap_fragment.len(), asfh.srate);
             overlap_fragment = Vec::new(); continue;
         }
 
@@ -177,7 +178,6 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         let samples = pcm.len();
         // 7. Writing to output
         flush(play, &mut writefile, &mut sink, pcm, &pcm_fmt, asfh.srate);
-
         log.update(asfh.total_bytes, samples, asfh.srate); log.logging(false);
     }
     log.logging(true);
