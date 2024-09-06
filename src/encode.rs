@@ -113,8 +113,6 @@ impl EncodeParameters {
  * Returns: Overlapped frame, Next overlap fragment
  */
 fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u16, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    let olap = if olap > 0 { olap.max(2).min(256) } else { 0 };
-
     if !overlap_fragment.is_empty() {
         let mut nframe = Vec::new();
         nframe.extend(overlap_fragment.iter().cloned());
@@ -123,7 +121,8 @@ fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u16,
     }
 
     let mut next_overlap = Vec::new();
-    if COMPACT.contains(&profile) && olap > 0 {
+    if COMPACT.contains(&profile) && olap > 1 {
+        let olap = olap.max(2).min(256);
         let cutoff = (frame.len() * (olap as usize - 1)) / olap as usize;
         next_overlap = frame[cutoff..].to_vec();
     }
