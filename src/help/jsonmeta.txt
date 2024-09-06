@@ -13,7 +13,7 @@ Format:
     {
         "key": "metadata key",
         "type": "base64",
-        "value": "base64 value(encoded in binary)"
+        "value": "YmluYXJ5IHZhbHVlIChlbmNvZGVkIGluIGJhc2U2NCk="
     }
 ]
 
