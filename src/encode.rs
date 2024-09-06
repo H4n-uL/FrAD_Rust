@@ -18,7 +18,7 @@ pub struct EncodeParameters {
     pcmfmt: common::PCMFormat,
     enable_ecc: bool, ecc_ratio: [u8; 2],
     frame_size: u32, little_endian: bool,
-    profile: u8, loss_level: u8, overlap: u8,
+    profile: u8, loss_level: u8, overlap: u16,
     metadata: Vec<(String, Vec<u8>)>,
     image: Vec<u8>,
 }
@@ -112,8 +112,8 @@ impl EncodeParameters {
  * Parameters: Current frame, Overlap fragment, Overlap rate, Profile
  * Returns: Overlapped frame, Next overlap fragment
  */
-fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u8, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    let olap = if olap > 0 { olap.max(2) } else { 0 };
+fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, olap: u16, profile: u8) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
+    let olap = if olap > 0 { olap.max(2).min(256) } else { 0 };
 
     if !overlap_fragment.is_empty() {
         let mut nframe = Vec::new();
@@ -167,7 +167,10 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
         let readlen = common::read_exact(&mut readfile, &mut pcm_buf);
-        if readlen == 0 { break; }
+        if readlen == 0 {
+            if COMPACT.contains(&asfh.profile) { asfh.flush_compact(&mut writefile); }
+            break;
+        }
 
         // 3. RAW PCM bitstream to f64 PCM
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(encparam.pcmfmt.bit_depth() / 8)
@@ -201,11 +204,7 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         (asfh.ecc, asfh.ecc_ratio) = (encparam.enable_ecc, encparam.ecc_ratio);
         // i rly wish i dont need to do this
 
-        let frad: Vec<u8> = asfh.write_vec(frad);
-        writefile.write_all(&frad).unwrap_or_else(|err| {
-            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
-            else { panic!("Error writing to stdout: {}", err); }
-        });
+        asfh.write(&mut writefile, frad);
 
         log.update(asfh.total_bytes, samples, asfh.srate);
         log.logging(false);

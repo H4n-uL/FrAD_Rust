@@ -35,32 +35,26 @@ fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASF
 
 /** flush
  * Flushes the PCM data to the output
+ * Parameters: Play flag, Output file/sink, PCM data, PCM format, Sample rate
  * Parameters: Output file, PCM data
  * Returns: None
  */
-fn flush(file: &mut Box<dyn Write>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat) {
+fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: u32) {
     if pcm.is_empty() { return; }
-    let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
-    let pcm_bytes: Vec<u8> = pcm_flat.iter().flat_map(|x| f64_to_any(*x, fmt)).collect();
-    file.write_all(&pcm_bytes)
-    .unwrap_or_else(|err|
-        if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
-    );
-}
-
-/** flush_play
- * Flushes the PCM data to the playback sink
- * Parameters: Sink, PCM data, Sample rate
- * Returns: None
- */
-fn flush_play(sink: &mut Sink, pcm: Vec<Vec<f64>>, srate: u32) {
-    if pcm.is_empty() { return; }
-    let source = SamplesBuffer::new(
-        pcm[0].len() as u16,
-        srate,
-        pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
-    );
-    sink.append(source);
+    if isplay {
+        sink.append(SamplesBuffer::new(
+            pcm[0].len() as u16,
+            srate,
+            pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
+        ));
+    }
+    else {
+        let pcm_bytes: Vec<u8> = pcm.into_iter().flatten().flat_map(|x| f64_to_any(x, fmt)).collect();
+        file.write_all(&pcm_bytes)
+        .unwrap_or_else(|err|
+            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
+        );
+    }
 }
 
 /** decode
@@ -124,8 +118,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
                 log.update(0, overlap_fragment.len(), asfh.srate);
-                if play { flush_play(&mut sink, overlap_fragment, asfh.srate); }
-                else { flush(&mut writefile, overlap_fragment, &pcm_fmt); }
+                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
                 break;
             }
             if head.is_empty() { head = buf.to_vec(); }
@@ -133,7 +126,14 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
             continue;
         }
         // 2. Reading the frame
+        head = Vec::new();
         asfh.update(&mut readfile);
+
+        // 2.5. Flushing frames
+        if asfh.flush {
+            flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
+            overlap_fragment = Vec::new(); continue;
+        }
 
         // 3. Reading the frame data
         let mut frad = vec![0u8; asfh.frmbytes as usize];
@@ -150,8 +150,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
                 );
             }
             if info.srate != 0 || info.channels != 0 {
-                if play { flush_play(&mut sink, overlap_fragment, info.srate); }
-                else { flush(&mut writefile, overlap_fragment, &pcm_fmt); } // flush
+                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate); // flush
                 let name = format!("{}.{}.pcm", wfile, no);
                 writefile = if !wpipe && !play { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
@@ -177,9 +176,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
         let samples = pcm.len();
         // 7. Writing to output
-        if play { flush_play(&mut sink, pcm, asfh.srate); }
-        else { flush(&mut writefile, pcm, &pcm_fmt); }
-        head = Vec::new();
+        flush(play, &mut writefile, &mut sink, pcm, &pcm_fmt, asfh.srate);
 
         log.update(asfh.total_bytes, samples, asfh.srate); log.logging(false);
     }

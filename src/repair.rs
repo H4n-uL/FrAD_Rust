@@ -69,8 +69,11 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
             continue;
         }
         // 2. Reading the frame
+        head = Vec::new();
         asfh.update(&mut readfile);
-        let samples = if asfh.olap < 2 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
+        if asfh.flush { asfh.flush_compact(&mut writefile); continue; }
+
+        let samples = if asfh.olap == 0 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
         (asfh.fsize as usize * (asfh.olap as usize - 1)) / asfh.olap as usize };
         olap_fragment_len = asfh.fsize as usize - samples;
 
@@ -91,9 +94,7 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
 
         // 6. Writing to file
         (asfh.ecc, asfh.ecc_ratio) = (true, ecc_ratio);
-        let frad: Vec<u8> = asfh.write_vec(frad);
-        writefile.write_all(frad.as_slice()).unwrap();
-        head = Vec::new();
+        asfh.write(&mut writefile, frad);
 
         log.update(asfh.total_bytes, samples, asfh.srate);
         log.logging(false);

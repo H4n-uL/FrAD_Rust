@@ -36,7 +36,7 @@ pub struct CliParams {
     pub frame_size: u32,
     pub little_endian: bool,
     pub profile: u8,
-    pub overlap: u8,
+    pub overlap: u16,
     pub losslevel: u8,
     pub enable_ecc: bool,
     pub ecc_ratio: [u8; 2],

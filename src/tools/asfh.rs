@@ -5,7 +5,7 @@
  */
 
 use crate::{common::{crc16_ansi, crc32, read_exact, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
-use std::io::Read;
+use std::{io::{ErrorKind, Read, Write}, process::exit};
 
 /** encode_pfb
  * Encodes PFloat byte (containing necessary info for the frame)
@@ -86,8 +86,10 @@ pub struct ASFH {
     pub crc32: [u8; 4],
 
     // Profile 1
-    pub olap: u8,
+    pub olap: u16,
     pub crc16: [u8; 2],
+
+    pub flush: bool,
 }
 
 impl ASFH {
@@ -106,6 +108,7 @@ impl ASFH {
             olap: 0,
             crc32: [0; 4],
             crc16: [0; 2],
+            flush: false,
         }
     }
 
@@ -114,11 +117,11 @@ impl ASFH {
             self.channels == other.channels && self.srate == other.srate && self.olap == other.olap;
     }
 
-    /** write_vec
+    /** write
      * Makes a frame from audio frame and metadata
-     * Parameters: Audio frame
+     * Parameters: File, Audio frame
      */
-    pub fn write_vec(&mut self, frad: Vec<u8>) -> Vec<u8> {
+    pub fn write(&mut self, file: &mut Box<dyn Write>, frad: Vec<u8>) {
         let mut fhead = FRM_SIGN.to_vec();
 
         fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
@@ -126,7 +129,7 @@ impl ASFH {
 
         if COMPACT.contains(&self.profile) {
             fhead.extend(encode_css(self.channels, self.srate, self.fsize));
-            fhead.push(self.olap);
+            fhead.push((self.olap.max(1) - 1) as u8);
             if self.ecc {
                 fhead.extend(self.ecc_ratio.to_vec());
                 fhead.extend(crc16_ansi(&frad).to_vec());
@@ -143,7 +146,25 @@ impl ASFH {
 
         let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
         self.total_bytes = frad.len() as u128;
-        return frad;
+
+        file.write_all(&frad).unwrap_or_else(|err| {
+            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
+            else { panic!("Error writing to stdout: {}", err); }
+        });
+    }
+
+    pub fn flush_compact(&mut self, file: &mut Box<dyn Write>) {
+        let mut fhead = FRM_SIGN.to_vec();
+        fhead.extend(&[0u8; 4]);
+        fhead.push(encode_pfb(self.profile, false, self.endian, self.bit_depth)[0]);
+        fhead.extend([0u8; 3].to_vec());
+
+        self.total_bytes = fhead.len() as u128;
+
+        file.write_all(&fhead).unwrap_or_else(|err| {
+            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
+            else { panic!("Error writing to stdout: {}", err); }
+        });
     }
 
     /** update
@@ -162,8 +183,10 @@ impl ASFH {
         if COMPACT.contains(&self.profile) {
             buf = vec![0u8; 3]; let _ = read_exact(file, &mut buf);
             fhead.extend(buf);
-            (self.channels, self.srate, self.fsize) = decode_css(fhead[0x9..0xb].to_vec());
-            self.olap = fhead[0xb];
+            if fhead[0x9..0xb] == [0u8; 2] { self.flush = true; }
+            else { self.flush = false; (self.channels, self.srate, self.fsize) = decode_css(fhead[0x9..0xb].to_vec()); }
+            self.olap = fhead[0xb] as u16 + 1;
+            if self.olap == 1 { self.olap = 0; }
             if self.ecc {
                 buf = vec![0u8; 4]; let _ = file.read(&mut buf).unwrap();
                 fhead.extend(buf);
