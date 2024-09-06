@@ -74,20 +74,24 @@ pub struct ASFH {
     pub total_bytes: u128,
     pub frmbytes: u64,
 
-    // PFloat byte
-    pub profile: u8,
-    pub ecc: bool,
+    // Audio structure data
     pub endian: bool,
     pub bit_depth: i16,
-
-    // Profile 0
     pub channels: i16,
-    pub ecc_ratio: [u8; 2],
     pub srate: u32,
     pub fsize: u32,
+
+    // Error correction
+    pub ecc: bool,
+    pub ecc_ratio: [u8; 2],
+
+    // Profile
+    pub profile: u8,
+
+    // LOSSLESS
     pub crc32: [u8; 4],
 
-    // Profile 1
+    // COMPACT
     pub olap: u16,
     pub crc16: [u8; 2],
 }
@@ -95,19 +99,14 @@ pub struct ASFH {
 impl ASFH {
     pub fn new() -> ASFH {
         ASFH {
-            total_bytes: 0,
-            frmbytes: 0,
+            total_bytes: 0, frmbytes: 0,
+
+            endian: false, bit_depth: 0,
+            channels: 0, srate: 0, fsize: 0,
+
+            ecc: false, ecc_ratio: [0; 2],
             profile: 0,
-            ecc: false,
-            endian: false,
-            bit_depth: 0,
-            channels: 0,
-            ecc_ratio: [0; 2],
-            srate: 0,
-            fsize: 0,
-            olap: 0,
-            crc32: [0; 4],
-            crc16: [0; 2],
+            olap: 0, crc16: [0; 2], crc32: [0; 4],
         }
     }
 
