@@ -198,7 +198,6 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         (asfh.bit_depth, asfh.channels, asfh.endian, asfh.profile) = (bit_ind, chnl, encparam.little_endian, encparam.profile);
         (asfh.srate, asfh.fsize, asfh.olap) = (encparam.srate, fsize, encparam.overlap);
         (asfh.ecc, asfh.ecc_ratio) = (encparam.enable_ecc, encparam.ecc_ratio);
-        // i rly wish i dont need to do this
 
         asfh.write(&mut writefile, frad);
 
