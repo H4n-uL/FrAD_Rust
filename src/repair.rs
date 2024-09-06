@@ -11,7 +11,6 @@ use std::{fs::File, io::{Read, Write}, path::Path};
  * Repair or Apply ECC to FrAD stream
  * Parameters: Input file, CLI parameters
  * Returns: Repaired FrAD stream on File
- * Note: Pipe is not supported
  */
 pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut wfile = params.output;
@@ -70,8 +69,8 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
         }
         // 2. Reading the frame
         head = Vec::new();
-        asfh.update(&mut readfile);
-        if asfh.flush { asfh.flush_compact(&mut writefile); continue; }
+        let force_flush = asfh.update(&mut readfile);
+        if force_flush { asfh.force_flush(&mut writefile); continue; }
 
         let samples = if asfh.olap == 0 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
         (asfh.fsize as usize * (asfh.olap as usize - 1)) / asfh.olap as usize };

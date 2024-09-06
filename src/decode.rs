@@ -127,10 +127,10 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         }
         // 2. Reading the frame
         head = Vec::new();
-        asfh.update(&mut readfile);
+        let force_flush = asfh.update(&mut readfile);
 
-        // 2.5. Flushing frames
-        if asfh.flush {
+        // 2.5. Force flush
+        if force_flush {
             flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
             overlap_fragment = Vec::new(); continue;
         }

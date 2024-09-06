@@ -166,10 +166,7 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         let fbytes = rlen * encparam.channels as usize * encparam.pcmfmt.bit_depth() / 8;
         let mut pcm_buf = vec![0u8; fbytes];
         let readlen = common::read_exact(&mut readfile, &mut pcm_buf);
-        if readlen == 0 {
-            if COMPACT.contains(&asfh.profile) { asfh.flush_compact(&mut writefile); }
-            break;
-        }
+        if readlen == 0 { asfh.force_flush(&mut writefile); break; }
 
         // 3. RAW PCM bitstream to f64 PCM
         let pcm: Vec<f64> = pcm_buf[..readlen].chunks(encparam.pcmfmt.bit_depth() / 8)
