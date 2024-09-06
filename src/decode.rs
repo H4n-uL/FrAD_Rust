@@ -4,7 +4,7 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
+use crate::{backend::linspace, common::{self, f64_to_any, same_file, PCMFormat},
     fourier::{self, profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS}},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
@@ -74,7 +74,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     let mut wpipe = false;
     if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
-        if rfile == wfile { panic!("Input and output files cannot be the same"); }
+        if same_file(&rfile, &wfile) { panic!("Input and output files cannot be the same"); }
         if wfile.is_empty() {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");

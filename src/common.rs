@@ -5,7 +5,7 @@
  */
 
 use half::f16;
-use std::{fs::File, io::{Read, Write}};
+use std::{fs::{self, File}, io::{Read, Write}, path::Path};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -137,6 +137,17 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
         if total_read == 0 { break; }
         writefile.write_all(&buf[..total_read]).unwrap();
     }
+}
+
+pub fn same_file<P: AsRef<Path>>(path1: &P, path2: &P) -> bool {
+    let canon_path1 = fs::canonicalize(path1).unwrap();
+    let canon_path2 = fs::canonicalize(path2).unwrap();
+
+    #[cfg(unix)]
+    return canon_path1 == canon_path2;
+
+    #[cfg(not(unix))]
+    return canon_path1 == canon_path2;
 }
 
 /** norm_into

@@ -4,7 +4,7 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{common, fourier::{self, profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX},
+use crate::{common::{self, same_file}, fourier::{self, profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX},
     tools::{asfh::ASFH, cli, ecc, head, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
@@ -47,7 +47,7 @@ impl EncodeParameters {
         if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
         else if !Path::new(&rfile).exists() { eprintln!("Input file doesn't exist"); exit(1); }
         if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
-        else if rfile == wfile { eprintln!("Input and output files cannot be the same"); exit(1); }
+        else if same_file(&rfile, &wfile) { eprintln!("Input and output files cannot be the same"); exit(1); }
 
         if params.srate == 0 { eprintln!("Sample rate must be given"); exit(1); }
         if params.channels == 0 { eprintln!("Channel count must be given"); exit(1); }
