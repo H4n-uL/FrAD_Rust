@@ -4,11 +4,12 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{backend::linspace, common::{self, f64_to_any, same_file, PCMFormat},
+use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
     fourier::{self, profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS}},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
-use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path};
+use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
+use same_file::is_same_file;
 
 /** overlap
  * Overlaps the current frame with the overlap fragment
@@ -74,7 +75,10 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     let mut wpipe = false;
     if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
-        if same_file(&rfile, &wfile) { panic!("Input and output files cannot be the same"); }
+        match is_same_file(&rfile, &wfile) {
+            Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
+            _ => {}
+        }
         if wfile.is_empty() {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");

@@ -38,7 +38,7 @@ mv target/release/frad /path/to/bin/frad
 export PATH=/path/to/bin:$PATH
 ```
 
-**警告： `--release`なしでビルドすると実行速度が極端に遅くなるので、必ず`--release`と一緒にビルドしてください。**
+**警告： `--release`なしでビルドすると実行速度が極端に遅くなるので、必ず `--release`と一緒にビルドしてください。**
 
 ## メタデータJSON例
 
@@ -67,8 +67,9 @@ export PATH=/path/to/bin:$PATH
 3. half
 4. rodio
 5. rustfft
-6. serde_json
-7. tempfile
+6. same_file
+7. serde_json
+8. tempfile
 
 ## 貢献方法
 

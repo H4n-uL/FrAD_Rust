@@ -4,8 +4,9 @@
  * Function: Repair or Apply ECC to FrAD stream
  */
 
-use crate::{common::{self, same_file}, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
-use std::{fs::File, io::{Read, Write}, path::Path};
+use crate::{common, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
+use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
+use same_file::is_same_file;
 
 /** repair
  * Repair or Apply ECC to FrAD stream
@@ -24,7 +25,10 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut wpipe = false;
     if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
-        if same_file(&rfile, &wfile) { panic!("Input and output files cannot be the same"); }
+        match is_same_file(&rfile, &wfile) {
+            Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
+            _ => {}
+        }
         if wfile.is_empty() {
             let wfrf = Path::new(&rfile).file_name().unwrap().to_string_lossy().split(".").map(|s| s.to_string()).collect::<Vec<String>>();
             wfile = [wfrf[..wfrf.len() - 1].join("."), "recov".to_string(), wfrf[wfrf.len() - 1].clone()].join(".");

@@ -5,7 +5,7 @@
  */
 
 use half::f16;
-use std::{fs::{self, File}, io::{Read, Write}, os::unix::fs::MetadataExt, path::Path};
+use std::{fs::File, io::{Read, Write}};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -136,23 +136,6 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
         }
         if total_read == 0 { break; }
         writefile.write_all(&buf[..total_read]).unwrap();
-    }
-}
-
-pub fn same_file<P: AsRef<Path>>(path1: &P, path2: &P) -> bool {
-    if !(path1.as_ref().exists() && path2.as_ref().exists()) { return false; }
-
-    let (meta1, meta2) = (fs::metadata(path1).unwrap(), fs::metadata(path2).unwrap());
-
-    if cfg!(unix) {
-        let inode1 = (meta1.dev(), meta1.ino());
-        let inode2 = (meta2.dev(), meta2.ino());
-        return inode1 == inode2;
-    }
-    else {
-        let canon_path1 = fs::canonicalize(path1).unwrap();
-        let canon_path2 = fs::canonicalize(path2).unwrap();
-        return canon_path1 == canon_path2;
     }
 }
 

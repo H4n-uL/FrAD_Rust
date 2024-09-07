@@ -69,8 +69,9 @@ Metadata JSON
 3. half
 4. rodio
 5. rustfft
-6. serde_json
-7. tempfile
+6. same_file
+7. serde_json
+8. tempfile
 
 ## How to contribute
 
