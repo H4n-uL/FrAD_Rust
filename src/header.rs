@@ -53,7 +53,7 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
     }
 
     let mut temp = NamedTempFile::new().unwrap();
-    move_all(&mut rfile, temp.as_file_mut(), 1048576);
+    move_all(&mut rfile, temp.as_file_mut(), 16777216);
 
     let mut img = Vec::new();
     if !params.image_path.is_empty() {
@@ -92,5 +92,5 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
 
     temp.seek(SeekFrom::Start(0)).unwrap();
 
-    move_all(temp.as_file_mut(), &mut wfile, 1048576);
+    move_all(temp.as_file_mut(), &mut wfile, 16777216);
 }
