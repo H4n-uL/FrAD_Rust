@@ -94,7 +94,7 @@ impl Decode {
      * Parameters: Input stream
      * Returns: Decoded PCM, Sample rate, Channels, Critical info modification flag
      */
-    pub fn process(&mut self, stream: Vec<u8>) -> (Vec<Vec<f64>>, u32, i16, bool) {
+    pub fn process(&mut self, stream: Vec<u8>) -> (Vec<Vec<f64>>, u32, bool) {
         self.buffer.extend(stream);
         let mut ret = Vec::new();
 
@@ -102,21 +102,8 @@ impl Decode {
             // If every parameter in the ASFH struct is set,
             /* 1. Decoding FrAD Frame */
             if self.asfh.all_set {
-                // 1.0. Check if the frame is ready to be decoded
-
-                // 1.0.1. If the buffer is not enough to decode the frame, break
+                // 1.0. If the buffer is not enough to decode the frame, break
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
-
-                // 1.0.2. If any critical parameter has changed, flush the overlap buffer
-                if !self.asfh.criteq(&self.info) {
-                    if self.info.srate != 0 || self.info.channels != 0 { // If the info struct is not empty
-                        ret.extend(self.flush()); // Flush the overlap buffer
-                        let (srate, chnl) = (self.info.srate, self.info.channels); // Get previous info
-                        self.info = self.asfh.clone(); // Update the info struct
-                        return (ret, srate, chnl, true); // and return
-                    }
-                    self.info = self.asfh.clone(); // else, Update the info struct and continue
-                }
 
                 // 1.1. Split out the frame data
                 let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
@@ -171,16 +158,27 @@ impl Decode {
 
                 // 2.3. Check header parsing result
                 match force_flush {
-                    // 1. If header is complete and not forced to flush, continue
-                    Ok(false) => continue,
-                    // 2. If header is complete and forced to flush, flush and return
+                    // 2.3.1. If header is complete and not forced to flush, continue
+                    Ok(false) => {
+                        // 2.3.1.1. If any critical parameter has changed, flush the overlap buffer
+                        if !self.asfh.criteq(&self.info) {
+                            if self.info.srate != 0 || self.info.channels != 0 { // If the info struct is not empty
+                                ret.extend(self.flush()); // Flush the overlap buffer
+                                let srate = self.info.srate; // Save the sample rate
+                                self.info = self.asfh.clone(); // Update the info struct
+                                return (ret, srate, true); // and return
+                            }
+                            self.info = self.asfh.clone(); // else, Update the info struct and continue
+                        }
+                    },
+                    // 2.3.2. If header is complete and forced to flush, flush and return
                     Ok(true) => { ret.extend(self.flush()); break; },
-                    // 3. If header is incomplete, return
+                    // 2.3.3. If header is incomplete, return
                     Err(_) => break,
                 }
             }
         }
-        return (ret, self.asfh.srate, self.asfh.channels, false);
+        return (ret, self.asfh.srate, false);
     }
 
     /** flush
@@ -254,22 +252,21 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     if play { loglevel = 0; }
     let mut decoder = Decode::new(params.enable_ecc, loglevel);
     let pcm_fmt = params.pcm;
-    let mut srate: u32 = 0;
 
     let mut no = 0;
     loop {
         let mut buf = vec![0u8; 32768];
         let readlen = common::read_exact(&mut readfile, &mut buf);
         if readlen == 0 && decoder.buffer.is_empty() { break; }
-        let (pcm, critical_info_modified): (Vec<Vec<f64>>, bool);
-        (pcm, srate, _, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
+        let (pcm, srate, critical_info_modified): (Vec<Vec<f64>>, u32, bool);
+        (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
 
         if critical_info_modified && !(wpipe || play) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
     }
-    write(play, &mut writefile, &mut sink, decoder.flush(), &pcm_fmt, &srate);
+    write(play, &mut writefile, &mut sink, decoder.flush(), &pcm_fmt, &decoder.asfh.srate);
 
     decoder.log.logging(true);
     if play { sink.sleep_until_end(); }
