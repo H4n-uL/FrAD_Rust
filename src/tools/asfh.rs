@@ -4,7 +4,7 @@
  * Function: Audio Stream Frame Header tools
  */
 
-use crate::{common::{crc16_ansi, crc32, read_exact, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
+use crate::{backend::SplitFront, common::{crc16_ansi, crc32, read_exact, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
 use std::{io::{ErrorKind, Read, Write}, process::exit};
 
 /** encode_pfb
@@ -73,9 +73,9 @@ pub struct ASFH {
     // Audio Stream Frame Header
     pub total_bytes: u128,
     pub frmbytes: u64,
-    // pub buffer: Vec<u8>,
-    // pub parse_complete: bool,
-    // pub header_bytes: usize,
+    pub buffer: Vec<u8>,
+    pub all_set: bool,
+    pub header_bytes: usize,
 
     // Audio structure data
     pub endian: bool,
@@ -99,8 +99,8 @@ pub struct ASFH {
 impl ASFH {
     pub fn new() -> ASFH {
         ASFH {
-            total_bytes: 0, frmbytes: 0, // buffer: Vec::new(),
-            // header_bytes: 0, parse_complete: false,
+            total_bytes: 0, frmbytes: 0, buffer: Vec::new(),
+            header_bytes: 0, all_set: false,
 
             endian: false, bit_depth: 0,
             channels: 0, srate: 0, fsize: 0,
@@ -111,9 +111,8 @@ impl ASFH {
         }
     }
 
-    pub fn eq(&self, other: &ASFH) -> bool {
-        return self.profile == other.profile && self.bit_depth == other.bit_depth &&
-            self.channels == other.channels && self.srate == other.srate && self.olap == other.olap;
+    pub fn criteq(&self, other: &ASFH) -> bool {
+        return self.channels == other.channels && self.srate == other.srate;
     }
 
     /** write
@@ -225,67 +224,73 @@ impl ASFH {
         return false;
     }
 
-    // pub fn update_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, bool> {
-    //     if self.buffer.is_empty() { self.buffer = FRM_SIGN.to_vec(); }
+    pub fn read_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, bool> {
 
-    //     if self.buffer.len() < 9 {
-    //         if buffer.len() < 9 - self.buffer.len() { return Err(false); }
-    //         self.buffer.extend(buffer.split_out(9 - self.buffer.len()));
+        if self.buffer.len() < 9 { // If the buffer is not complete
+            self.buffer.extend(buffer.split_front(9 - self.buffer.len())); // Fill the buffer
+            if self.buffer.len() < 9 { return Err(false); } // if not enough, return Err
+            self.header_bytes = self.buffer.len(); // if enough, set total header bytes
 
-    //         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
-    //         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
-    //     }
+            self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
+            (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
+        }
 
-    //     if COMPACT.contains(&self.profile) {
-    //         if self.buffer.len() < 12 {
-    //             if buffer.len() < 12 - self.buffer.len() { return Err(false); }
-    //             self.buffer.extend(buffer.split_out(12 - self.buffer.len()));
-    //             self.header_bytes = self.buffer.len();
+        if COMPACT.contains(&self.profile) {
+            if self.buffer.len() < 12 {
+                self.buffer.extend(buffer.split_front(12 - self.buffer.len()));
+                if self.buffer.len() < 12 { return Err(false); }
+                self.header_bytes = self.buffer.len();
 
-    //             let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[5..7].to_vec());
-    //             if force_flush { self.parse_complete = true; self.buffer.clear(); return Ok(true); }
+                let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
+                if force_flush { self.all_set = true; return Ok(true); }
 
-    //             self.olap = self.buffer[7] as u16;
-    //             if self.olap != 0 { self.olap += 1; }
-    //         }
-    //         if self.ecc {
-    //             if self.buffer.len() < 16 {
-    //                 if buffer.len() < 16 - self.buffer.len() { return Err(false); }
-    //                 self.buffer.extend(buffer.split_out(16 - self.buffer.len()));
-    //                 self.header_bytes = self.buffer.len();
+                self.olap = self.buffer[0xb] as u16;
+                if self.olap != 0 { self.olap += 1; }
+            }
+            if self.ecc {
+                if self.buffer.len() < 16 {
+                    self.buffer.extend(buffer.split_front(16 - self.buffer.len()));
+                    if self.buffer.len() < 16 { return Err(false); }
+                    self.header_bytes = self.buffer.len();
 
-    //                 self.ecc_ratio = [self.buffer[8], self.buffer[9]];
-    //                 self.crc16 = self.buffer[10..12].try_into().unwrap();
-    //             }
-    //         }
-    //     }
-    //     else {
-    //         if self.buffer.len() < 32 {
-    //             if buffer.len() < 32 - self.buffer.len() { return Err(false); }
-    //             self.buffer.extend(buffer.split_out(32 - self.buffer.len()));
-    //             self.header_bytes = self.buffer.len();
+                    self.ecc_ratio = [self.buffer[0xc], self.buffer[0xd]];
+                    self.crc16 = self.buffer[0xe..0x10].try_into().unwrap();
+                }
+            }
+        }
+        else {
+            if self.buffer.len() < 32 {
+                self.buffer.extend(buffer.split_front(32 - self.buffer.len()));
+                if self.buffer.len() < 32 { return Err(false); }
+                self.header_bytes = self.buffer.len();
 
-    //             self.channels = self.buffer[0x9] as i16 + 1;
-    //             self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
-    //             self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
+                self.channels = self.buffer[0x9] as i16 + 1;
+                self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
+                self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
 
-    //             self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
-    //             self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
-    //         }
-    //     }
+                self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
+                self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
+            }
+        }
 
-    //     if self.frmbytes == u32::MAX as u64 {
-    //         if self.buffer.len() < self.header_bytes + 8 {
-    //             if buffer.len() < self.header_bytes + 8 - self.buffer.len() { return Err(false); }
-    //             self.buffer.extend(buffer.split_out(self.header_bytes + 8 - self.buffer.len()));
-    //             self.header_bytes = self.buffer.len();
+        if self.frmbytes == u32::MAX as u64 {
+            if self.buffer.len() < self.header_bytes + 8 {
+                self.buffer.extend(buffer.split_front(self.header_bytes + 8 - self.buffer.len()));
+                if self.buffer.len() < self.header_bytes + 8 { return Err(false); }
+                self.header_bytes = self.buffer.len();
 
-    //             self.frmbytes = u64::from_be_bytes(self.buffer[self.header_bytes-8..].try_into().unwrap());
-    //         }
-    //     }
+                self.frmbytes = u64::from_be_bytes(self.buffer[self.buffer.len()-8..].try_into().unwrap());
+            }
+        }
 
-    //     self.parse_complete = true;
-    //     self.buffer.clear();
-    //     return Ok(false);
-    // }
+        self.total_bytes = self.header_bytes as u128 + self.frmbytes as u128;
+
+        self.all_set = true;
+        return Ok(false);
+    }
+
+    pub fn clear(&mut self) {
+        self.all_set = false;
+        self.buffer.clear();
+    }
 }

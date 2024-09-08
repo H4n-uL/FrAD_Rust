@@ -4,43 +4,20 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{backend::linspace, common::{self, f64_to_any, PCMFormat},
-    fourier::{self, profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS}},
+use crate::{backend::{linspace, SplitFront, VecPatternFind}, common::{self, f64_to_any, PCMFormat},
+    fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
     tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 use same_file::is_same_file;
 
-/** overlap
- * Overlaps the current frame with the overlap fragment
- * Parameters: Current frame, Overlap fragment, ASFH
- * Returns: Overlapped frame, Next overlap fragment
- */
-fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASFH) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
-    if !overlap_fragment.is_empty() {
-        let fade_in: Vec<f64> = linspace(0.0, 1.0, overlap_fragment.len());
-        let fade_out: Vec<f64> = linspace(1.0, 0.0, overlap_fragment.len());
-        for c in 0..asfh.channels as usize {
-            for i in 0..overlap_fragment.len() {
-                frame[i][c] = frame[i][c] * fade_in[i] + overlap_fragment[i][c] * fade_out[i];
-            }
-        }
-    }
-    let mut next_overlap = Vec::new();
-    if COMPACT.contains(&asfh.profile) && asfh.olap != 0 {
-        let olap = asfh.olap.max(2);
-        next_overlap = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
-    }
-    return (frame, next_overlap);
-}
-
-/** flush
- * Flushes the PCM data to the output
+/** write
+ * Writes PCM data to file or sink
  * Parameters: Play flag, Output file/sink, PCM data, PCM format, Sample rate
  * Parameters: Output file, PCM data
  * Returns: None
  */
-fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: &u32) {
+fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: &u32) {
     if pcm.is_empty() { return; }
     if isplay {
         sink.append(SamplesBuffer::new(
@@ -58,6 +35,172 @@ fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<
     }
 }
 
+/** Decode
+ * Struct for FrAD decoder
+ */
+pub struct Decode {
+    asfh: ASFH, info: ASFH,
+    buffer: Vec<u8>,
+    overlap_fragment: Vec<Vec<f64>>,
+    log: LogObj,
+
+    fix_error: bool,
+}
+
+impl Decode {
+    pub fn new(fix_error: bool, loglevel: u8) -> Decode {
+        Decode {
+            asfh: ASFH::new(), info: ASFH::new(),
+            buffer: Vec::new(),
+            overlap_fragment: Vec::new(),
+            log: LogObj::new(loglevel, 0.5),
+
+            fix_error,
+        }
+    }
+
+    /** overlap
+     * Apply overlap to the decoded PCM
+     * Parameters: Decoded PCM
+     * Returns: PCM with overlap applied
+     */
+    fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+        // 1. If overlap buffer not empty, apply Forward-linear overlap-add
+        if !self.overlap_fragment.is_empty() {
+            let fade_in: Vec<f64> = linspace(0.0, 1.0, self.overlap_fragment.len());
+            let fade_out: Vec<f64> = linspace(1.0, 0.0, self.overlap_fragment.len());
+            for c in 0..self.asfh.channels as usize {
+                for i in 0..self.overlap_fragment.len() {
+                    frame[i][c] = frame[i][c] * fade_in[i] + self.overlap_fragment[i][c] * fade_out[i];
+                }
+            }
+        }
+
+        // 2. if COMPACT profile and overlap is enabled, split this frame
+        let mut next_overlap = Vec::new();
+        if COMPACT.contains(&self.asfh.profile) && self.asfh.olap != 0 {
+            let olap = self.asfh.olap.max(2);
+            // return_frame         = frame[0 ~ (len*(olap-1)) / olap]
+            // new_overlap_fragment = frame[(len*(olap-1)) / olap ~ len]
+            // = [2048], olap=16 -> [1920, 128]
+            next_overlap = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
+        }
+        self.overlap_fragment = next_overlap;
+        return frame;
+    }
+
+    /** process
+     * Process the input stream and decode the FrAD frames
+     * Parameters: Input stream
+     * Returns: Decoded PCM, Sample rate, Channels, Critical info modification flag
+     */
+    pub fn process(&mut self, stream: Vec<u8>) -> (Vec<Vec<f64>>, u32, i16, bool) {
+        self.buffer.extend(stream);
+        let mut ret = Vec::new();
+
+        loop {
+            // If every parameter in the ASFH struct is set,
+            /* 1. Decoding FrAD Frame */
+            if self.asfh.all_set {
+                // 1.0. Check if the frame is ready to be decoded
+
+                // 1.0.1. If the buffer is not enough to decode the frame, break
+                if self.buffer.len() < self.asfh.frmbytes as usize { break; }
+
+                // 1.0.2. If any critical parameter has changed, flush the overlap buffer
+                if !self.asfh.criteq(&self.info) {
+                    if self.info.srate != 0 || self.info.channels != 0 { // If the info struct is not empty
+                        ret.extend(self.flush()); // Flush the overlap buffer
+                        let (srate, chnl) = (self.info.srate, self.info.channels); // Get previous info
+                        self.info = self.asfh.clone(); // Update the info struct
+                        return (ret, srate, chnl, true); // and return
+                    }
+                    self.info = self.asfh.clone(); // else, Update the info struct and continue
+                }
+
+                // 1.1. Split out the frame data
+                let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
+
+                // 1.2. Correct the error if ECC is enabled
+                if self.asfh.ecc {
+                    if self.fix_error && ( // and if the user requested
+                        // and if CRC mismatch
+                        LOSSLESS.contains(&self.asfh.profile) && common::crc32(&frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && common::crc16_ansi(&frad) != self.asfh.crc16
+                    ) { frad = ecc::decode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // Error correction
+                    else { frad = ecc::unecc(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // ECC removal
+                }
+
+                // 1.3. Decode the FrAD frame
+                let mut pcm =
+                match self.asfh.profile {
+                    1 => profile1::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.srate),
+                    4 => profile4::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian),
+                    _ => profile0::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian)
+                };
+
+                // 1.4. Apply overlap
+                pcm = self.overlap(pcm); let samples = pcm.len();
+                self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+                self.log.logging(false);
+
+                // 1.5. Append the decoded PCM and clear header
+                ret.extend(pcm);
+                self.asfh.clear();
+            }
+
+            /* 2. Finding header / Gathering more data to parse */
+            else {
+                // 2.1. If the header buffer not found, find the header buffer
+                if !self.asfh.buffer.starts_with(&common::FRM_SIGN) {
+                    match self.buffer.find_pattern(&common::FRM_SIGN) {
+                        // If pattern found in the buffer
+                        // 2.1.1. Split out the buffer to the header buffer
+                        Some(i) => {
+                            self.buffer.split_front(i);
+                            self.asfh.buffer = self.buffer.split_front(4);
+                        },
+                        // 2.1.2. else, Split out the buffer to the last 4 bytes and return
+                        None => {
+                            self.buffer.split_front(self.buffer.len().saturating_sub(4)); break; 
+                        }
+                    }
+                }
+                // 2.2. If header buffer found, try parsing the header
+                let force_flush = self.asfh.read_buf(&mut self.buffer);
+
+                // 2.3. Check header parsing result
+                match force_flush {
+                    // 1. If header is complete and not forced to flush, continue
+                    Ok(false) => continue,
+                    // 2. If header is complete and forced to flush, flush and return
+                    Ok(true) => { ret.extend(self.flush()); break; },
+                    // 3. If header is incomplete, return
+                    Err(_) => break,
+                }
+            }
+        }
+        return (ret, self.asfh.srate, self.asfh.channels, false);
+    }
+
+    /** flush
+     * Flush the overlap buffer
+     * Parameters: None
+     * Returns: Overlap buffer
+     */
+    pub fn flush(&mut self) -> Vec<Vec<f64>> {
+        // 1. Extract the overlap buffer
+        // 2. Update log
+        // 3. Clear the overlap buffer
+        // 4. Return exctacted buffer
+
+        let ret = self.overlap_fragment.clone();
+        self.log.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
+        self.overlap_fragment.clear();
+        return ret;
+    }
+}
+
 /** decode
  * Decodes any found FrAD frames in the input file to f64be PCM
  * Parameters: Input file, CLI parameters
@@ -65,7 +208,6 @@ fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<
  */
 pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     let mut wfile = params.output;
-    let fix_error = params.enable_ecc;
     if rfile.is_empty() { panic!("Input file must be given"); }
 
     let mut rpipe = false;
@@ -98,7 +240,6 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
             }
         }
     }
-    let mut no: u32 = 0;
     let play = params.play;
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -107,100 +248,27 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe && !play { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
-    let (mut asfh, mut info) = (ASFH::new(), ASFH::new());
-
-    let (mut head, mut overlap_fragment) = (Vec::new(), Vec::new());
-    let pcm_fmt = params.pcm;
 
     if play { loglevel = 0; }
-    let mut log = LogObj::new(loglevel, 0.5);
+    let mut decoder = Decode::new(params.enable_ecc, loglevel);
+    let pcm_fmt = params.pcm;
+    let mut srate: u32 = 0;
 
-    loop { // Main decode loop
-        // 1. Reading the header
-        if head != common::FRM_SIGN {
-            // 1.5 Ignore fixed header
-            if head == common::SIGNATURE {
-                let mut buf = vec![0u8; 4];
-                readfile.read_exact(&mut buf).unwrap();
-                let mut head_len = [0u8; 8];
-                readfile.read_exact(&mut head_len).unwrap();
-                let mut head_len = u64::from_be_bytes(head_len) as usize - 64;
+    let mut no = 0;
+    loop {
+        let mut buf = vec![0u8; 32768];
+        let readlen = common::read_exact(&mut readfile, &mut buf);
+        if readlen == 0 && decoder.buffer.is_empty() { break; }
+        let (pcm, critical_info_modified): (Vec<Vec<f64>>, bool);
+        (pcm, srate, _, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
+        write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
 
-                let mut buf = vec![0u8; 1048576];
-                let mut sink_len = 48;
-                readfile.read_exact(&mut buf[..sink_len]).unwrap();
-                while head_len > 0 {
-                    sink_len = head_len.min(buf.len());
-                    readfile.read_exact(&mut buf[..sink_len]).unwrap();
-                    head_len -= sink_len;
-                }
-            }
-            let mut buf = vec![0u8; 1];
-            let readlen = common::read_exact(&mut readfile, &mut buf);
-            if readlen == 0 {
-                log.update(&0, overlap_fragment.len(), &asfh.srate);
-                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, &asfh.srate);
-                break;
-            }
-            head.extend(buf);
-            if head.len() > 4 { head = head[1..].to_vec(); }
-            continue;
+        if critical_info_modified && !wpipe {
+            no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
-        // 2. Reading the frame
-        head = Vec::new();
-        let force_flush = asfh.update(&mut readfile);
-
-        // 2.1. Force flush
-        if force_flush {
-            flush(play, &mut writefile, &mut sink, overlap_fragment.clone(), &pcm_fmt, &asfh.srate);
-            log.update(&asfh.total_bytes, overlap_fragment.len(), &asfh.srate);
-            overlap_fragment = Vec::new(); continue;
-        }
-
-        // 2.2. Checking if ASFH info has changed
-        if !asfh.eq(&info) {
-            if no != 0 { log.logging(true); }
-            if !play {
-                eprintln!("Track {}: Profile {}", no, asfh.profile);
-                eprintln!("{}b@{} Hz / {} channel{}",
-                    fourier::BIT_DEPTHS[asfh.profile as usize][asfh.bit_depth as usize],
-                    asfh.srate, asfh.channels, if asfh.channels > 1 { "s" } else { "" }
-                );
-            }
-            if info.srate != 0 || info.channels != 0 {
-                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, &asfh.srate); // flush
-                let name = format!("{}.{}.pcm", wfile, no);
-                writefile = if !wpipe && !play { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
-            }
-            (info, overlap_fragment, no) = (asfh.clone(), Vec::new(), no + 1); // and create new file
-        }
-
-        // 3. Reading the frame data
-        let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = common::read_exact(&mut readfile, &mut frad);
-
-        // 4. Fixing errors
-        if asfh.ecc {
-            if fix_error && (
-                LOSSLESS.contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
-                COMPACT.contains(&asfh.profile) && common::crc16_ansi(&frad) != asfh.crc16
-            ) { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
-            else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
-        }
-
-        // 5. Decoding the frame
-        let mut pcm =
-        if asfh.profile == 1 { profile1::digital(frad, asfh.bit_depth, asfh.channels, asfh.srate) }
-        else if asfh.profile == 4 { profile4::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) }
-        else { profile0::digital(frad, asfh.bit_depth, asfh.channels, asfh.endian) };
-
-        // 6. Overlapping
-        (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
-        let samples = pcm.len();
-        // 7. Writing to output
-        flush(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &asfh.srate);
-        log.update(&asfh.total_bytes, samples, &asfh.srate); log.logging(false);
     }
-    log.logging(true);
+    write(play, &mut writefile, &mut sink, decoder.flush(), &pcm_fmt, &srate);
+
+    decoder.log.logging(true);
     if play { sink.sleep_until_end(); }
 }
