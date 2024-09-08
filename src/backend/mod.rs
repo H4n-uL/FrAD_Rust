@@ -38,3 +38,15 @@ impl<T: Clone> Transpose<T> for Vec<Vec<T>> {
         return (0..self[0].len()).map(|i| self.iter().map(|inner| inner[i].clone()).collect()).collect();
     }
 }
+
+pub trait SplitOut<T> {
+    fn _split_out(&mut self, n: usize) -> Vec<T> where T: Clone;
+}
+
+impl<T: Clone> SplitOut<T> for Vec<T> {
+    fn _split_out(&mut self, at: usize) -> Self {
+        let mut other = self.split_off(at);
+        std::mem::swap(self, &mut other);
+        return other;
+    }
+}
