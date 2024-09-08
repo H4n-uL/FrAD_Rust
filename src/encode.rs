@@ -155,15 +155,19 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
 
     let mut log = LogObj::new(loglevel, 0.5);
 
+    (asfh.endian, asfh.profile) = (encparam.little_endian, encparam.profile);
+    (asfh.srate, asfh.olap) = (encparam.srate, encparam.overlap);
+    (asfh.ecc, asfh.ecc_ratio) = (encparam.enable_ecc, encparam.ecc_ratio);
+
     loop { // Main encode loop
         // 1. Encoding parameter verification
-        if encparam.srate == 0 { panic!("Sample rate cannot be zero"); }
+        if asfh.srate == 0 { panic!("Sample rate cannot be zero"); }
         if encparam.channels == 0 { panic!("Channel count cannot be zero"); }
-        if encparam.frame_size > SEGMAX[encparam.profile as usize] { panic!("Samples per frame cannot exceed {}", SEGMAX[encparam.profile as usize]); }
+        if encparam.frame_size > SEGMAX[asfh.profile as usize] { panic!("Samples per frame cannot exceed {}", SEGMAX[asfh.profile as usize]); }
 
         // 2. Reading PCM data
         let mut rlen = encparam.frame_size as usize;
-        if COMPACT.contains(&encparam.profile) {
+        if COMPACT.contains(&asfh.profile) {
             // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
             let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= encparam.frame_size as u32).min().unwrap() as usize;
             rlen = if li_val < overlap_fragment.len()
@@ -185,29 +189,27 @@ pub fn encode(encparam: EncodeParameters, loglevel: u8) {
         let samples = frame.len();
 
         // 3.5. Overlapping for Profile 1
-        (frame, overlap_fragment) = overlap(frame, overlap_fragment, encparam.overlap, encparam.profile);
+        (frame, overlap_fragment) = overlap(frame, overlap_fragment, asfh.olap, asfh.profile);
         let fsize: u32 = frame.len() as u32;
 
         // 4. Encoding
-        if !fourier::BIT_DEPTHS[encparam.profile as usize].contains(&encparam.bit_depth) { panic!("Invalid bit depth"); }
-        let (mut frad, bit_ind, chnl) = match encparam.profile {
-            1 => profile1::analogue(frame, encparam.bit_depth, encparam.srate, encparam.loss_level),
-            4 => profile4::analogue(frame, encparam.bit_depth, encparam.little_endian),
-            _ => profile0::analogue(frame, encparam.bit_depth, encparam.little_endian)
+        if !fourier::BIT_DEPTHS[asfh.profile as usize].contains(&encparam.bit_depth) { panic!("Invalid bit depth"); }
+        let (mut frad, bit_ind, chnl) = match asfh.profile {
+            1 => profile1::analogue(frame, encparam.bit_depth, asfh.srate, encparam.loss_level),
+            4 => profile4::analogue(frame, encparam.bit_depth, asfh.endian),
+            _ => profile0::analogue(frame, encparam.bit_depth, asfh.endian)
         };
 
-        if encparam.enable_ecc { // Creating Reed-Solomon error correction code
-            frad = ecc::encode_rs(frad, encparam.ecc_ratio[0] as usize, encparam.ecc_ratio[1] as usize);
+        if asfh.ecc { // Creating Reed-Solomon error correction code
+            frad = ecc::encode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize);
         }
 
         // 5. Writing to file
-        (asfh.bit_depth, asfh.channels, asfh.endian, asfh.profile) = (bit_ind, chnl, encparam.little_endian, encparam.profile);
-        (asfh.srate, asfh.fsize, asfh.olap) = (encparam.srate, fsize, encparam.overlap);
-        (asfh.ecc, asfh.ecc_ratio) = (encparam.enable_ecc, encparam.ecc_ratio);
+        (asfh.bit_depth, asfh.channels, asfh.fsize) = (bit_ind, chnl, fsize);
 
         asfh.write(&mut writefile, frad);
 
-        log.update(asfh.total_bytes, samples, asfh.srate);
+        log.update(&asfh.total_bytes, samples, &asfh.srate);
         log.logging(false);
     }
     log.logging(true);

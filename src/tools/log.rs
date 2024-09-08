@@ -82,10 +82,10 @@ impl LogObj {
             last_logging: Instant::now(),
         }
     }
-    pub fn update(&mut self, size: u128, samples: usize, srate: u32) {
+    pub fn update(&mut self, size: &u128, samples: usize, srate: &u32) {
         self.total_size += size;
-        self.duration.insert(srate, if self.duration.contains_key(&srate) { self.duration[&srate] } else { 0 } + samples as u128);
-        self.bitrate.insert(srate, if self.bitrate.contains_key(&srate) { self.bitrate[&srate] } else { 0 } + size as u128);
+        self.duration.insert(*srate, if self.duration.contains_key(&srate) { self.duration[&srate] } else { 0 } + samples as u128);
+        self.bitrate.insert(*srate, if self.bitrate.contains_key(&srate) { self.bitrate[&srate] } else { 0 } + *size as u128);
     }
     pub fn logging(&mut self, force: bool) {
         if !force && self.last_logging.elapsed() < self.log_interval { return; }

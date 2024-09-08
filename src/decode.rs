@@ -40,12 +40,12 @@ fn overlap(mut frame: Vec<Vec<f64>>, overlap_fragment: Vec<Vec<f64>>, asfh: &ASF
  * Parameters: Output file, PCM data
  * Returns: None
  */
-fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: u32) {
+fn flush(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: &u32) {
     if pcm.is_empty() { return; }
     if isplay {
         sink.append(SamplesBuffer::new(
             pcm[0].len() as u16,
-            srate,
+            *srate,
             pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
         ));
     }
@@ -138,8 +138,8 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
             let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
-                log.update(0, overlap_fragment.len(), asfh.srate);
-                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
+                log.update(&0, overlap_fragment.len(), &asfh.srate);
+                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, &asfh.srate);
                 break;
             }
             head.extend(buf);
@@ -150,18 +150,14 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         head = Vec::new();
         let force_flush = asfh.update(&mut readfile);
 
-        // 2.5. Force flush
+        // 2.1. Force flush
         if force_flush {
-            flush(play, &mut writefile, &mut sink, overlap_fragment.clone(), &pcm_fmt, asfh.srate);
-            log.update(asfh.total_bytes, overlap_fragment.len(), asfh.srate);
+            flush(play, &mut writefile, &mut sink, overlap_fragment.clone(), &pcm_fmt, &asfh.srate);
+            log.update(&asfh.total_bytes, overlap_fragment.len(), &asfh.srate);
             overlap_fragment = Vec::new(); continue;
         }
 
-        // 3. Reading the frame data
-        let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = common::read_exact(&mut readfile, &mut frad);
-
-        // 3.5. Checking if ASFH info has changed
+        // 2.2. Checking if ASFH info has changed
         if !asfh.eq(&info) {
             if no != 0 { log.logging(true); }
             if !play {
@@ -172,12 +168,16 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
                 );
             }
             if info.srate != 0 || info.channels != 0 {
-                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate); // flush
+                flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, &asfh.srate); // flush
                 let name = format!("{}.{}.pcm", wfile, no);
                 writefile = if !wpipe && !play { Box::new(File::create(name).unwrap()) } else { Box::new(std::io::stdout()) };
             }
-            (info, overlap_fragment, no) = (asfh, Vec::new(), no + 1); // and create new file
+            (info, overlap_fragment, no) = (asfh.clone(), Vec::new(), no + 1); // and create new file
         }
+
+        // 3. Reading the frame data
+        let mut frad = vec![0u8; asfh.frmbytes as usize];
+        let _ = common::read_exact(&mut readfile, &mut frad);
 
         // 4. Fixing errors
         if asfh.ecc {
@@ -198,8 +198,8 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         (pcm, overlap_fragment) = overlap(pcm, overlap_fragment, &asfh);
         let samples = pcm.len();
         // 7. Writing to output
-        flush(play, &mut writefile, &mut sink, pcm, &pcm_fmt, asfh.srate);
-        log.update(asfh.total_bytes, samples, asfh.srate); log.logging(false);
+        flush(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &asfh.srate);
+        log.update(&asfh.total_bytes, samples, &asfh.srate); log.logging(false);
     }
     log.logging(true);
     if play { sink.sleep_until_end(); }

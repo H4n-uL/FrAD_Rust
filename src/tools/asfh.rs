@@ -68,7 +68,7 @@ fn decode_css(css: Vec<u8>) -> (i16, u32, u32, bool) {
 /** ASFH
  * Audio Stream Frame Header
  */
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ASFH {
     // Audio Stream Frame Header
     pub total_bytes: u128,
