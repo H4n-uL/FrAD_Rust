@@ -58,14 +58,14 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
         if head.is_empty() {
             let mut buf = vec![0u8; 4];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(0, olap_fragment_len, asfh.srate); break; }
+            if readlen == 0 { log.update(&0, olap_fragment_len, &asfh.srate); break; }
             head = buf.to_vec();
         }
         // all the way until hitting the header or EOF
         if head != common::FRM_SIGN {
             let mut buf = vec![0u8; 1];
             let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(0, olap_fragment_len, asfh.srate); writefile.write_all(&head).unwrap(); break; }
+            if readlen == 0 { log.update(&0, olap_fragment_len, &asfh.srate); writefile.write_all(&head).unwrap(); break; }
             head.extend(buf);
             writefile.write_all(&[head[0]]).unwrap();
             head = head[1..].to_vec();
@@ -99,7 +99,7 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
         (asfh.ecc, asfh.ecc_ratio) = (true, ecc_ratio);
         asfh.write(&mut writefile, frad);
 
-        log.update(asfh.total_bytes, samples, asfh.srate);
+        log.update(&asfh.total_bytes, samples, &asfh.srate);
         log.logging(false);
     }
     log.logging(true);
