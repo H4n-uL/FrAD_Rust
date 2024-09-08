@@ -68,22 +68,22 @@ fn decode_css(css: Vec<u8>) -> (i16, u32, u32, bool) {
 /** ASFH
  * Audio Stream Frame Header
  */
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ASFH {
     // Audio Stream Frame Header
     pub total_bytes: u128,
     pub frmbytes: u64,
+    // pub buffer: Vec<u8>,
+    // pub parse_complete: bool,
+    // pub header_bytes: usize,
 
     // Audio structure data
     pub endian: bool,
-    pub bit_depth: i16,
-    pub channels: i16,
-    pub srate: u32,
-    pub fsize: u32,
+    pub bit_depth: i16, pub channels: i16,
+    pub srate: u32, pub fsize: u32,
 
     // Error correction
-    pub ecc: bool,
-    pub ecc_ratio: [u8; 2],
+    pub ecc: bool, pub ecc_ratio: [u8; 2],
 
     // Profile
     pub profile: u8,
@@ -99,7 +99,8 @@ pub struct ASFH {
 impl ASFH {
     pub fn new() -> ASFH {
         ASFH {
-            total_bytes: 0, frmbytes: 0,
+            total_bytes: 0, frmbytes: 0, // buffer: Vec::new(),
+            // header_bytes: 0, parse_complete: false,
 
             endian: false, bit_depth: 0,
             channels: 0, srate: 0, fsize: 0,
@@ -223,4 +224,68 @@ impl ASFH {
 
         return false;
     }
+
+    // pub fn update_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, bool> {
+    //     if self.buffer.is_empty() { self.buffer = FRM_SIGN.to_vec(); }
+
+    //     if self.buffer.len() < 9 {
+    //         if buffer.len() < 9 - self.buffer.len() { return Err(false); }
+    //         self.buffer.extend(buffer.split_out(9 - self.buffer.len()));
+
+    //         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
+    //         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
+    //     }
+
+    //     if COMPACT.contains(&self.profile) {
+    //         if self.buffer.len() < 12 {
+    //             if buffer.len() < 12 - self.buffer.len() { return Err(false); }
+    //             self.buffer.extend(buffer.split_out(12 - self.buffer.len()));
+    //             self.header_bytes = self.buffer.len();
+
+    //             let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[5..7].to_vec());
+    //             if force_flush { self.parse_complete = true; self.buffer.clear(); return Ok(true); }
+
+    //             self.olap = self.buffer[7] as u16;
+    //             if self.olap != 0 { self.olap += 1; }
+    //         }
+    //         if self.ecc {
+    //             if self.buffer.len() < 16 {
+    //                 if buffer.len() < 16 - self.buffer.len() { return Err(false); }
+    //                 self.buffer.extend(buffer.split_out(16 - self.buffer.len()));
+    //                 self.header_bytes = self.buffer.len();
+
+    //                 self.ecc_ratio = [self.buffer[8], self.buffer[9]];
+    //                 self.crc16 = self.buffer[10..12].try_into().unwrap();
+    //             }
+    //         }
+    //     }
+    //     else {
+    //         if self.buffer.len() < 32 {
+    //             if buffer.len() < 32 - self.buffer.len() { return Err(false); }
+    //             self.buffer.extend(buffer.split_out(32 - self.buffer.len()));
+    //             self.header_bytes = self.buffer.len();
+
+    //             self.channels = self.buffer[0x9] as i16 + 1;
+    //             self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
+    //             self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
+
+    //             self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
+    //             self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
+    //         }
+    //     }
+
+    //     if self.frmbytes == u32::MAX as u64 {
+    //         if self.buffer.len() < self.header_bytes + 8 {
+    //             if buffer.len() < self.header_bytes + 8 - self.buffer.len() { return Err(false); }
+    //             self.buffer.extend(buffer.split_out(self.header_bytes + 8 - self.buffer.len()));
+    //             self.header_bytes = self.buffer.len();
+
+    //             self.frmbytes = u64::from_be_bytes(self.buffer[self.header_bytes-8..].try_into().unwrap());
+    //         }
+    //     }
+
+    //     self.parse_complete = true;
+    //     self.buffer.clear();
+    //     return Ok(false);
+    // }
 }
