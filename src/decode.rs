@@ -265,7 +265,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
         (pcm, srate, _, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
 
-        if critical_info_modified && !wpipe {
+        if critical_info_modified && !(wpipe || play) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
     }
