@@ -192,11 +192,13 @@ impl Decode {
         // 1. Extract the overlap buffer
         // 2. Update log
         // 3. Clear the overlap buffer
-        // 4. Return exctacted buffer
+        // 4. Clear the ASFH struct
+        // 5. Return exctacted buffer
 
         let ret = self.overlap_fragment.clone();
         self.log.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
+        self.asfh.clear();
         return ret;
     }
 }
