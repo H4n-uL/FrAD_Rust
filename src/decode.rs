@@ -118,15 +118,32 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     loop { // Main decode loop
         // 1. Reading the header
         if head != common::FRM_SIGN {
-            let mut buf = vec![0u8; if head.is_empty() { 4 } else { 1 }];
+            // 1.5 Ignore fixed header
+            if head == common::SIGNATURE {
+                let mut buf = vec![0u8; 4];
+                readfile.read_exact(&mut buf).unwrap();
+                let mut head_len = [0u8; 8];
+                readfile.read_exact(&mut head_len).unwrap();
+                let mut head_len = u64::from_be_bytes(head_len) as usize - 64;
+
+                let mut buf = vec![0u8; 1048576];
+                let mut sink_len = 48;
+                readfile.read_exact(&mut buf[..sink_len]).unwrap();
+                while head_len > 0 {
+                    sink_len = head_len.min(buf.len());
+                    readfile.read_exact(&mut buf[..sink_len]).unwrap();
+                    head_len -= sink_len;
+                }
+            }
+            let mut buf = vec![0u8; 1];
             let readlen = common::read_exact(&mut readfile, &mut buf);
             if readlen == 0 {
                 log.update(0, overlap_fragment.len(), asfh.srate);
                 flush(play, &mut writefile, &mut sink, overlap_fragment, &pcm_fmt, asfh.srate);
                 break;
             }
-            if head.is_empty() { head = buf.to_vec(); }
-            else { head = head.iter().chain(buf.iter()).skip(1).cloned().collect(); }
+            head.extend(buf);
+            if head.len() > 4 { head = head[1..].to_vec(); }
             continue;
         }
         // 2. Reading the frame
