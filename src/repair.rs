@@ -9,7 +9,7 @@ use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
 
 /** Repair
-* Struct for FrAD Repairr
+* Struct for FrAD Repairer
 */
 pub struct Repair {
     asfh: ASFH,
