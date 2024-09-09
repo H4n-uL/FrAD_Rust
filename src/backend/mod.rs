@@ -25,9 +25,6 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     return result;
 }
 
-/** Transpose
- * Trait for 2D vector transposition
-*/
 pub trait Transpose<T> {
     fn trans(&self) -> Vec<Vec<T>> where T: Clone;
 }
@@ -60,5 +57,15 @@ impl<T: PartialEq> VecPatternFind<T> for Vec<T> {
         if self.is_empty() || self.len() < pattern.len() { return None; }
         if pattern.is_empty() { return Some(0); }
         return self.windows(pattern.len()).position(|window| window == pattern);
+    }
+}
+
+pub trait Prepend<T> {
+    fn prepend(&mut self, other: &[T]) where T: Clone;
+}
+
+impl<T: Clone> Prepend<T> for Vec<T> {
+    fn prepend(&mut self, other: &[T]) {
+        self.splice(0..0, other.iter().cloned());
     }
 }

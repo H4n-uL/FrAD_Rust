@@ -151,6 +151,40 @@ impl ASFH {
         });
     }
 
+    /** write_buf
+     * Makes a frame from audio frame and metadata and return as buffer
+     * Parameters: Audio frame
+     * Returns: Frame buffer
+     */
+    pub fn write_buf(&mut self, frad: Vec<u8>) -> Vec<u8> {
+        let mut fhead = FRM_SIGN.to_vec();
+
+        fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
+        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
+
+        if COMPACT.contains(&self.profile) {
+            fhead.extend(encode_css(self.channels, self.srate, self.fsize, false));
+            fhead.push((self.olap.max(1) - 1) as u8);
+            if self.ecc {
+                fhead.extend(self.ecc_ratio.to_vec());
+                fhead.extend(crc16_ansi(&frad).to_vec());
+            }
+        }
+        else {
+            fhead.push((self.channels - 1) as u8);
+            fhead.extend(self.ecc_ratio.to_vec());
+            fhead.extend(self.srate.to_be_bytes().to_vec());
+            fhead.extend([0u8; 8].to_vec());
+            fhead.extend(self.fsize.to_be_bytes().to_vec());
+            fhead.extend(crc32(&frad).to_vec());
+        }
+
+        let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
+        self.total_bytes = frad.len() as u128;
+
+        return frad;
+    }
+
     /** force_flush
      * Makes a force-flush frame
      * Parameters: File
@@ -172,6 +206,26 @@ impl ASFH {
             if err.kind() == ErrorKind::BrokenPipe { exit(0); }
             else { panic!("Error writing to stdout: {}", err); }
         });
+    }
+
+    /** force_flush_buf
+     * Makes a force-flush frame and return as buffer
+     * Returns: Frame buffer
+     */
+    pub fn force_flush_buf(&mut self) -> Vec<u8> {
+        let mut fhead = FRM_SIGN.to_vec();
+        fhead.extend([0u8; 4].to_vec());
+        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
+
+        if COMPACT.contains(&self.profile) {
+            fhead.extend(encode_css(self.channels, self.srate, self.fsize, true));
+            fhead.push(0);
+        }
+        else { return Vec::new(); }
+
+        self.total_bytes = fhead.len() as u128;
+
+        return fhead;
     }
 
     /** update
@@ -224,6 +278,11 @@ impl ASFH {
         return false;
     }
 
+    /** read_buf
+     * Reads a frame from a buffer
+     * Parameters: Buffer
+     * Returns: Frame complete flag as Result, Force flush flag as boolean
+     */
     pub fn read_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, bool> {
 
         if self.buffer.len() < 9 { // If the buffer is not complete

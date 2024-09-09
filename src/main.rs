@@ -1,7 +1,7 @@
 mod backend; mod fourier; mod tools; mod common;
 mod encode; mod decode; mod repair; mod header;
 
-use {encode::EncodeParameters, std::{env, path::Path}};
+use std::{env, path::Path};
 
 const BANNER: &str =
 "                   Fourier Analogue-in-Digital Rust Reference
@@ -25,8 +25,7 @@ fn main() {
 
     let loglevel = params.loglevel;
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
-        let encparam = EncodeParameters::from_cli(input, params);
-        encode::encode(encparam, loglevel);
+        encode::encode(input, params, loglevel);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str())
         || tools::cli::PLAY_OPT.contains(&action.as_str()) {
