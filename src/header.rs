@@ -5,7 +5,7 @@
  */
 
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
-use base64::{prelude::BASE64_STANDARD, Engine as _};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{json, Value};
 use tempfile::NamedTempFile;
 use crate::{common::{move_all, SIGNATURE}, tools::{cli, head}};

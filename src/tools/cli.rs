@@ -4,7 +4,7 @@
  * Function: Simple CLI parser for FrAD Library
  */
 
-use base64::{prelude::BASE64_STANDARD, Engine as _};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{from_str, Value};
 use std::{collections::VecDeque, env::Args, fs::read_to_string};
 
