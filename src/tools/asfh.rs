@@ -114,12 +114,12 @@ impl ASFH {
         return self.channels == other.channels && self.srate == other.srate;
     }
 
-    /** write_buf
+    /** write
      * Makes a frame from audio frame and metadata and return as buffer
      * Parameters: Audio frame
      * Returns: Frame buffer
      */
-    pub fn write_buf(&mut self, frad: Vec<u8>) -> Vec<u8> {
+    pub fn write(&mut self, frad: Vec<u8>) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
 
         fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
@@ -148,11 +148,11 @@ impl ASFH {
         return frad;
     }
 
-    /** force_flush_buf
+    /** force_flush
      * Makes a force-flush frame and return as buffer
      * Returns: Frame buffer
      */
-    pub fn force_flush_buf(&mut self) -> Vec<u8> {
+    pub fn force_flush(&mut self) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
         fhead.extend([0u8; 4].to_vec());
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
@@ -182,12 +182,12 @@ impl ASFH {
         return true;
     }
 
-    /** read_buf
+    /** read
      * Reads a frame from a buffer
      * Parameters: Input buffer
      * Returns: Frame complete flag as Result, Force flush flag as boolean
      */
-    pub fn read_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, ()> {
+    pub fn read(&mut self, buffer: &mut Vec<u8>) -> Result<bool, ()> {
         if !self.fill_buffer(buffer, 9) { return Err(()) } // If buffer not filled, return error
         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);

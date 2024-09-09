@@ -145,7 +145,7 @@ impl Encoder {
             // Unravel flat PCM to 2D PCM array
             let mut frame: Vec<Vec<f64>> = (0..rlen).take_while(|&i| (i as usize + 1) * self.channels as usize <= pcm_flat.len())
             .map(|i| pcm_flat[i as usize * (self.channels as usize)..(i + 1) as usize * (self.channels as usize)].to_vec()).collect();
-            if frame.is_empty() { self.asfh.force_flush_buf(); break; } // If frame is empty, break
+            if frame.is_empty() { self.asfh.force_flush(); break; } // If frame is empty, break
             let samples = frame.len();
 
             // 2. Overlap the frame with the previous overlap fragment
@@ -167,7 +167,7 @@ impl Encoder {
 
             // 5. Write the frame to the buffer
             (self.asfh.bit_depth, self.asfh.channels, self.asfh.fsize) = (bit_ind, chnl, fsize);
-            ret.extend(self.asfh.write_buf(frad));
+            ret.extend(self.asfh.write(frad));
 
             // Logging
             self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);

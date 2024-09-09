@@ -154,7 +154,7 @@ impl Decode {
                     }
                 }
                 // 2.2. If header buffer found, try parsing the header
-                let force_flush = self.asfh.read_buf(&mut self.buffer);
+                let force_flush = self.asfh.read(&mut self.buffer);
 
                 // 2.3. Check header parsing result
                 match force_flush {

@@ -84,7 +84,7 @@ impl Repair {
                 (self.asfh.ecc, self.asfh.ecc_ratio) = (true, self.ecc_ratio);
 
                 // 1.4. Write the frame data to the buffer
-                ret.extend(self.asfh.write_buf(frad));
+                ret.extend(self.asfh.write(frad));
                 self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
                 self.log.logging(false);
 
@@ -110,7 +110,7 @@ impl Repair {
                     }
                 }
                 // 2.2. If header buffer found, try parsing the header
-                let force_flush = self.asfh.read_buf(&mut self.buffer);
+                let force_flush = self.asfh.read(&mut self.buffer);
 
                 // 2.3. Check header parsing result
                 match force_flush {
@@ -119,7 +119,7 @@ impl Repair {
                     // 2.3.2. If header is complete and forced to flush, flush and return
                     Ok(true) => {
                         self.log.update(&0, self.olap_len, &self.asfh.srate);
-                        ret.extend(self.asfh.force_flush_buf());
+                        ret.extend(self.asfh.force_flush());
                         self.olap_len = 0;
                         break;
                     },
