@@ -100,7 +100,7 @@ impl Encoder {
      * Parameters: PCM stream, Flush flag
      * Returns: Encoded audio data
      */
-    pub fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
+    fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret:Vec<u8> = Vec::new();
 
