@@ -6,6 +6,7 @@
 
 use crate::{backend::{Prepend, SplitFront}, common::{self, any_to_f64, PCMFormat}, fourier::{self, profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX}, tools::{asfh::ASFH, cli::CliParams, ecc, head, log::LogObj}};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
+// use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 use same_file::is_same_file;
 
 /** Encoder
@@ -108,8 +109,18 @@ impl Encoder {
     fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret:Vec<u8> = Vec::new();
+        // let rng = &mut rand::thread_rng();
 
         loop {
+            // self.asfh.profile = *vec![0, 1, 4].choose(rng).unwrap();
+            // self.bit_depth = *fourier::BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
+            // self.set_frame_size(*compact::SAMPLES_LI.choose(rng).unwrap());
+            // self.set_loss_level(rng.gen_range(0..21));
+            // let ecc_dsize = rng.gen_range(1..254);
+            // let ecc_codesize = rng.gen_range(1..255 - ecc_dsize);
+            // self.set_ecc(rng.gen_bool(0.5), [ecc_dsize, ecc_codesize]);
+            // self.set_overlap(rng.gen_range(2..256));
+
             // 0. Set read length in samples
             let mut rlen = self.fsize as usize;
             if COMPACT.contains(&self.asfh.profile) {
