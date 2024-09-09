@@ -255,7 +255,9 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     loop {
         let mut buf = vec![0u8; 32768];
         let readlen = common::read_exact(&mut readfile, &mut buf);
-        if readlen == 0 && decoder.buffer.is_empty() { break; }
+
+        if readlen == 0 && decoder.buffer.is_empty() && (!play || sink.empty()) { break; }
+
         let (pcm, srate, critical_info_modified): (Vec<Vec<f64>>, u32, bool);
         (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
