@@ -168,68 +168,58 @@ impl ASFH {
         return fhead;
     }
 
+    /** fill_buffer
+     * Fills the buffer with the required bytes
+     * Parameters: Input buffer, Target size
+     * Returns: Buffer filled flag
+     */
+    fn fill_buffer(&mut self, buffer: &mut Vec<u8>, target_size: usize) -> bool {
+        if self.buffer.len() < target_size {
+            self.buffer.extend(buffer.split_front(target_size - self.buffer.len()));
+            if self.buffer.len() < target_size { return false; }
+        }
+        self.header_bytes = target_size;
+        return true;
+    }
+
     /** read_buf
      * Reads a frame from a buffer
-     * Parameters: Buffer
+     * Parameters: Input buffer
      * Returns: Frame complete flag as Result, Force flush flag as boolean
      */
-    pub fn read_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, bool> {
-
-        if self.buffer.len() < 9 { // If the buffer is not complete
-            self.buffer.extend(buffer.split_front(9 - self.buffer.len())); // Fill the buffer
-            if self.buffer.len() < 9 { return Err(false); } // if not enough, return Err
-            self.header_bytes = self.buffer.len(); // if enough, set total header bytes
-
-            self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
-            (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
-        }
+    pub fn read_buf(&mut self, buffer: &mut Vec<u8>) -> Result<bool, ()> {
+        if !self.fill_buffer(buffer, 9) { return Err(()) } // If buffer not filled, return error
+        self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
+        (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
 
         if COMPACT.contains(&self.profile) {
-            if self.buffer.len() < 12 {
-                self.buffer.extend(buffer.split_front(12 - self.buffer.len()));
-                if self.buffer.len() < 12 { return Err(false); }
-                self.header_bytes = self.buffer.len();
+            if !self.fill_buffer(buffer, 12) { return Err(()) }
 
-                let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
-                if force_flush { self.all_set = true; return Ok(true); }
+            let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
+            if force_flush { self.all_set = true; return Ok(true); }
+            self.olap = self.buffer[0xb] as u16; if self.olap != 0 { self.olap += 1; }
 
-                self.olap = self.buffer[0xb] as u16;
-                if self.olap != 0 { self.olap += 1; }
-            }
             if self.ecc {
-                if self.buffer.len() < 16 {
-                    self.buffer.extend(buffer.split_front(16 - self.buffer.len()));
-                    if self.buffer.len() < 16 { return Err(false); }
-                    self.header_bytes = self.buffer.len();
+                if !self.fill_buffer(buffer, 16) { return Err(()) }
 
-                    self.ecc_ratio = [self.buffer[0xc], self.buffer[0xd]];
-                    self.crc16 = self.buffer[0xe..0x10].try_into().unwrap();
-                }
+                self.ecc_ratio = [self.buffer[0xc], self.buffer[0xd]];
+                self.crc16 = self.buffer[0xe..0x10].try_into().unwrap();
             }
         }
         else {
-            if self.buffer.len() < 32 {
-                self.buffer.extend(buffer.split_front(32 - self.buffer.len()));
-                if self.buffer.len() < 32 { return Err(false); }
-                self.header_bytes = self.buffer.len();
+            if !self.fill_buffer(buffer, 32) { return Err(()) }
 
-                self.channels = self.buffer[0x9] as i16 + 1;
-                self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
-                self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
+            self.channels = self.buffer[0x9] as i16 + 1;
+            self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
+            self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
 
-                self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
-                self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
-            }
+            self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
+            self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
         }
 
         if self.frmbytes == u32::MAX as u64 {
-            if self.buffer.len() < self.header_bytes + 8 {
-                self.buffer.extend(buffer.split_front(self.header_bytes + 8 - self.buffer.len()));
-                if self.buffer.len() < self.header_bytes + 8 { return Err(false); }
-                self.header_bytes = self.buffer.len();
-
-                self.frmbytes = u64::from_be_bytes(self.buffer[self.buffer.len()-8..].try_into().unwrap());
-            }
+            if !self.fill_buffer(buffer, self.header_bytes + 8) { return Err(()) }
+            self.frmbytes = u64::from_be_bytes(self.buffer[self.buffer.len()-8..].try_into().unwrap());
         }
 
         self.total_bytes = self.header_bytes as u128 + self.frmbytes as u128;
