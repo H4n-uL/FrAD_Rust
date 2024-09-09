@@ -7,7 +7,7 @@
 use super::super::backend::u8pack;
 
 // Bit depth table
-pub const DEPTHS: [i16; 8] = [12, 16, 24, 32, 48, 64, 128, 0];
+pub const DEPTHS: [i16; 8] = [12, 16, 24, 32, 48, 64, 0, 0];
 // Dynamic ranges for preventing overflow
 const FLOAT_DR: [i16; 8] = [5, 5, 8, 8, 11, 11, 15, 0];
 
