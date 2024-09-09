@@ -2,7 +2,7 @@
 
 Play FrAD files, not decoding to any other format.
 
-Usage: fourier play <path/to/audio.frad> [kwargs...]
+Usage: {frad} play <path/to/audio.frad> [kwargs...]
 
 Options:
 
