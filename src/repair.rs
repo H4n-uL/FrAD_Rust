@@ -22,7 +22,19 @@ pub struct Repair {
 }
 
 impl Repair {
-    pub fn new(ecc_ratio: [u8; 2]) -> Repair {
+    pub fn new(mut ecc_ratio: [u8; 2]) -> Repair {
+        if ecc_ratio[0] == 0 {
+            eprintln!("ECC data size must not be zero");
+            eprintln!("Setting ECC to default 96 24");
+            ecc_ratio = [96, 24];
+        }
+        if ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255 {
+            eprintln!("ECC data size and check size must not exceed 255, given: {} and {}",
+                ecc_ratio[0], ecc_ratio[1]);
+            eprintln!("Setting ECC to default 96 24");
+            ecc_ratio = [96, 24];
+        }
+
         Repair {
             asfh: ASFH::new(),
             buffer: Vec::new(),

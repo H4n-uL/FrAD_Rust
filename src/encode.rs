@@ -58,6 +58,11 @@ impl Encoder {
     }
     pub fn set_ecc(&mut self, ecc: bool, ecc_ratio: [u8; 2]) {
         self.asfh.ecc = ecc;
+        if ecc_ratio[0] == 0 {
+            eprintln!("ECC data size must not be zero");
+            eprintln!("Setting ECC to default 96 24");
+            self.asfh.ecc_ratio = [96, 24];
+        }
         if ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255 {
             eprintln!("ECC data size and check size must not exceed 255, given: {} and {}",
                 ecc_ratio[0], ecc_ratio[1]);
