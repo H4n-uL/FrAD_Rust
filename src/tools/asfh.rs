@@ -4,8 +4,7 @@
  * Function: Audio Stream Frame Header tools
  */
 
-use crate::{backend::SplitFront, common::{crc16_ansi, crc32, read_exact, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
-use std::{io::{ErrorKind, Read, Write}, process::exit};
+use crate::{backend::SplitFront, common::{crc16_ansi, crc32, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
 
 /** encode_pfb
  * Encodes PFloat byte (containing necessary info for the frame)
@@ -115,42 +114,6 @@ impl ASFH {
         return self.channels == other.channels && self.srate == other.srate;
     }
 
-    /** write
-     * Makes a frame from audio frame and metadata
-     * Parameters: File, Audio frame
-     */
-    pub fn write(&mut self, file: &mut Box<dyn Write>, frad: Vec<u8>) {
-        let mut fhead = FRM_SIGN.to_vec();
-
-        fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
-        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
-
-        if COMPACT.contains(&self.profile) {
-            fhead.extend(encode_css(self.channels, self.srate, self.fsize, false));
-            fhead.push((self.olap.max(1) - 1) as u8);
-            if self.ecc {
-                fhead.extend(self.ecc_ratio.to_vec());
-                fhead.extend(crc16_ansi(&frad).to_vec());
-            }
-        }
-        else {
-            fhead.push((self.channels - 1) as u8);
-            fhead.extend(self.ecc_ratio.to_vec());
-            fhead.extend(self.srate.to_be_bytes().to_vec());
-            fhead.extend([0u8; 8].to_vec());
-            fhead.extend(self.fsize.to_be_bytes().to_vec());
-            fhead.extend(crc32(&frad).to_vec());
-        }
-
-        let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
-        self.total_bytes = frad.len() as u128;
-
-        file.write_all(&frad).unwrap_or_else(|err| {
-            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
-            else { panic!("Error writing to stdout: {}", err); }
-        });
-    }
-
     /** write_buf
      * Makes a frame from audio frame and metadata and return as buffer
      * Parameters: Audio frame
@@ -185,29 +148,6 @@ impl ASFH {
         return frad;
     }
 
-    /** force_flush
-     * Makes a force-flush frame
-     * Parameters: File
-     */
-    pub fn force_flush(&mut self, file: &mut Box<dyn Write>) {
-        let mut fhead = FRM_SIGN.to_vec();
-        fhead.extend([0u8; 4].to_vec());
-        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
-
-        if COMPACT.contains(&self.profile) {
-            fhead.extend(encode_css(self.channels, self.srate, self.fsize, true));
-            fhead.push(0);
-        }
-        else { return; }
-
-        self.total_bytes = fhead.len() as u128;
-
-        file.write_all(&fhead).unwrap_or_else(|err| {
-            if err.kind() == ErrorKind::BrokenPipe { exit(0); }
-            else { panic!("Error writing to stdout: {}", err); }
-        });
-    }
-
     /** force_flush_buf
      * Makes a force-flush frame and return as buffer
      * Returns: Frame buffer
@@ -226,56 +166,6 @@ impl ASFH {
         self.total_bytes = fhead.len() as u128;
 
         return fhead;
-    }
-
-    /** update
-     * Updates the ASFH from a file
-     * Parameters: File
-     * Returns: Force flush flag
-     */
-    pub fn update(&mut self, file: &mut Box<dyn Read>) -> bool {
-        let mut fhead = FRM_SIGN.to_vec();
-
-        let mut buf = vec![0u8; 5]; let _ = read_exact(file, &mut buf);
-        fhead.extend(buf);
-
-        self.frmbytes = u32::from_be_bytes(fhead[0x4..0x8].try_into().unwrap()) as u64;
-        (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(fhead[0x8]);
-
-        if COMPACT.contains(&self.profile) {
-            buf = vec![0u8; 3]; let _ = read_exact(file, &mut buf);
-            fhead.extend(buf);
-            let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(fhead[0x9..0xb].to_vec());
-            if force_flush { return true; }
-            self.olap = fhead[0xb] as u16;
-            if self.olap != 0 { self.olap += 1; }
-            if self.ecc {
-                buf = vec![0u8; 4]; let _ = file.read(&mut buf).unwrap();
-                fhead.extend(buf);
-                self.ecc_ratio = [fhead[0xc], fhead[0xd]];
-                self.crc16 = fhead[0xe..0x10].try_into().unwrap();
-            }
-        }
-        else {
-            buf = vec![0u8; 23]; let _ = read_exact(file, &mut buf);
-            fhead.extend(buf);
-            self.channels = fhead[0x9] as i16 + 1;
-            self.ecc_ratio = [fhead[0xa], fhead[0xb]];
-            self.srate = u32::from_be_bytes(fhead[0xc..0x10].try_into().unwrap());
-
-            self.fsize = u32::from_be_bytes(fhead[0x18..0x1c].try_into().unwrap());
-            self.crc32 = fhead[0x1c..0x20].try_into().unwrap();
-        }
-
-        if self.frmbytes == u32::MAX as u64 {
-            buf = vec![0u8; 8]; let _ = read_exact(file, &mut buf);
-            fhead.extend(buf);
-            self.frmbytes = u64::from_be_bytes(fhead[fhead.len()-8..].try_into().unwrap());
-        }
-
-        self.total_bytes = fhead.len() as u128 + self.frmbytes as u128;
-
-        return false;
     }
 
     /** read_buf

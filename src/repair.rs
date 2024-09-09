@@ -4,9 +4,132 @@
  * Function: Repair or Apply ECC to FrAD stream
  */
 
-use crate::{common, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
+use crate::{backend::{SplitFront, VecPatternFind}, common, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
+
+/** Repair
+* Struct for FrAD Repairr
+*/
+pub struct Repair {
+    asfh: ASFH,
+    buffer: Vec<u8>,
+    log: LogObj,
+
+    fix_error: bool,
+    olap_len: usize,
+    ecc_ratio: [u8; 2],
+}
+
+impl Repair {
+    pub fn new(ecc_ratio: [u8; 2]) -> Repair {
+        Repair {
+            asfh: ASFH::new(),
+            buffer: Vec::new(),
+            log: LogObj::new(0, 0.5),
+
+            fix_error: true,
+            olap_len: 0,
+            ecc_ratio,
+        }
+    }
+
+    /** process
+     * Process the input stream and repair the FrAD stream
+    * Parameters: Input stream
+    * Returns: Repaired FrAD stream
+    */
+    pub fn process(&mut self, stream: Vec<u8>) -> Vec<u8> {
+        self.buffer.extend(stream);
+        let mut ret = Vec::new();
+
+        loop {
+            // If every parameter in the ASFH struct is set,
+            /* 1. Repairing FrAD Frame */
+            if self.asfh.all_set {
+                // 1.0. If the buffer is not enough to decode the frame, break
+                if self.buffer.len() < self.asfh.frmbytes as usize { break; }
+
+                let samples = if self.asfh.olap == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
+                    (self.asfh.fsize as usize * (self.asfh.olap as usize - 1)) / self.asfh.olap as usize };
+                self.olap_len = self.asfh.fsize as usize - samples;
+
+                // 1.1. Split out the frame data
+                let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
+
+                // 1.2. Correct the error if ECC is enabled
+                if self.asfh.ecc {
+                    if self.fix_error && ( // and if the user requested
+                        // and if CRC mismatch
+                        LOSSLESS.contains(&self.asfh.profile) && common::crc32(&frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && common::crc16_ansi(&frad) != self.asfh.crc16
+                    ) { frad = ecc::decode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // Error correction
+                    else { frad = ecc::unecc(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // ECC removal
+                }
+
+                // 1.3. Create Reed-Solomon error correction code
+                frad = ecc::encode_rs(frad, self.ecc_ratio[0] as usize, self.ecc_ratio[1] as usize);
+                (self.asfh.ecc, self.asfh.ecc_ratio) = (true, self.ecc_ratio);
+
+                // 1.4. Write the frame data to the buffer
+                ret.extend(self.asfh.write_buf(frad));
+                self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+                self.log.logging(false);
+
+                // 1.5. Clear the ASFH struct
+                self.asfh.clear();
+            }
+
+            /* 2. Finding header / Gathering more data to parse */
+            else {
+                // 2.1. If the header buffer not found, find the header buffer
+                if !self.asfh.buffer.starts_with(&common::FRM_SIGN) {
+                    match self.buffer.find_pattern(&common::FRM_SIGN) {
+                        // If pattern found in the buffer
+                        // 2.1.1. Split out the buffer to the header buffer
+                        Some(i) => {
+                            ret.extend(self.buffer.split_front(i));
+                            self.asfh.buffer = self.buffer.split_front(4);
+                        },
+                        // 2.1.2. else, Split out the buffer to the last 4 bytes and return
+                        None => {
+                            ret.extend(self.buffer.split_front(self.buffer.len().saturating_sub(4))); break; 
+                        }
+                    }
+                }
+                // 2.2. If header buffer found, try parsing the header
+                let force_flush = self.asfh.read_buf(&mut self.buffer);
+
+                // 2.3. Check header parsing result
+                match force_flush {
+                    // 2.3.1. If header is complete and not forced to flush, continue
+                    Ok(false) => {},
+                    // 2.3.2. If header is complete and forced to flush, flush and return
+                    Ok(true) => {
+                        self.log.update(&0, self.olap_len, &self.asfh.srate);
+                        ret.extend(self.asfh.force_flush_buf());
+                        self.olap_len = 0;
+                        break;
+                    },
+                    // 2.3.3. If header is incomplete, return
+                    Err(_) => break,
+                }
+            }
+        }
+        return ret;
+    }
+
+    /** flush
+     * Flush the remaining buffer
+    * Parameters: None
+    * Returns: Repairer buffer
+    */
+    pub fn flush(&mut self) -> Vec<u8> {
+        let ret = self.buffer.clone();
+        self.buffer.clear();
+        return ret;
+    }
+}
 
 /** repair
  * Repair or Apply ECC to FrAD stream
@@ -15,7 +138,6 @@ use same_file::is_same_file;
  */
 pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
     let mut wfile = params.output;
-    let ecc_ratio = params.ecc_ratio;
     if rfile.is_empty() { panic!("Input file must be given"); }
 
     let mut rpipe = false;
@@ -50,57 +172,17 @@ pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
-
-    let (mut asfh, mut head, mut olap_fragment_len) = (ASFH::new(), Vec::new(), 0);
-    let mut log = LogObj::new(loglevel, 0.5);
+    
+    let mut repairer = Repair::new(params.ecc_ratio);
+    repairer.log = LogObj::new(loglevel, 0.5);
     loop {
-        // 1. Reading the header
-        if head.is_empty() {
-            let mut buf = vec![0u8; 4];
-            let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(&0, olap_fragment_len, &asfh.srate); break; }
-            head = buf.to_vec();
-        }
-        // all the way until hitting the header or EOF
-        if head != common::FRM_SIGN {
-            let mut buf = vec![0u8; 1];
-            let readlen = readfile.read(&mut buf).unwrap();
-            if readlen == 0 { log.update(&0, olap_fragment_len, &asfh.srate); writefile.write_all(&head).unwrap(); break; }
-            head.extend(buf);
-            writefile.write_all(&[head[0]]).unwrap();
-            head = head[1..].to_vec();
-            continue;
-        }
-        // 2. Reading the frame
-        head = Vec::new();
-        let force_flush = asfh.update(&mut readfile);
-        if force_flush { asfh.force_flush(&mut writefile); continue; }
+        let mut buffer = vec![0; 32768];
+        let bytes_read = readfile.read(&mut buffer).unwrap();
+        if bytes_read == 0 { break; }
 
-        let samples = if asfh.olap == 0 || LOSSLESS.contains(&asfh.profile) { asfh.fsize as usize } else {
-        (asfh.fsize as usize * (asfh.olap as usize - 1)) / asfh.olap as usize };
-        olap_fragment_len = asfh.fsize as usize - samples;
-
-        // 3. Reading the frame data
-        let mut frad = vec![0u8; asfh.frmbytes as usize];
-        let _ = common::read_exact(&mut readfile, &mut frad);
-
-        // 4. Repairing the frame
-        if asfh.ecc {
-            if LOSSLESS.contains(&asfh.profile) && common::crc32(&frad) != asfh.crc32 ||
-            COMPACT.contains(&asfh.profile) && common::crc16_ansi(&frad) != asfh.crc16
-            { frad = ecc::decode_rs(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
-            else { frad = ecc::unecc(frad, asfh.ecc_ratio[0] as usize, asfh.ecc_ratio[1] as usize); }
-        }
-
-        // 5. Applying ECC
-        frad = ecc::encode_rs(frad, ecc_ratio[0] as usize, ecc_ratio[1] as usize);
-
-        // 6. Writing to file
-        (asfh.ecc, asfh.ecc_ratio) = (true, ecc_ratio);
-        asfh.write(&mut writefile, frad);
-
-        log.update(&asfh.total_bytes, samples, &asfh.srate);
-        log.logging(false);
+        let mut repaired = repairer.process(buffer[..bytes_read].to_vec());
+        writefile.write_all(&mut repaired).unwrap();
     }
-    log.logging(true);
+    writefile.write_all(&mut repairer.flush()).unwrap();
+    repairer.log.logging(true);
 }
