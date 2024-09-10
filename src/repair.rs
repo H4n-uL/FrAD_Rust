@@ -116,7 +116,7 @@ impl Repair {
                         // 2.1.2. else, Split out the buffer to the last 4 bytes and return
                         None => {
                             ret.extend(self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len() - 1)));
-                            break; 
+                            break;
                         }
                     }
                 }
