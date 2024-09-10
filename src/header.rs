@@ -8,7 +8,7 @@ use crate::{
     common::{move_all, SIGNATURE},
     tools::{cli, head}
 };
-use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
+use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{json, Value};
@@ -20,7 +20,8 @@ use tempfile::NamedTempFile;
  * Returns: FrAD file with modified metadata
  */
 pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
-    if file_name.is_empty() { eprintln!("File path is required."); std::process::exit(1); }
+    if file_name.is_empty() { eprintln!("Input file must be given"); exit(1); }
+    else if !Path::new(&file_name).exists() { eprintln!("Input file does not exist"); exit(1); }
 
     let mut head = vec![0u8; 64];
 
