@@ -200,7 +200,6 @@ impl Encode {
  */
 pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool) -> (Box<dyn Read>, Box<dyn Write>) {
     let (mut rpipe, mut wpipe) = (false, false);
-    if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
     if PIPEIN.contains(&input.as_str()) { rpipe = true; }
     else if !Path::new(&input).exists() { eprintln!("Input file doesn't exist"); exit(1); }
     if PIPEOUT.contains(&output.as_str()) { wpipe = true; }
@@ -249,7 +248,7 @@ pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool
  * Parameters: Input file, CLI parameters, Log level
  */
 pub fn encode(input: String, params: CliParams, loglevel: u8) {
-    let (mut rfile, mut wfile) = set_files(input, params.output, params.profile, params.overwrite);
+    if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
     let mut encoder = Encode::new(params.profile, params.pcm);
     if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
@@ -265,6 +264,8 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
     encoder.set_overlap(params.overlap);
 
     encoder.set_loss_level(params.losslevel);
+
+    let (mut rfile, mut wfile) = set_files(input, params.output, encoder.asfh.profile, params.overwrite);
 
     let mut image = Vec::new();
 
