@@ -15,10 +15,10 @@ use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, proces
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 use same_file::is_same_file;
 
-/** Encoder
+/** Encode
  * Struct for FrAD encoder
  */
-pub struct Encoder {
+pub struct Encode {
     asfh: ASFH,
     bit_depth: i16, channels: i16, fsize: u32,
     buffer: Vec<u8>,
@@ -29,11 +29,11 @@ pub struct Encoder {
     loss_level: u8,
 }
 
-impl Encoder {
-    pub fn new(profile: u8, pcm_format: PCMFormat) -> Encoder {
+impl Encode {
+    pub fn new(profile: u8, pcm_format: PCMFormat) -> Encode {
         let mut asfh = ASFH::new();
         asfh.profile = profile;
-        Encoder {
+        Encode {
             asfh,
             bit_depth: 0, channels: 0, fsize: 0,
             buffer: Vec::new(),
@@ -248,7 +248,7 @@ pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool
  * Parameters: Input file, CLI parameters, Log level
  */
 pub fn encode(input: String, params: CliParams, loglevel: u8) {
-    let mut encoder = Encoder::new(params.profile, params.pcm);
+    let mut encoder = Encode::new(params.profile, params.pcm);
     encoder.log = LogObj::new(loglevel, 0.5);
 
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
