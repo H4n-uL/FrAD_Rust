@@ -19,7 +19,7 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
 }
 
 /** encode_css
- * Encodes Channel-Srate-Smpcount byte for Compact Profiles
+ * Encodes channel-srate-samples byte for Compact Profiles
  * Parameters: Channel count, Sample rate, Sample count
  * Returns: Encoded CSS
  */
@@ -47,7 +47,7 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
 }
 
 /** decode_css
- * Decodes Channel-SampleRate-SampleCount byte for Compact Profiles
+ * Decodes Cchannel-srate-samples byte for Compact Profiles
  * Parameters: Encoded CSS
  * Returns: Channel count, Sample rate, Sample count
  */
