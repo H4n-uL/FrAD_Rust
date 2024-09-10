@@ -107,11 +107,12 @@ impl Repair {
                         // 2.1.1. Split out the buffer to the header buffer
                         Some(i) => {
                             ret.extend(self.buffer.split_front(i));
-                            self.asfh.buffer = self.buffer.split_front(4);
+                            self.asfh.buffer = self.buffer.split_front(FRM_SIGN.len());
                         },
                         // 2.1.2. else, Split out the buffer to the last 4 bytes and return
                         None => {
-                            ret.extend(self.buffer.split_front(self.buffer.len().saturating_sub(4))); break; 
+                            self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len()));
+                            break; 
                         }
                     }
                 }
