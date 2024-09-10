@@ -5,7 +5,7 @@
  */
 
 use crate::common::{Endian::{Big, Little}, PCMFormat};
-use std::{collections::VecDeque, env::Args, fs::read_to_string};
+use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{from_str, Value};
@@ -142,14 +142,16 @@ impl CliParams {
 pub fn parse(args: Args) -> (String, String, String, CliParams) {
     let mut args: VecDeque<String> = args.collect();
     let mut params: CliParams = CliParams::new();
-    args.pop_front().unwrap();
+    let executable = args.pop_front().unwrap();
     if args.is_empty() { return (String::new(), String::new(), String::new(), params); }
 
     let action = args.pop_front().unwrap();
     if PLAY_OPT.contains(&action.as_str()) { params.play = true; }
     let mut metaaction = String::new();
     if METADATA_OPT.contains(&action.as_str()) {
-        metaaction = args.pop_front().unwrap();
+        metaaction = args.pop_front().unwrap_or_else(
+            || { eprintln!("Metadata action not specified, type `{executable} help meta` for available options."); exit(1); }
+        );
     }
     if args.is_empty() { return (action, String::new(), String::new(), params); }
     let input = args.pop_front().unwrap();
