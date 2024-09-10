@@ -13,7 +13,7 @@ use std::{collections::HashMap, time::{Duration, Instant}};
  */
 fn format_time(mut n: f64) -> String {
     if n < 0.0 { return format!("-{}", format_time(-n)); }
-    
+
     let julian = (n / 31557600.0) as u16; n = n % 31557600.0;
     let days = (n / 86400.0) as u16; n = n % 86400.0;
     let hours = (n / 3600.0) as u8; n = n % 3600.0;

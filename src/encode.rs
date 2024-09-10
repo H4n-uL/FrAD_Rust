@@ -95,7 +95,7 @@ impl Encoder {
             // prepent the fragment to the frame
             frame.prepend(&self.overlap_fragment);
         }
-    
+
         // 2. If overlap is enabled and profile uses overlap
         let mut next_overlap = Vec::new();
         if COMPACT.contains(&self.asfh.profile) && self.asfh.olap > 1 {
