@@ -1,6 +1,6 @@
 [package]
 name = "frad"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["HaמuL"]
 license = "Archivist Licence"
 edition = "2021"

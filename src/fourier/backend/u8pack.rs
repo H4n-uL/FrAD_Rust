@@ -5,8 +5,8 @@
  * Dependencies: byteorder, half
  */
 
-use half::f16;
 use crate::backend::bitcvt;
+use half::f16;
 
 /** cut_float3s
  * Cuts off last bits of floats to make their bit depth to 12, 24, or 48
@@ -14,8 +14,10 @@ use crate::backend::bitcvt;
  *      Bitstream, Bit depth divisable by 3
  * Returns: bitstream
  */
-fn cut_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
-    return bstr.chunks(bits as usize * 4 / 3).flat_map(|c| c.iter().take(bits as usize)).cloned().collect();
+fn cut_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
+    return bstr.chunks(bits * 4 / 3).flat_map(|x| {
+        x.iter().skip(if be { 0 } else { bits / 3 }).take(bits).cloned()
+    }).collect();
 }
 
 /** pack
@@ -25,6 +27,7 @@ fn cut_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
  * Returns: Byte array
  */
 pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
+    let bits = bits as usize;
     let mut bytes: Vec<u8> = Vec::new();
     if bits % 8 != 0 { be = true }
 
@@ -57,10 +60,7 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
         }
     }
 
-    if bits % 3 == 0 {
-        let bitstrm: Vec<bool> = bitcvt::frombytes(bytes.clone());
-        bytes = bitcvt::tobytes(cut_float3s(bitstrm, bits));
-    }
+    if bits % 3 == 0 { bytes = bitcvt::tobytes(cut_float3s(bitcvt::frombytes(bytes), bits, be)); }
 
     return bytes;
 }
@@ -71,11 +71,10 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
  *      Bitstream, Bit depth divisable by 3
  * Returns: bitstream
  */
-fn pad_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
-    bstr.chunks(bits as usize).flat_map(|c| {
-        let mut padded = Vec::from(c);
-        padded.extend(std::iter::repeat(false).take(bits as usize / 3));
-        return padded
+fn pad_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
+    let pad = vec![false; bits / 3];
+    bstr.chunks(bits).flat_map(|y| {
+        if be { [Vec::from(y), pad.clone()] } else { [pad.clone(), Vec::from(y)] }.concat()
     }).collect()
 }
 
@@ -86,13 +85,14 @@ fn pad_float3s(bstr: Vec<bool>, bits: i16) -> Vec<bool> {
  * Returns: Flat f64 array
  */
 pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
+    let bits = bits as usize;
     let mut vec: Vec<f64> = Vec::new();
     if bits % 8 != 0 { be = true }
 
     if bits % 3 == 0 {
         let mut bitstrm: Vec<bool> = bitcvt::frombytes(input.clone());
-        bitstrm.truncate(bitstrm.len() - bitstrm.len() % bits as usize);
-        input = bitcvt::tobytes(pad_float3s(bitstrm, bits));
+        bitstrm.truncate(bitstrm.len() - bitstrm.len() % bits);
+        input = bitcvt::tobytes(pad_float3s(bitstrm, bits, be));
     }
 
     if bits == 12 || bits == 16 {
