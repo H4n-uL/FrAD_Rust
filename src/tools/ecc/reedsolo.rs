@@ -440,12 +440,9 @@ pub struct RSCodec {
 impl RSCodec {
     pub fn new(nsym: usize, nsize: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> RSCodec {
         let mut rs = RSCodec {
-            nsym,
-            nsize,
-            fcr,
-            prim,
-            generator,
-            c_exp,
+            nsym, nsize,
+            fcr, prim,
+            generator, c_exp,
             gf_log: [0; 256],
             gf_exp: [0; 512],
             gen: Vec::new(),
@@ -466,6 +463,10 @@ impl RSCodec {
         rs.gen = _rs_generator_poly(nsym, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
 
         return rs;
+    }
+
+    pub fn new_default(nsym: usize, nsize: usize) -> RSCodec {
+        return RSCodec::new(nsym, nsize, 0, 0x11d, 2, 8);
     }
 
     pub fn encode(&self, data: &[u8]) -> Vec<u8> {

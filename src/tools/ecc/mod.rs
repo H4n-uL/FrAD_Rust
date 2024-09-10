@@ -4,7 +4,7 @@ pub use reedsolo::RSCodec;
 
 pub fn encode_rs(data: Vec<u8>, dlen: usize, codelen: usize) -> Vec<u8> {
     let block_sz: usize = dlen + codelen;
-    let rs = RSCodec::new(codelen, block_sz, 0, 0x11d, 2, 8);
+    let rs = RSCodec::new_default(codelen, block_sz);
 
     let encoded_chunks = data.chunks(dlen).map(|chunk| {
         rs.encode(chunk)
@@ -15,7 +15,7 @@ pub fn encode_rs(data: Vec<u8>, dlen: usize, codelen: usize) -> Vec<u8> {
 
 pub fn decode_rs(data: Vec<u8>, dlen: usize, codelen: usize) -> Vec<u8> {
     let block_sz: usize = dlen + codelen;
-    let rs = RSCodec::new(codelen, block_sz, 0, 0x11d, 2, 8);
+    let rs = RSCodec::new_default(codelen, block_sz);
 
     let decoded_chunks = data.chunks(block_sz).map(|chunk| {
         rs.decode(chunk, None)
