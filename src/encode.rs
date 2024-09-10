@@ -249,6 +249,8 @@ pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool
  * Parameters: Input file, CLI parameters, Log level
  */
 pub fn encode(input: String, params: CliParams, loglevel: u8) {
+    let (mut rfile, mut wfile) = set_files(input, params.output, params.profile, params.overwrite);
+
     let mut encoder = Encode::new(params.profile, params.pcm);
     if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
     if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
@@ -263,8 +265,6 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
     encoder.set_overlap(params.overlap);
 
     encoder.set_loss_level(params.losslevel);
-
-    let (mut rfile, mut wfile) = set_files(input, params.output, encoder.asfh.profile, params.overwrite);
 
     let mut image = Vec::new();
 
