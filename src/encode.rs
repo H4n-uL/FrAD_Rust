@@ -4,8 +4,14 @@
  * Function: Encode f64be PCM to FrAD
  */
 
-use crate::{backend::{Prepend, SplitFront}, common::{self, any_to_f64, PCMFormat}, fourier::{self, profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, SEGMAX}, tools::{asfh::ASFH, cli::CliParams, ecc, head, log::LogObj}};
+use crate::{
+    backend::{Prepend, SplitFront},
+    common:: {any_to_f64, read_exact, PCMFormat, PIPEIN, PIPEOUT},
+    fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, BIT_DEPTHS, SEGMAX},
+    tools::  {asfh::ASFH, cli::CliParams, ecc, head, log::LogObj}
+};
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
+
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 use same_file::is_same_file;
 
@@ -19,7 +25,7 @@ pub struct Encoder {
     overlap_fragment: Vec<Vec<f64>>,
     log: LogObj,
 
-    pcm_format: common::PCMFormat,
+    pcm_format: PCMFormat,
     loss_level: u8,
 }
 
@@ -113,7 +119,7 @@ impl Encoder {
 
         loop {
             // self.asfh.profile = *vec![0, 1, 4].choose(rng).unwrap();
-            // self.bit_depth = *fourier::BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
+            // self.bit_depth = *BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
             // self.set_frame_size(*compact::SAMPLES_LI.choose(rng).unwrap());
             // self.set_loss_level(rng.gen_range(0..21));
             // let ecc_dsize = rng.gen_range(1..254);
@@ -153,7 +159,7 @@ impl Encoder {
             let fsize: u32 = frame.len() as u32;
 
             // 3. Encode the frame
-            if !fourier::BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
+            if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
             let (mut frad, bit_ind, chnl) = match self.asfh.profile {
                 1 => profile1::analogue(frame, self.bit_depth, self.asfh.srate, self.loss_level),
                 4 => profile4::analogue(frame, self.bit_depth, self.asfh.endian),
@@ -194,9 +200,9 @@ impl Encoder {
 pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool) -> (Box<dyn Read>, Box<dyn Write>) {
     let (mut rpipe, mut wpipe) = (false, false);
     if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
-    if common::PIPEIN.contains(&input.as_str()) { rpipe = true; }
+    if PIPEIN.contains(&input.as_str()) { rpipe = true; }
     else if !Path::new(&input).exists() { eprintln!("Input file doesn't exist"); exit(1); }
-    if common::PIPEOUT.contains(&output.as_str()) { wpipe = true; }
+    if PIPEOUT.contains(&output.as_str()) { wpipe = true; }
     else {
         match is_same_file(&input, &output) {
             Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
@@ -275,7 +281,7 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
 
     loop {
         let mut pcm_buf = vec![0u8; 32768];
-        let readlen = common::read_exact(&mut rfile, &mut pcm_buf);
+        let readlen = read_exact(&mut rfile, &mut pcm_buf);
         if readlen == 0 { break; }
         wfile.write_all(&encoder.process(pcm_buf[..readlen].to_vec())).unwrap();
     }

@@ -4,11 +4,11 @@
  * Function: Simple CLI parser for FrAD Library
  */
 
-use base64::{prelude::BASE64_STANDARD, Engine};
-use serde_json::{from_str, Value};
+use crate::common::{Endian::{Big, Little}, PCMFormat};
 use std::{collections::VecDeque, env::Args, fs::read_to_string};
 
-use crate::common::{Endian::{Big, Little}, PCMFormat};
+use base64::{prelude::BASE64_STANDARD, Engine};
+use serde_json::{from_str, Value};
 
 // CLI Options
 pub const ENCODE_OPT: [&str; 2] = ["encode", "enc"];

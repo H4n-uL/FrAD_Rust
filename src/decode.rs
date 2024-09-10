@@ -4,10 +4,14 @@
  * Function: Decode any file containing FrAD frames to PCM
  */
 
-use crate::{backend::{linspace, SplitFront, VecPatternFind}, common::{self, f64_to_any, PCMFormat},
+use crate::{
+    backend::{linspace, SplitFront, VecPatternFind},
+    common:: {crc16_ansi, crc32, f64_to_any, read_exact, PCMFormat, FRM_SIGN, PIPEIN, PIPEOUT},
     fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
-    tools::{asfh::ASFH, cli, ecc, log::LogObj}};
+    tools::  {asfh::ASFH, cli::CliParams, ecc, log::LogObj}
+};
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
+
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 use same_file::is_same_file;
 
@@ -112,8 +116,8 @@ impl Decode {
                 if self.asfh.ecc {
                     if self.fix_error && ( // and if the user requested
                         // and if CRC mismatch
-                        LOSSLESS.contains(&self.asfh.profile) && common::crc32(&frad) != self.asfh.crc32 ||
-                        COMPACT.contains(&self.asfh.profile) && common::crc16_ansi(&frad) != self.asfh.crc16
+                        LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16
                     ) { frad = ecc::decode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // Error correction
                     else { frad = ecc::unecc(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // ECC removal
                 }
@@ -139,8 +143,8 @@ impl Decode {
             /* 2. Finding header / Gathering more data to parse */
             else {
                 // 2.1. If the header buffer not found, find the header buffer
-                if !self.asfh.buffer.starts_with(&common::FRM_SIGN) {
-                    match self.buffer.find_pattern(&common::FRM_SIGN) {
+                if !self.asfh.buffer.starts_with(&FRM_SIGN) {
+                    match self.buffer.find_pattern(&FRM_SIGN) {
                         // If pattern found in the buffer
                         // 2.1.1. Split out the buffer to the header buffer
                         Some(i) => {
@@ -206,16 +210,16 @@ impl Decode {
  * Parameters: Input file, CLI parameters
  * Returns: Decoded PCM on File or stdout
  */
-pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
+pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
     let mut wfile = params.output;
     if rfile.is_empty() { panic!("Input file must be given"); }
 
     let mut rpipe = false;
-    if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
+    if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
 
     let mut wpipe = false;
-    if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
+    if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
         match is_same_file(&rfile, &wfile) {
             Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
@@ -254,7 +258,7 @@ pub fn decode(rfile: String, params: cli::CliParams, mut loglevel: u8) {
     let mut no = 0;
     loop {
         let mut buf = vec![0u8; 32768];
-        let readlen = common::read_exact(&mut readfile, &mut buf);
+        let readlen = read_exact(&mut readfile, &mut buf);
 
         if readlen == 0 && decoder.buffer.is_empty() && (!play || sink.empty()) { break; }
 

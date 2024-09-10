@@ -4,8 +4,14 @@
  * Function: Repair or Apply ECC to FrAD stream
  */
 
-use crate::{backend::{SplitFront, VecPatternFind}, common, fourier::profiles::{COMPACT, LOSSLESS}, tools::{asfh::ASFH, cli, ecc, log::LogObj}};
+use crate::{
+    backend::{SplitFront, VecPatternFind},
+    common:: {crc16_ansi, crc32, FRM_SIGN, PIPEIN, PIPEOUT},
+    fourier::profiles::{COMPACT, LOSSLESS},
+    tools::  {asfh::ASFH, cli::CliParams, ecc, log::LogObj}
+};
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
+
 use same_file::is_same_file;
 
 /** Repair
@@ -73,8 +79,8 @@ impl Repair {
                 if self.asfh.ecc {
                     if self.fix_error && ( // and if the user requested
                         // and if CRC mismatch
-                        LOSSLESS.contains(&self.asfh.profile) && common::crc32(&frad) != self.asfh.crc32 ||
-                        COMPACT.contains(&self.asfh.profile) && common::crc16_ansi(&frad) != self.asfh.crc16
+                        LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16
                     ) { frad = ecc::decode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // Error correction
                     else { frad = ecc::unecc(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // ECC removal
                 }
@@ -95,8 +101,8 @@ impl Repair {
             /* 2. Finding header / Gathering more data to parse */
             else {
                 // 2.1. If the header buffer not found, find the header buffer
-                if !self.asfh.buffer.starts_with(&common::FRM_SIGN) {
-                    match self.buffer.find_pattern(&common::FRM_SIGN) {
+                if !self.asfh.buffer.starts_with(&FRM_SIGN) {
+                    match self.buffer.find_pattern(&FRM_SIGN) {
                         // If pattern found in the buffer
                         // 2.1.1. Split out the buffer to the header buffer
                         Some(i) => {
@@ -148,16 +154,16 @@ impl Repair {
  * Parameters: Input file, CLI parameters
  * Returns: Repaired FrAD stream on File
  */
-pub fn repair(rfile: String, params: cli::CliParams, loglevel: u8) {
+pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
     let mut wfile = params.output;
     if rfile.is_empty() { panic!("Input file must be given"); }
 
     let mut rpipe = false;
-    if common::PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
+    if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
 
     let mut wpipe = false;
-    if common::PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
+    if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
         match is_same_file(&rfile, &wfile) {
             Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }

@@ -4,7 +4,11 @@
  * Function: Audio Stream Frame Header tools
  */
 
-use crate::{backend::SplitFront, common::{crc16_ansi, crc32, FRM_SIGN}, fourier::profiles::{compact, COMPACT}};
+use crate::{
+    backend::SplitFront,
+    common::{crc16_ansi, crc32, FRM_SIGN},
+    fourier::profiles::{compact, COMPACT}
+};
 
 /** encode_pfb
  * Encodes PFloat byte (containing necessary info for the frame)
