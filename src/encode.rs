@@ -51,6 +51,7 @@ impl Encode {
         self.channels = channels;
     }
     pub fn set_frame_size(&mut self, frame_size: u32) {
+        if frame_size == 0 { panic!("Frame size cannot be zero"); }
         if frame_size > SEGMAX[self.asfh.profile as usize] { panic!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); }
         self.fsize = frame_size;
     }
@@ -249,15 +250,16 @@ pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool
  */
 pub fn encode(input: String, params: CliParams, loglevel: u8) {
     let mut encoder = Encode::new(params.profile, params.pcm);
-    encoder.log = LogObj::new(loglevel, 0.5);
-
-    encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
-    encoder.set_little_endian(params.little_endian);
-    encoder.set_bit_depth(params.bits);
+    if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
+    if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
 
     encoder.set_srate(params.srate);
     encoder.set_channels(params.channels as i16);
     encoder.set_frame_size(params.frame_size);
+
+    encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
+    encoder.set_little_endian(params.little_endian);
+    encoder.set_bit_depth(params.bits);
     encoder.set_overlap(params.overlap);
 
     encoder.set_loss_level(params.losslevel);
@@ -279,6 +281,7 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
         if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );
 
+    encoder.log = LogObj::new(loglevel, 0.5);
     loop {
         let mut pcm_buf = vec![0u8; 32768];
         let readlen = read_exact(&mut rfile, &mut pcm_buf);

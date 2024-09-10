@@ -161,11 +161,11 @@ impl Repair {
  */
 pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
     let mut wfile = params.output;
-    if rfile.is_empty() { panic!("Input file must be given"); }
+    if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
     let mut rpipe = false;
     if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
-    else if !Path::new(&rfile).exists() { panic!("Input file does not exist"); }
+    else if !Path::new(&rfile).exists() { eprintln!("Input file does not exist"); exit(1); }
 
     let mut wpipe = false;
     if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
