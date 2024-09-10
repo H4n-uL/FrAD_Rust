@@ -52,6 +52,10 @@ impl Repair {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        return self.buffer.len() < FRM_SIGN.len();
+    }
+
     /** process
      * Process the input stream and repair the FrAD stream
     * Parameters: Input stream
@@ -111,7 +115,7 @@ impl Repair {
                         },
                         // 2.1.2. else, Split out the buffer to the last 4 bytes and return
                         None => {
-                            self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len()));
+                            self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len() - 1));
                             break; 
                         }
                     }
@@ -197,7 +201,7 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
     loop {
         let mut buffer = vec![0; 32768];
         let bytes_read = readfile.read(&mut buffer).unwrap();
-        if bytes_read == 0 { break; }
+        if bytes_read == 0 && repairer.is_empty() { break; }
 
         let mut repaired = repairer.process(buffer[..bytes_read].to_vec());
         writefile.write_all(&mut repaired).unwrap();

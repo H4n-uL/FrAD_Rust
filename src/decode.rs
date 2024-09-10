@@ -93,6 +93,10 @@ impl Decode {
         return frame;
     }
 
+    pub fn is_empty(&self) -> bool {
+        return self.buffer.len() < FRM_SIGN.len();
+    }
+
     /** process
      * Process the input stream and decode the FrAD frames
      * Parameters: Input stream
@@ -153,7 +157,7 @@ impl Decode {
                         },
                         // 2.1.2. else, Split out the buffer to the last 4 bytes and return
                         None => {
-                            self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len()));
+                            self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len() - 1));
                             break; 
                         }
                     }
@@ -261,7 +265,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
         let mut buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut buf);
 
-        if readlen == 0 && decoder.buffer.is_empty() && (!play || sink.empty()) { break; }
+        if readlen == 0 && decoder.is_empty() && (!play || sink.empty()) { break; }
 
         let (pcm, srate, critical_info_modified): (Vec<Vec<f64>>, u32, bool);
         (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
