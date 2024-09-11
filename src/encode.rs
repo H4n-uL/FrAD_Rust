@@ -115,7 +115,7 @@ impl Encode {
      */
     fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
         self.buffer.extend(stream);
-        let mut ret:Vec<u8> = Vec::new();
+        let mut ret: Vec<u8> = Vec::new();
         // let rng = &mut rand::thread_rng();
 
         loop {
