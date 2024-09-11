@@ -58,7 +58,7 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
         }
     }
 
-    if bits % 3 == 0 { bytes = bitcvt::tobytes(cut_float3s(bitcvt::frombytes(bytes), bits, be)); }
+    if bits % 3 == 0 { bytes = bitcvt::to_bytes(cut_float3s(bitcvt::to_bits(bytes), bits, be)); }
 
     return bytes;
 }
@@ -85,7 +85,7 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
     let mut vec: Vec<f64> = Vec::new();
 
     if bits % 8 != 0 { be = true }
-    if bits % 3 == 0 { input = bitcvt::tobytes(pad_float3s(bitcvt::frombytes(input), bits, be)); }
+    if bits % 3 == 0 { input = bitcvt::to_bytes(pad_float3s(bitcvt::to_bits(input), bits, be)); }
 
     if bits == 12 || bits == 16 {
         vec = input

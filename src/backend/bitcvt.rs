@@ -4,12 +4,12 @@
  * Function: Convert byte array to bitstream and vice versa
  */
 
-/** frombytes
+/** to_bits
  * Converts byte array to bitstream
  * Parameters: Byte array
  * Returns: Bitstream
  */
-pub fn frombytes(bytes: Vec<u8>) -> Vec<bool> {
+pub fn to_bits(bytes: Vec<u8>) -> Vec<bool> {
     let mut bitstream: Vec<bool> = Vec::new();
 
     for byte in bytes {
@@ -18,12 +18,12 @@ pub fn frombytes(bytes: Vec<u8>) -> Vec<bool> {
     return bitstream;
 }
 
-/** tobytes
+/** to_bytes
  * Converts bitstream to byte array
  * Parameters: Bitstream
  * Returns: Byte array
  */
-pub fn tobytes(bitstream: Vec<bool>) -> Vec<u8> {
+pub fn to_bytes(bitstream: Vec<bool>) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     let mut byte: u8 = 0u8;
 

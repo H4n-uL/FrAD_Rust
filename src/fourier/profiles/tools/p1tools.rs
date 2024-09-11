@@ -109,14 +109,14 @@ pub fn exp_golomb_rice_encode(data: Vec<i64>) -> Vec<u8> {
     for n in data {
         let n = if n > 0 { 2 * n - 1 } else { -2 * n };
         let x = (n + 2_i64.pow(k as u32)).to_be_bytes().to_vec();
-        let mut bcode: Vec<bool> = bitcvt::frombytes(x).iter().skip_while(|&x| !x).cloned().collect();
+        let mut bcode: Vec<bool> = bitcvt::to_bits(x).iter().skip_while(|&x| !x).cloned().collect();
         let m = bcode.len() - (k + 1) as usize;
         let mut un_bin = vec![false; m];
         un_bin.append(&mut bcode);
         encoded_binary.extend(un_bin);
     }
     let mut encoded = vec![k];
-    encoded.extend(bitcvt::tobytes(encoded_binary));
+    encoded.extend(bitcvt::to_bytes(encoded_binary));
     return encoded;
 }
 
@@ -128,7 +128,7 @@ pub fn exp_golomb_rice_encode(data: Vec<i64>) -> Vec<u8> {
 pub fn exp_golomb_rice_decode(data: Vec<u8>) -> Vec<i64> {
     let k = data[0];
     let mut decoded: Vec<i64> = Vec::new();
-    let mut data = bitcvt::frombytes(data.iter().skip(1).cloned().collect());
+    let mut data = bitcvt::to_bits(data.iter().skip(1).cloned().collect());
 
     while !data.is_empty() {
         let m = data.iter().position(|&x| x).unwrap_or(data.len());
@@ -140,7 +140,7 @@ pub fn exp_golomb_rice_decode(data: Vec<u8>) -> Vec<i64> {
         let mut n = i64::from_be_bytes({
             let mut x = vec![false; 64 - codeword.len()];
             x.extend(codeword);
-            bitcvt::tobytes(x).try_into().unwrap()
+            bitcvt::to_bytes(x).try_into().unwrap()
         }) - 2_i64.pow(k as u32);
         n = if n % 2 == 1 { (n + 1) / 2 } else { -n / 2 };
         decoded.push(n);
