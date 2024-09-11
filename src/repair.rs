@@ -81,16 +81,16 @@ impl Repair {
 
                 // 1.2. Correct the error if ECC is enabled
                 if self.asfh.ecc {
-                    if self.fix_error && ( // and if the user requested
+                    let repair =  self.fix_error && ( // and if the user requested
                         // and if CRC mismatch
                         LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
                         COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16
-                    ) { frad = ecc::decode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // Error correction
-                    else { frad = ecc::unecc(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize); } // ECC removal
+                    );
+                    frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
                 }
 
                 // 1.3. Create Reed-Solomon error correction code
-                frad = ecc::encode_rs(frad, self.ecc_ratio[0] as usize, self.ecc_ratio[1] as usize);
+                frad = ecc::encode(frad, self.ecc_ratio);
                 (self.asfh.ecc, self.asfh.ecc_ratio) = (true, self.ecc_ratio);
 
                 // 1.4. Write the frame data to the buffer

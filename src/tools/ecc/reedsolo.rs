@@ -96,19 +96,19 @@ fn _gf_poly_eval(poly: &[u8], x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> 
     return y;
 }
 
-fn _rs_generator_poly(nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
+fn _rs_generator_poly(parity_size: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
     let mut g = vec![1];
-    for i in 0..nsym {
+    for i in 0..parity_size {
         g = _gf_poly_mul(&g, &[1, _gf_pow(generator, i as u8 + fcr, gf_exp, gf_log)], gf_exp, gf_log);
     }
     return g;
 }
 
-fn _rs_encode_msg(msg_in: &[u8], nsym: usize, fcr: u8, generator: u8, gen: Option<&[u8]>, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
-    if msg_in.len() + nsym > 255 {
+fn _rs_encode_msg(msg_in: &[u8], parity_size: usize, fcr: u8, generator: u8, gen: Option<&[u8]>, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
+    if msg_in.len() + parity_size > 255 {
         panic!("Message is too long");
     }
-    let get_tmp = _rs_generator_poly(nsym, fcr, generator, gf_exp, gf_log);
+    let get_tmp = _rs_generator_poly(parity_size, fcr, generator, gf_exp, gf_log);
     let gen = gen.unwrap_or_else(|| &get_tmp);
 
     let mut msg_out = vec![0; msg_in.len() + gen.len() - 1];
@@ -128,10 +128,10 @@ fn _rs_encode_msg(msg_in: &[u8], nsym: usize, fcr: u8, generator: u8, gen: Optio
     return msg_out;
 }
 
-fn _rs_calc_syndromes(msg: &[u8], nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
-    let mut synd = vec![0; nsym + 1];
+fn _rs_calc_syndromes(msg: &[u8], parity_size: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
+    let mut synd = vec![0; parity_size + 1];
     synd[0] = 0;
-    for i in 0..nsym {
+    for i in 0..parity_size {
         synd[i + 1] = _gf_poly_eval(msg, _gf_pow(generator, i as u8 + fcr, gf_exp, gf_log), gf_exp, gf_log);
     }
     return synd;
@@ -181,16 +181,16 @@ fn _rs_correct_errata(msg_in: &mut [u8], synd: &[u8], err_pos: &[usize], generat
     return Ok(());
 }
 
-fn _rs_find_error_locator(synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, erase_count: usize, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<Vec<u8>, RSError> {
+fn _rs_find_error_locator(synd: &[u8], parity_size: usize, erase_loc: Option<&[u8]>, erase_count: usize, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<Vec<u8>, RSError> {
     let mut err_loc = match erase_loc {
         Some(erase_loc) => erase_loc.to_vec(),
         None => vec![1],
     };
     let mut old_loc = err_loc.clone();
 
-    let synd_shift = synd.len() - nsym;
+    let synd_shift = synd.len() - parity_size;
 
-    for i in 0..nsym-erase_count {
+    for i in 0..parity_size-erase_count {
         let mut delta = synd[i+synd_shift];
         for j in 1..err_loc.len() {
             delta ^= _gf_mul(err_loc[err_loc.len()-j-1], synd[i+synd_shift-j], gf_exp, gf_log);
@@ -213,7 +213,7 @@ fn _rs_find_error_locator(synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, er
     }
 
     let errs = err_loc.len() - 1;
-    if errs*2 + erase_count > nsym {
+    if errs*2 + erase_count > parity_size {
         return Err(RSError::TooManyErrors);
     }
 
@@ -261,7 +261,7 @@ fn _rs_forney_syndromes(synd: &[u8], pos: &[usize], nmess: usize, generator: u8,
     fsynd
 }
 
-fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase_pos: Option<&[usize]>, only_erasures: bool, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<(Vec<u8>, Vec<u8>, Vec<usize>), RSError> {
+fn _rs_correct_msg(msg_in: &mut [u8], parity_size: usize, fcr: u8, generator: u8, erase_pos: Option<&[usize]>, only_erasures: bool, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Result<(Vec<u8>, Vec<u8>, Vec<usize>), RSError> {
     if msg_in.len() > 255 {
         return Err(RSError::MessageTooLong);
     }
@@ -271,19 +271,19 @@ fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase
         msg_in[*e_pos] = 0;
     }
 
-    if erase_pos.len() > nsym {
+    if erase_pos.len() > parity_size {
         return Err(RSError::TooManyErasures);
     }
 
-    let synd = _rs_calc_syndromes(msg_in, nsym, fcr, generator, gf_exp, gf_log);
+    let synd = _rs_calc_syndromes(msg_in, parity_size, fcr, generator, gf_exp, gf_log);
     if synd.iter().max() == Some(&0) {
-        return Ok((msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), vec![]));
+        return Ok((msg_in[..msg_in.len()-parity_size].to_vec(), msg_in.to_vec(), vec![]));
     }
 
     let mut err_pos = vec![];
     if !only_erasures {
         let fsynd = _rs_forney_syndromes(&synd, erase_pos, msg_in.len(), generator, gf_exp, gf_log);
-        let err_loc = _rs_find_error_locator(&fsynd, nsym, Some(&_rs_find_errata_locator(erase_pos, generator, gf_exp, gf_log)), erase_pos.len(), gf_exp, gf_log)?;
+        let err_loc = _rs_find_error_locator(&fsynd, parity_size, Some(&_rs_find_errata_locator(erase_pos, generator, gf_exp, gf_log)), erase_pos.len(), gf_exp, gf_log)?;
         err_pos = _rs_find_errors(&err_loc, msg_in.len(), generator, gf_exp, gf_log)?;
         if err_pos.is_empty() {
             return Err(RSError::ErrorLocationFailure);
@@ -294,16 +294,16 @@ fn _rs_correct_msg(msg_in: &mut [u8], nsym: usize, fcr: u8, generator: u8, erase
     if corres.is_err() {
         return Err(corres.err().unwrap());
     }
-    let synd = _rs_calc_syndromes(msg_in, nsym, fcr, generator, gf_exp, gf_log);
+    let synd = _rs_calc_syndromes(msg_in, parity_size, fcr, generator, gf_exp, gf_log);
     if synd.iter().max() != Some(&0) {
         return Err(RSError::ErrorCorrectionFailure);
     }
 
-    return Ok((msg_in[..msg_in.len()-nsym].to_vec(), msg_in.to_vec(), erase_pos.iter().chain(err_pos.iter()).cloned().collect()));
+    return Ok((msg_in[..msg_in.len()-parity_size].to_vec(), msg_in.to_vec(), erase_pos.iter().chain(err_pos.iter()).cloned().collect()));
 }
 
-fn _rs_check(msg: &[u8], nsym: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> bool {
-    let synd = _rs_calc_syndromes(msg, nsym, fcr, generator, gf_exp, gf_log);
+fn _rs_check(msg: &[u8], parity_size: usize, fcr: u8, generator: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> bool {
+    let synd = _rs_calc_syndromes(msg, parity_size, fcr, generator, gf_exp, gf_log);
     synd.iter().max() == Some(&0)
 }
 
@@ -426,8 +426,8 @@ fn _primes_in_range(start: u32, end: u32) -> Vec<u32> {
 
 #[derive(Debug)]
 pub struct RSCodec {
-    pub nsym: usize,
-    pub nsize: usize,
+    pub data_size: usize,
+    pub parity_size: usize,
     pub fcr: u8,
     pub prim: u16,
     pub generator: u8,
@@ -438,18 +438,19 @@ pub struct RSCodec {
 }
 
 impl RSCodec {
-    pub fn new(nsym: usize, nsize: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> RSCodec {
+    pub fn new(data_size: usize, parity_size: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> RSCodec {
         let mut rs = RSCodec {
-            nsym, nsize,
+            data_size, parity_size,
             fcr, prim,
             generator, c_exp,
             gf_log: [0; 256],
             gf_exp: [0; 512],
             gen: Vec::new(),
         };
+        let block_size = data_size + parity_size;
 
-        if nsize > 255 && c_exp <= 8 {
-            rs.c_exp = (((nsize-1) as f64).ln() / 2.0_f64.ln()).ceil() as u32;
+        if block_size > 255 && c_exp <= 8 {
+            rs.c_exp = (((block_size-1) as f64).ln() / 2.0_f64.ln()).ceil() as u32;
         }
 
         if c_exp != 8 && prim == 0x11d {
@@ -460,29 +461,29 @@ impl RSCodec {
         rs.gf_log = gf_log;
         rs.gf_exp = gf_exp;
 
-        rs.gen = _rs_generator_poly(nsym, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
+        rs.gen = _rs_generator_poly(parity_size, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
 
         return rs;
     }
 
-    pub fn new_default(nsym: usize, nsize: usize) -> RSCodec {
-        return RSCodec::new(nsym, nsize, 0, 0x11d, 2, 8);
+    pub fn new_default(data_size: usize, parity_size: usize) -> RSCodec {
+        return RSCodec::new(data_size, parity_size, 0, 0x11d, 2, 8);
     }
 
     pub fn encode(&self, data: &[u8]) -> Vec<u8> {
-        let chunk_size = self.nsize - self.nsym;
+        let chunk_size = self.data_size;
 
         let mut chunks = Vec::new();
         for chunk in data.chunks(chunk_size) {
-            let chunk_enc = _rs_encode_msg(&chunk.to_vec(), self.nsym, self.fcr, self.generator, None, &self.gf_exp, &self.gf_log);
+            let chunk_enc = _rs_encode_msg(&chunk.to_vec(), self.parity_size, self.fcr, self.generator, None, &self.gf_exp, &self.gf_log);
             chunks.push(chunk_enc);
         }
         return chunks.into_iter().flatten().collect();
     }
 
     pub fn decode(&self, data: &[u8], erase_pos: Option<&[usize]>) -> Result<Vec<u8>, RSError> {
-        let chunk_size = self.nsize;
-        let enc_chunk_size = chunk_size + self.nsym;
+        let chunk_size = self.data_size + self.parity_size;
+        let enc_chunk_size = chunk_size + self.parity_size;
         let erase_pos = erase_pos.unwrap_or(&[]);
 
         let mut chunks = Vec::new();
@@ -495,7 +496,7 @@ impl RSCodec {
                 })
                 .collect();
 
-            let chunk_dec = _rs_correct_msg(&mut chunk.to_vec(), self.nsym, self.fcr, self.generator, Some(&chunk_erase_pos), false, &self.gf_exp, &self.gf_log);
+            let chunk_dec = _rs_correct_msg(&mut chunk.to_vec(), self.parity_size, self.fcr, self.generator, Some(&chunk_erase_pos), false, &self.gf_exp, &self.gf_log);
             if chunk_dec.is_err() {
                 return Err(chunk_dec.err().unwrap());
             }

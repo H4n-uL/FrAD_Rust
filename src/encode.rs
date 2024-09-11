@@ -169,7 +169,7 @@ impl Encode {
 
             // 4. Create Reed-Solomon error correction code
             if self.asfh.ecc {
-                frad = ecc::encode_rs(frad, self.asfh.ecc_ratio[0] as usize, self.asfh.ecc_ratio[1] as usize);
+                frad = ecc::encode(frad, self.asfh.ecc_ratio);
             }
 
             // 5. Write the frame to the buffer
