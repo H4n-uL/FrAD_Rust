@@ -95,8 +95,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
 
         if readlen == 0 && decoder.is_empty() && (!play || sink.empty()) { break; }
 
-        let (pcm, srate, critical_info_modified): (Vec<Vec<f64>>, u32, bool);
-        (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
+        let (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
         logging(loglevel, &decoder.streaminfo, false);
 
@@ -104,7 +103,8 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
     }
-    write(play, &mut writefile, &mut sink, decoder.flush(), &pcm_fmt, &decoder.asfh.srate);
+    let (pcm, srate) = decoder.flush();
+    write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
     logging(loglevel, &decoder.streaminfo, true);
     if play { sink.sleep_until_end(); }
 }

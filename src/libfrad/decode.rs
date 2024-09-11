@@ -15,7 +15,7 @@ use crate::{
  * Struct for FrAD decoder
  */
 pub struct Decode {
-    pub asfh: ASFH, info: ASFH,
+    asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
     pub streaminfo: StreamInfo,
@@ -72,7 +72,7 @@ impl Decode {
     /** process
      * Process the input stream and decode the FrAD frames
      * Parameters: Input stream
-     * Returns: Decoded PCM, Sample rate, Channels, Critical info modification flag
+     * Returns: Decoded PCM, Sample rate, Critical info modification flag
      */
     pub fn process(&mut self, stream: Vec<u8>) -> (Vec<Vec<f64>>, u32, bool) {
         self.buffer.extend(stream);
@@ -143,7 +143,7 @@ impl Decode {
                         // 2.3.1.1. If any critical parameter has changed, flush the overlap buffer
                         if !self.asfh.criteq(&self.info) {
                             if self.info.srate != 0 || self.info.channels != 0 { // If the info struct is not empty
-                                ret.extend(self.flush()); // Flush the overlap buffer
+                                ret.extend(self.flush().0); // Flush the overlap buffer
                                 let srate = self.info.srate; // Save the sample rate
                                 self.info = self.asfh.clone(); // Update the info struct
                                 return (ret, srate, true); // and return
@@ -152,7 +152,7 @@ impl Decode {
                         }
                     },
                     // 2.3.2. If header is complete and forced to flush, flush and return
-                    Ok(true) => { ret.extend(self.flush()); break; },
+                    Ok(true) => { ret.extend(self.flush().0); break; },
                     // 2.3.3. If header is incomplete, return
                     Err(_) => break,
                 }
@@ -164,9 +164,9 @@ impl Decode {
     /** flush
      * Flush the overlap buffer
      * Parameters: None
-     * Returns: Overlap buffer
+     * Returns: Overlap buffer, Sample rate
      */
-    pub fn flush(&mut self) -> Vec<Vec<f64>> {
+    pub fn flush(&mut self) -> (Vec<Vec<f64>>, u32) {
         // 1. Extract the overlap buffer
         // 2. Update stream info
         // 3. Clear the overlap buffer
@@ -177,6 +177,6 @@ impl Decode {
         self.streaminfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
-        return ret;
+        return (ret, self.asfh.srate);
     }
 }
