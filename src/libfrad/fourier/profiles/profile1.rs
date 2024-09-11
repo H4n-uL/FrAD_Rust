@@ -1,12 +1,16 @@
 /**                              FrAD Profile 1                               */
 /**
  * Copyright 2024 HaמuL
- * Function: FrAD Profile 1 encoding and decoding core
+ * Description: FrAD Profile 1 encoding and decoding core
  * Dependencies: flate2, half
  */
 
 use crate::backend::Transpose;
-use super::{super::backend::core::{dct, idct}, compact::SAMPLES_LI, tools::p1tools};
+use super::{
+    super::backend::core::{dct, idct},
+    compact::SAMPLES_LI,
+    tools::p1tools
+};
 
 use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
 use std::io::prelude::*;

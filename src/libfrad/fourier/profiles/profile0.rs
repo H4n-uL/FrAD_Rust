@@ -1,7 +1,7 @@
 /**                              FrAD Profile 0                               */
 /**
  * Copyright 2024 HaמuL
- * Function: FrAD Profile 0 encoding and decoding core
+ * Description: FrAD Profile 0 encoding and decoding core
  */
 
 use crate::backend::Transpose;

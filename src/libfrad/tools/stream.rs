@@ -1,7 +1,7 @@
 /**                                Stream Info                                */
 /**
  * Copyright 2024 HaמuL
- * Function: Stream information container
+ * Description: Stream information container
  */
 
 use std::{collections::HashMap, time::Instant};

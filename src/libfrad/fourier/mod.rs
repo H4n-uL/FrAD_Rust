@@ -1,7 +1,7 @@
 /**                                  Fourier                                  */
 /**
  * Copyright 2024 HaמuL
- * Function: Main Fourier tools
+ * Description: Main Fourier tools
  */
 
 pub mod backend; pub mod profiles;

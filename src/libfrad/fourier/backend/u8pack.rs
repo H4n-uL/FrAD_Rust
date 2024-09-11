@@ -1,7 +1,7 @@
 /**                             Bytearray packer                              */
 /**
  * Copyright 2024 HaמuL
- * Function: Pack float array into byte array and vice versa
+ * Description: Packer and unpacker for floats <-> byte arrays
  * Dependencies: byteorder, half
  */
 

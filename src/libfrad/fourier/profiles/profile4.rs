@@ -1,7 +1,7 @@
 /**                              FrAD Profile 4                               */
 /**
  * Copyright 2024 HaמuL
- * Function: FrAD Profile 4 encoding and decoding core
+ * Description: FrAD Profile 4 encoding and decoding core
  */
 
 use super::super::backend::u8pack;

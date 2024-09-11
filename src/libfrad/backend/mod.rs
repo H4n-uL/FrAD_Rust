@@ -1,7 +1,7 @@
 /**                              Library Backend                              */
 /**
  * Copyright 2024 HaמuL
- * Function: Backend for FrAD Library
+ * Description: Backend for FrAD Library
  */
 
 pub mod bitcvt;

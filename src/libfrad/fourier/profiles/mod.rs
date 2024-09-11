@@ -1,7 +1,7 @@
 /**                        FrAD Profiles configuration                        */
 /**
  * Copyright 2024 HaמuL
- * Function: Configuration for each FrAD profiles and profiles group
+ * Description: Configuration for each FrAD profiles and profiles group
  */
 
 pub mod tools;

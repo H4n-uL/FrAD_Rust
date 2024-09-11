@@ -1,7 +1,7 @@
 /**                                ASFH Tools                                 */
 /**
  * Copyright 2024 HaמuL
- * Function: Audio Stream Frame Header tools
+ * Description: Audio Stream Frame Header tools
  */
 
 use crate::{

@@ -1,7 +1,7 @@
 /**                              FrAD Profile 2                               */
 /**
  * Copyright 2024 HaמuL
- * Function: TBD
+ * Description: TBD
  * Dependencies: TBD
  */
 

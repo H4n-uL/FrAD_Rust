@@ -1,15 +1,13 @@
 /**                                  Header                                   */
 /**
  * Copyright 2024 HaמuL
- * Function: Add or Remove metadata from FrAD file
+ * Description: Metadata modificator for FrAD
  */
 
+use frad::{common::SIGNATURE, tools::head};
 use crate::{
-    common::SIGNATURE,
-    tools::head,
-
-    common_app::move_all,
-    tools_app::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
+    common::move_all,
+    tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
 };
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 

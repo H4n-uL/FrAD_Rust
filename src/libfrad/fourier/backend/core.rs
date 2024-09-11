@@ -1,7 +1,7 @@
 /**                    Fast Discrete Cosine Transform - II                    */
 /**
  * Copyright 2024 HaמuL
- * Function: FCT-II, Forward normalised
+ * Description: FCT-II, Forward normalised
  * Dependencies: rustfft
 */
 

@@ -1,7 +1,7 @@
 /**                             Error Correction                              */
 /**
  * Copyright 2024 HaמuL
- * Function: Error correction tools
+ * Description: Error correction tools
  */
 
 mod reedsolo;

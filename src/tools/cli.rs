@@ -1,10 +1,10 @@
 /**                                CLI Parser                                 */
 /**
  * Copyright 2024 HaמuL
- * Function: Simple CLI parser for FrAD Library
+ * Description: Simple CLI parser for FrAD Executable
  */
 
-use crate::common::{Endian::{Big, Little}, PCMFormat};
+use frad::common::{Endian::{Big, Little}, PCMFormat};
 use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};

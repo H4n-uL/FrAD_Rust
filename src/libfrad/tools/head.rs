@@ -1,7 +1,7 @@
 /**                            Header Configurator                            */
 /**
  * Copyright 2024 HaמuL
- * Function: Build or Parse FrAD Header
+ * Description: FrAD Header Builder and Parser
  */
 
 use crate::common::SIGNATURE;

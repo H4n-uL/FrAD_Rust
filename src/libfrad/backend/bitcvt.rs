@@ -1,7 +1,7 @@
 /**                                Bitconvert                                 */
 /**
  * Copyright 2024 HaמuL
- * Function: Convert byte array to bitstream and vice versa
+ * Description: Bitstream <-> Byte array converter
  */
 
 /** to_bits

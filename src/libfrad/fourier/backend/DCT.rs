@@ -1,7 +1,7 @@
 /**                      Discrete Cosine Transform - II                       */
 /**
  * Copyright 2024 HaמuL
- * Function: DCT-II, Forward normalised
+ * Description: DCT-II, Forward normalised
 */
 
 use std::f64::consts::PI;
