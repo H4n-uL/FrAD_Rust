@@ -6,7 +6,9 @@
 
 use crate::{
     common::{move_all, SIGNATURE},
-    tools::{cli, head}
+    tools::head,
+
+    tools_app::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG},
 };
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 
@@ -19,7 +21,7 @@ use tempfile::NamedTempFile;
  * Parameters: File path, Modification type, Metadata, Image path
  * Returns: FrAD file with modified metadata
  */
-pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
+pub fn modify(file_name: String, modtype: String, params: CliParams) {
     if file_name.is_empty() { eprintln!("Input file must be given"); exit(1); }
     else if !Path::new(&file_name).exists() { eprintln!("Input file does not exist"); exit(1); }
 
@@ -36,7 +38,7 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
     let (mut meta_old, img_old) = head::parser(head_old);
     let (mut meta_new, mut img_new) = (Vec::new(), Vec::new());
 
-    if modtype == cli::META_PARSE {
+    if modtype == META_PARSE {
         let mut json: Vec<Value> = Vec::new();
         for (key, data) in meta_old {
             let (data, itype) = match String::from_utf8(data.clone()) {
@@ -69,21 +71,21 @@ pub fn modify(file_name: String, modtype: String, params: cli::CliParams) {
     }
 
     match modtype.as_str() {
-        cli::META_ADD => {
+        META_ADD => {
             if !meta_old.is_empty() { meta_new.append(&mut meta_old); }
             meta_new.extend(params.meta);
             if !img_old.is_empty() { img_new = img_old; }
             if !img.is_empty() { img_new = img; }
         }
-        cli::META_REMOVE => {
+        META_REMOVE => {
             meta_new = meta_old.into_iter().filter(|(title, _)| !params.meta.iter().any(|(t, _)| t == title)).collect();
             img_new = img_old;
         }
-        cli::META_RMIMG => {
+        META_RMIMG => {
             meta_new = meta_old;
             img_new = Vec::new();
         }
-        cli::META_OVERWRITE => {
+        META_OVERWRITE => {
             meta_new = params.meta;
             img_new = img;
         }

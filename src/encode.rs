@@ -6,9 +6,12 @@
 
 use crate::{
     backend::{Prepend, SplitFront},
-    common:: {any_to_f64, read_exact, PCMFormat, PIPEIN, PIPEOUT},
+    common:: {any_to_f64, read_exact, PCMFormat},
     fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, BIT_DEPTHS, SEGMAX},
-    tools::  {asfh::ASFH, cli::CliParams, ecc, head, log::LogObj}
+    tools::  {asfh::ASFH, ecc, head, stream::StreamInfo},
+
+    common_app::{logging, PIPEIN, PIPEOUT},
+    tools_app::cli::CliParams,
 };
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
@@ -23,7 +26,7 @@ pub struct Encode {
     bit_depth: i16, channels: i16, fsize: u32,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
-    log: LogObj,
+    streaminfo: StreamInfo,
 
     pcm_format: PCMFormat,
     loss_level: u8,
@@ -38,7 +41,7 @@ impl Encode {
             bit_depth: 0, channels: 0, fsize: 0,
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
-            log: LogObj::new(0, 0.5),
+            streaminfo: StreamInfo::new(),
 
             pcm_format,
             loss_level: 0,
@@ -177,8 +180,7 @@ impl Encode {
             ret.extend(self.asfh.write(frad));
 
             // Logging
-            self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
-            self.log.logging(false);
+            self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
         }
 
         return ret;
@@ -282,13 +284,14 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
         if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );
 
-    encoder.log = LogObj::new(loglevel, 0.5);
+    encoder.streaminfo = StreamInfo::new();
     loop {
         let mut pcm_buf = vec![0u8; 32768];
         let readlen = read_exact(&mut rfile, &mut pcm_buf);
         if readlen == 0 { break; }
         wfile.write_all(&encoder.process(pcm_buf[..readlen].to_vec())).unwrap();
+        logging(loglevel, &encoder.streaminfo, false);
     }
     wfile.write_all(&encoder.flush()).unwrap();
-    encoder.log.logging(true);
+    logging(loglevel, &encoder.streaminfo, true);
 }

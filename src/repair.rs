@@ -6,9 +6,12 @@
 
 use crate::{
     backend::{SplitFront, VecPatternFind},
-    common:: {crc16_ansi, crc32, FRM_SIGN, PIPEIN, PIPEOUT},
+    common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::profiles::{COMPACT, LOSSLESS},
-    tools::  {asfh::ASFH, cli::CliParams, ecc, log::LogObj}
+    tools::  {asfh::ASFH, ecc, stream::StreamInfo},
+
+    common_app::{logging, PIPEIN, PIPEOUT},
+    tools_app::cli::CliParams,
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
@@ -20,7 +23,7 @@ use same_file::is_same_file;
 pub struct Repair {
     asfh: ASFH,
     buffer: Vec<u8>,
-    log: LogObj,
+    streaminfo: StreamInfo,
 
     fix_error: bool,
     olap_len: usize,
@@ -44,7 +47,7 @@ impl Repair {
         Repair {
             asfh: ASFH::new(),
             buffer: Vec::new(),
-            log: LogObj::new(0, 0.5),
+            streaminfo: StreamInfo::new(),
 
             fix_error: true,
             olap_len: 0,
@@ -95,8 +98,7 @@ impl Repair {
 
                 // 1.4. Write the frame data to the buffer
                 ret.extend(self.asfh.write(frad));
-                self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
-                self.log.logging(false);
+                self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Clear the ASFH struct
                 self.asfh.clear();
@@ -129,7 +131,7 @@ impl Repair {
                     Ok(false) => {},
                     // 2.3.2. If header is complete and forced to flush, flush and return
                     Ok(true) => {
-                        self.log.update(&0, self.olap_len, &self.asfh.srate);
+                        self.streaminfo.update(&0, self.olap_len, &self.asfh.srate);
                         ret.extend(self.asfh.force_flush());
                         self.olap_len = 0;
                         break;
@@ -197,7 +199,6 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
     let mut repairer = Repair::new(params.ecc_ratio);
-    repairer.log = LogObj::new(loglevel, 0.5);
     loop {
         let mut buffer = vec![0; 32768];
         let bytes_read = readfile.read(&mut buffer).unwrap();
@@ -205,7 +206,8 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
 
         let mut repaired = repairer.process(buffer[..bytes_read].to_vec());
         writefile.write_all(&mut repaired).unwrap();
+        logging(loglevel, &repairer.streaminfo, false);
     }
     writefile.write_all(&mut repairer.flush()).unwrap();
-    repairer.log.logging(true);
+    logging(loglevel, &repairer.streaminfo, true);
 }

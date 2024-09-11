@@ -11,10 +11,6 @@ use std::{fs::File, io::{Read, Write}};
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
 pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
 
-// Pipe and null device
-pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
-pub const PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
-
 #[derive(Clone, Copy)]
 pub enum PCMFormat {
     F16(Endian), F32(Endian), F64(Endian),

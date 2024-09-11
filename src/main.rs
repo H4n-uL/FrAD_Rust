@@ -1,4 +1,6 @@
-mod backend; mod fourier; mod tools; mod common;
+mod backend; mod fourier;
+mod tools; mod tools_app;
+mod common; mod common_app;
 mod encode; mod decode; mod repair; mod header;
 
 use std::{env, path::Path};
@@ -21,32 +23,32 @@ const PROFILES_HELP: &str = include_str!("help/profiles.txt");
 fn main() {
     let exepath = env::args().next().unwrap();
     let executable = Path::new(&exepath).file_name().unwrap().to_str().unwrap();
-    let (action, metaaction, input, params) = tools::cli::parse(env::args());
+    let (action, metaaction, input, params) = tools_app::cli::parse(env::args());
 
     let loglevel = params.loglevel;
-    if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
+    if tools_app::cli::ENCODE_OPT.contains(&action.as_str()) {
         encode::encode(input, params, loglevel);
     }
-    else if tools::cli::DECODE_OPT.contains(&action.as_str())
-        || tools::cli::PLAY_OPT.contains(&action.as_str()) {
+    else if tools_app::cli::DECODE_OPT.contains(&action.as_str())
+        || tools_app::cli::PLAY_OPT.contains(&action.as_str()) {
         decode::decode(input, params, loglevel);
     }
-    else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
+    else if tools_app::cli::REPAIR_OPT.contains(&action.as_str()) {
         repair::repair(input, params, loglevel);
     }
-    else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
+    else if tools_app::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);
     }
-    else if tools::cli::HELP_OPT.contains(&action.as_str()) {
+    else if tools_app::cli::HELP_OPT.contains(&action.as_str()) {
         println!("{}", BANNER);
         println!("{}",
-            if tools::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
-            else if tools::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
-            else if tools::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
-            else if tools::cli::PLAY_OPT.contains(&input.as_str()) { PLAY_HELP }
-            else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
-            else if tools::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
-            else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
+            if tools_app::cli::ENCODE_OPT.contains(&input.as_str()) { ENCODE_HELP }
+            else if tools_app::cli::DECODE_OPT.contains(&input.as_str()) { DECODE_HELP }
+            else if tools_app::cli::REPAIR_OPT.contains(&input.as_str()) { REPAIR_HELP }
+            else if tools_app::cli::PLAY_OPT.contains(&input.as_str()) { PLAY_HELP }
+            else if tools_app::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
+            else if tools_app::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
+            else if tools_app::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
             else { GENERAL_HELP }.replace("{frad}", executable)
         );
         println!();

@@ -6,9 +6,12 @@
 
 use crate::{
     backend::{linspace, SplitFront, VecPatternFind},
-    common:: {crc16_ansi, crc32, f64_to_any, read_exact, PCMFormat, FRM_SIGN, PIPEIN, PIPEOUT},
+    common:: {crc16_ansi, crc32, f64_to_any, read_exact, PCMFormat, FRM_SIGN},
     fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
-    tools::  {asfh::ASFH, cli::CliParams, ecc, log::LogObj}
+    tools::  {asfh::ASFH, ecc, stream::StreamInfo},
+
+    common_app::{logging, PIPEIN, PIPEOUT},
+    tools_app::cli::CliParams,
 };
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
 
@@ -46,18 +49,18 @@ pub struct Decode {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
-    log: LogObj,
+    streaminfo: StreamInfo,
 
     fix_error: bool,
 }
 
 impl Decode {
-    pub fn new(fix_error: bool, loglevel: u8) -> Decode {
+    pub fn new(fix_error: bool) -> Decode {
         Decode {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
-            log: LogObj::new(loglevel, 0.5),
+            streaminfo: StreamInfo::new(),
 
             fix_error,
         }
@@ -136,8 +139,7 @@ impl Decode {
 
                 // 1.4. Apply overlap
                 pcm = self.overlap(pcm); let samples = pcm.len();
-                self.log.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
-                self.log.logging(false);
+                self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Append the decoded PCM and clear header
                 ret.extend(pcm);
@@ -197,13 +199,13 @@ impl Decode {
      */
     pub fn flush(&mut self) -> Vec<Vec<f64>> {
         // 1. Extract the overlap buffer
-        // 2. Update log
+        // 2. Update stream info
         // 3. Clear the overlap buffer
         // 4. Clear the ASFH struct
         // 5. Return exctacted buffer
 
         let ret = self.overlap_fragment.clone();
-        self.log.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
+        self.streaminfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
         return ret;
@@ -257,7 +259,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
     sink.set_speed(params.speed as f32);
 
     if play { loglevel = 0; }
-    let mut decoder = Decode::new(params.enable_ecc, loglevel);
+    let mut decoder = Decode::new(params.enable_ecc);
     let pcm_fmt = params.pcm;
 
     let mut no = 0;
@@ -270,13 +272,13 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
         let (pcm, srate, critical_info_modified): (Vec<Vec<f64>>, u32, bool);
         (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
+        logging(loglevel, &decoder.streaminfo, false);
 
         if critical_info_modified && !(wpipe || play) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
     }
     write(play, &mut writefile, &mut sink, decoder.flush(), &pcm_fmt, &decoder.asfh.srate);
-
-    decoder.log.logging(true);
+    logging(loglevel, &decoder.streaminfo, true);
     if play { sink.sleep_until_end(); }
 }
