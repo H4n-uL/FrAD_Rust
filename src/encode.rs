@@ -6,12 +6,12 @@
 
 use crate::{
     backend::{Prepend, SplitFront},
-    common:: {any_to_f64, read_exact, PCMFormat},
+    common:: {any_to_f64, PCMFormat},
     fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT, LOSSLESS}, BIT_DEPTHS, SEGMAX},
     tools::  {asfh::ASFH, ecc, head, stream::StreamInfo},
 
-    common_app::{logging, PIPEIN, PIPEOUT},
-    tools_app::cli::CliParams,
+    common_app::{logging, read_exact, PIPEIN, PIPEOUT},
+    tools_app::cli::CliParams
 };
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 

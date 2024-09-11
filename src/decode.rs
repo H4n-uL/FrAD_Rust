@@ -6,12 +6,12 @@
 
 use crate::{
     backend::{linspace, SplitFront, VecPatternFind},
-    common:: {crc16_ansi, crc32, f64_to_any, read_exact, PCMFormat, FRM_SIGN},
+    common:: {crc16_ansi, crc32, f64_to_any, PCMFormat, FRM_SIGN},
     fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 
-    common_app::{logging, PIPEIN, PIPEOUT},
-    tools_app::cli::CliParams,
+    common_app::{logging, read_exact, PIPEIN, PIPEOUT},
+    tools_app::cli::CliParams
 };
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
 

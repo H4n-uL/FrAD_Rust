@@ -5,7 +5,6 @@
  */
 
 use half::f16;
-use std::{fs::File, io::{Read, Write}};
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -102,37 +101,6 @@ pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
         crc = (crc >> 8) ^ CRC16T_ANSI[((crc ^ byte as u16) & 0xff) as usize];
     }
     return crc.to_be_bytes().to_vec();
-}
-
-/** read_exact
- * Reads a file or stdin to a buffer with exact size
- * Parameters: File(&mut), Buffer(&mut)
- * Returns: Total bytes read
- */
-pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
-    let mut total_read = 0;
-
-    while total_read < buf.len() {
-        let read_size = file.read(&mut buf[total_read..]).unwrap();
-        if read_size == 0 { break; }
-        total_read += read_size;
-    }
-    return total_read;
-}
-
-pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
-    loop {
-        let mut buf: Vec<u8> = vec![0; bufsize];
-        let mut total_read = 0;
-
-        while total_read < buf.len() {
-            let read_size = readfile.read(&mut buf[total_read..]).unwrap();
-            if read_size == 0 { break; }
-            total_read += read_size;
-        }
-        if total_read == 0 { break; }
-        writefile.write_all(&buf[..total_read]).unwrap();
-    }
 }
 
 /** norm_into

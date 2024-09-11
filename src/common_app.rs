@@ -5,6 +5,7 @@
  */
 
 use crate::tools::stream::StreamInfo;
+use std::{fs::File, io::{Read, Write}};
 
 // Pipe and null device
 pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
@@ -70,4 +71,35 @@ pub fn logging(loglevel: u8, log: &StreamInfo, linefeed: bool) {
         format_bytes(log.total_size as f64), format_time(log.get_duration()), format_bytes(log.get_bitrate()), format_speed(log.get_speed())
     );
     if linefeed { eprintln!(); }
+}
+
+/** read_exact
+ * Reads a file or stdin to a buffer with exact size
+ * Parameters: File(&mut), Buffer(&mut)
+ * Returns: Total bytes read
+ */
+pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
+    let mut total_read = 0;
+
+    while total_read < buf.len() {
+        let read_size = file.read(&mut buf[total_read..]).unwrap();
+        if read_size == 0 { break; }
+        total_read += read_size;
+    }
+    return total_read;
+}
+
+pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
+    loop {
+        let mut buf: Vec<u8> = vec![0; bufsize];
+        let mut total_read = 0;
+
+        while total_read < buf.len() {
+            let read_size = readfile.read(&mut buf[total_read..]).unwrap();
+            if read_size == 0 { break; }
+            total_read += read_size;
+        }
+        if total_read == 0 { break; }
+        writefile.write_all(&buf[..total_read]).unwrap();
+    }
 }

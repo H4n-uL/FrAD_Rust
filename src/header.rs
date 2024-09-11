@@ -5,10 +5,11 @@
  */
 
 use crate::{
-    common::{move_all, SIGNATURE},
+    common::SIGNATURE,
     tools::head,
 
-    tools_app::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG},
+    common_app::move_all,
+    tools_app::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
 };
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 

@@ -11,7 +11,7 @@ use crate::{
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 
     common_app::{logging, PIPEIN, PIPEOUT},
-    tools_app::cli::CliParams,
+    tools_app::cli::CliParams
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
