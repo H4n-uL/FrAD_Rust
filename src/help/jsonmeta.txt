@@ -6,12 +6,12 @@ Format:
 
 [
     {
-        "key": "metadata key",
+        "key": "Metadata key",
         "type": "string",
         "value": "utf-8 value"
     },
     {
-        "key": "metadata key",
+        "key": "Another key",
         "type": "base64",
         "value": "YmluYXJ5IHZhbHVlIChlbmNvZGVkIGluIGJhc2U2NCk="
     }
@@ -19,7 +19,7 @@ Format:
 
 Features:
 
-    - utf-8 string metadata without any character limit
+    - UTF-8 string metadata without any restrictions
     - Base64 encoded binary metadata (up to 256 TiB)
-    - Support for duplicate keys
-    - Support for empty keys or values
+    - Supports duplicate keys
+    - Supports empty keys or values

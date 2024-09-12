@@ -1,0 +1,15 @@
+---------------------------------- VorbisMeta ----------------------------------
+
+VorbisMeta is a psuedo-vorbis comment metadata format for this application.
+It uses simple key-value pairs to store metadata.
+
+Format:
+
+MetadataKey=utf-8 value
+Another=another utf-8 value (base64 not supported)
+
+Features:
+
+    - Simple key-value pairs
+    - UTF-8 string metadata except for '=' in key
+    - Supports empty keys or values

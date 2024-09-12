@@ -21,6 +21,9 @@ Options:
     --jsonmeta <path/to/meta.json>
         JSONMeta format file path to embed (alias: jm)
         type `{frad} help jsonmeta` for JSONMeta format
+    --vorbis-meta <path/to/meta.tags>
+        VorbisMeta format file path to embed (alias: vm)
+        type `{frad} help vorbismeta` for VorbisMeta format
     --image <path/to/image.file>
         Image file path to embed, replace if exists (alias: img)
 

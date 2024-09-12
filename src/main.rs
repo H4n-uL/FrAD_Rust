@@ -21,6 +21,7 @@ const PLAY_HELP: &str = include_str!("help/play.txt");
 const REPAIR_HELP: &str = include_str!("help/repair.txt");
 const METADATA_HELP: &str = include_str!("help/metadata.txt");
 const JSONMETA_HELP: &str = include_str!("help/jsonmeta.txt");
+const VORBISMETA_HELP: &str = include_str!("help/vorbismeta.txt");
 const PROFILES_HELP: &str = include_str!("help/profiles.txt");
 
 /** Main function  */
@@ -52,6 +53,7 @@ fn main() {
             else if tools::cli::PLAY_OPT.contains(&input.as_str()) { PLAY_HELP }
             else if tools::cli::METADATA_OPT.contains(&input.as_str()) { METADATA_HELP }
             else if tools::cli::JSONMETA_OPT.contains(&input.as_str()) { JSONMETA_HELP }
+            else if tools::cli::VORBISMETA_OPT.contains(&input.as_str()) { VORBISMETA_HELP }
             else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
             else { GENERAL_HELP }.replace("{frad}", executable)
         );

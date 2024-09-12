@@ -17,6 +17,7 @@ pub const REPAIR_OPT: [&str; 2] = ["repair", "ecc"];
 pub const PLAY_OPT: [&str; 2] = ["play", "p"];
 pub const METADATA_OPT: [&str; 2] = ["meta", "metadata"];
 pub const JSONMETA_OPT: [&str; 2] = ["jsonmeta", "jm"];
+pub const VORBISMETA_OPT: [&str; 2] = ["vorbismeta", "vm"];
 pub const PROFILES_OPT: [&str; 2] = ["profiles", "prf"];
 pub const HELP_OPT: [&str; 3] = ["help", "h", "?"];
 
@@ -93,6 +94,24 @@ impl CliParams {
                 _ => { continue; }
             }
         }
+    }
+    pub fn set_meta_from_vorbis(&mut self, meta_path: String) {
+        let contents = match read_to_string(meta_path) { Ok(c) => c, Err(_) => { return; } };
+        let mut meta: Vec<(String, Vec<u8>)> = Vec::new();
+        for line in contents.lines() {
+            let mut parts = line.splitn(2, '=');
+            let key = parts.next().unwrap();
+            match parts.next() {
+                Some(value) => meta.push((key.to_string(), value.as_bytes().to_vec())),
+                None => {
+                    if let Some(last) = meta.last_mut() {
+                        last.1.extend(format!("\n{}", key).as_str().as_bytes());
+                    }
+                    else { meta.push(("".to_string(), key.as_bytes().to_vec())); }
+                }
+            }
+        }
+        self.meta = meta;
     }
     pub fn set_pcm_format(&mut self, fmt: &str) {
         self.pcm = match fmt {
@@ -191,6 +210,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                     else { params.meta.push((value, args.pop_front().unwrap().as_bytes().to_vec())); }
                 }
                 "jsonmeta" | "jm" => params.set_meta_from_json(args.pop_front().unwrap()),
+                "vorbis-meta" | "vm" => params.set_meta_from_vorbis(args.pop_front().unwrap()),
                 "img" | "image" => params.image_path = args.pop_front().unwrap(),
                 "log" | "v" => {
                     if !args.is_empty() && args[0].parse::<u8>().is_ok() {
