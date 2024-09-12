@@ -66,10 +66,10 @@ fn pack_f64(input: Vec<f64>, be: bool) -> Vec<u8> {
  * Returns: bitstream
  */
 fn pad_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
-    return bstr.chunks(bits).flat_map(|y| {
-        let pad = vec![false; bits / 3 * 4 - y.len()];
-        if be { [Vec::from(y), pad] } else { [pad, Vec::from(y)] }.concat()
-    }).collect();
+    let pad = vec![false; bits / 3];
+    return bstr.chunks(bits).filter(|y| y.len() == bits)
+    .flat_map(|y| { if be { y.iter().chain(pad.iter()) } else { pad.iter().chain(y.iter()) } })
+    .copied().collect();
 }
 
 /** unpack
