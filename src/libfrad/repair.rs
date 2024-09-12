@@ -1,7 +1,7 @@
 /**                                  Repair                                   */
 /**
  * Copyright 2024 HaמuL
- * Description: FrAD Repairer
+ * Description: FrAD repairer
  */
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
 };
 
 /** Repair
-* Struct for FrAD Repairer
+* Struct for FrAD repairer
 */
 pub struct Repair {
     asfh: ASFH,
