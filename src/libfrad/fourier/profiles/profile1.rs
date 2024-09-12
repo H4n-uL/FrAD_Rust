@@ -59,10 +59,10 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (V
         (freqs_masked[c], thresholds[c]) = (masked, thres_channel.iter().map(|x| (x * 3.0_f64.sqrt().powi(16 - bit_depth as i32))).collect());
     }
 
-    let freqs_flat: Vec<i64> = (0..freqs_masked[0].len()).flat_map(|i| freqs_masked.iter().map(move |inner| inner[i].round() as i64)).collect();
+    let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
     let freqs_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(freqs_flat);
 
-    let thres_flat: Vec<i64> = (0..thresholds[0].len()).flat_map(|i| thresholds.iter().map(move |inner| inner[i].round() as i64)).collect();
+    let thres_flat: Vec<i64> = thresholds.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
     let thres_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(thres_flat);
 
     let frad: Vec<u8> = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect();

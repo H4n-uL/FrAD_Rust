@@ -22,18 +22,17 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
  * Parameters: f64 PCM, Bit depth, Little endian toggle (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bits: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
     let channels = pcm[0].len();
-    let pcm_flat: Vec<f64> = pcm.into_iter().flatten().collect();
 
-    let mut bit_depth_index = DEPTHS.iter().position(|&x| x == bits).unwrap();
-    while pcm_flat.iter().fold(0.0, |max: f64, &x| max.max(x.abs())) >= FLOAT_DR_LIMITS[bit_depth_index] {
-        // 2^(2^(bit_depth-1)) is the "float limit" before infinity
-        if bit_depth_index == DEPTHS.len() { panic!("Overflow with reaching the max bit depth."); }
-        bit_depth_index += 1;
-    }
+    let pcm_flat: Vec<f64> = pcm.iter().flat_map(|x| x.iter()).cloned().collect();
+    let max_abs = pcm_flat.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
 
-    let frad = u8pack::pack(pcm_flat, bits, !little_endian);
+    let bit_depth_index = DEPTHS.iter().zip(FLOAT_DR_LIMITS.iter())
+    .enumerate().find(|(_, (&value, &limit))| value >= bit_depth && value > 0 && max_abs < limit)
+    .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
+
+    let frad = u8pack::pack(pcm_flat, DEPTHS[bit_depth_index], !little_endian);
     return (frad, bit_depth_index as i16, channels as i16);
 }
 
