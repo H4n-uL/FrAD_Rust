@@ -33,6 +33,16 @@ impl PCMFormat {
     pub fn signed(&self) -> bool {
         match self { PCMFormat::I8 | PCMFormat::I16(_) | PCMFormat::I24(_) | PCMFormat::I32(_) | PCMFormat::I64(_) => true, _ => false }
     }
+    pub fn scale(&self) -> f64 {
+        match self {
+            PCMFormat::I8 | PCMFormat::U8 => 128.0,
+            PCMFormat::I16(_) | PCMFormat::U16(_) => 32768.0,
+            PCMFormat::I24(_) | PCMFormat::U24(_) => 8388608.0,
+            PCMFormat::I32(_) | PCMFormat::U32(_) => 2147483648.0,
+            PCMFormat::I64(_) | PCMFormat::U64(_) => 9223372036854775808.0,
+            _ => 1.0
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -111,7 +121,7 @@ pub fn crc16_ansi(data: &[u8]) -> Vec<u8> {
 fn norm_into(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
     return if pcm_fmt.float() { x }
     else {
-        x /= 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1);
+        x /= pcm_fmt.scale();
         return if pcm_fmt.signed() { x } else { x - 1.0 };
     };
 }
@@ -125,7 +135,7 @@ fn norm_from(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
     return if pcm_fmt.float() { x }
     else {
         x = if pcm_fmt.signed() { x } else { x + 1.0 };
-        return (x * 2.0f64.powi(pcm_fmt.bit_depth() as i32 - 1)).round();
+        return (x * pcm_fmt.scale()).round();
     };
 }
 
@@ -187,9 +197,9 @@ macro_rules! int32_to_24 {
  * Returns: f64
  */
 pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
-    return if bytes.len() != pcm_fmt.bit_depth() / 8 { 0.0 }
-    else {
-        norm_into(match pcm_fmt {
+    if bytes.len() != pcm_fmt.bit_depth() / 8 { return 0.0 }
+    return norm_into(
+        match pcm_fmt {
             PCMFormat::F16(en) => to_f64!(f16, bytes, en).to_f64(),
             PCMFormat::F32(en) => to_f64!(f32, bytes, en) as f64,
             PCMFormat::F64(en) => to_f64!(f64, bytes, en),
@@ -205,8 +215,8 @@ pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
             PCMFormat::U24(en) => to_f64!(u32, int24_to_32!(bytes, en, false), en) as f64,
             PCMFormat::U32(en) => to_f64!(u32, bytes, en) as f64,
             PCMFormat::U64(en) => to_f64!(u64, bytes, en) as f64,
-        }, pcm_fmt)
-    };
+        }, pcm_fmt
+    );
 }
 
 /** f64_to_any

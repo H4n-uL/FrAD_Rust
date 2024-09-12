@@ -148,8 +148,7 @@ impl Encode {
             let pcm_flat: Vec<f64> = pcm_bytes.chunks(bytes_per_sample).map(|bytes| any_to_f64(bytes, &self.pcm_format)).collect();
 
             // Unravel flat PCM to 2D PCM array
-            let mut frame: Vec<Vec<f64>> = (0..rlen).take_while(|&i| (i as usize + 1) * self.channels as usize <= pcm_flat.len())
-            .map(|i| pcm_flat[i as usize * (self.channels as usize)..(i + 1) as usize * (self.channels as usize)].to_vec()).collect();
+            let mut frame: Vec<Vec<f64>> = pcm_flat.chunks(self.channels as usize).map(Vec::from).collect();
             if frame.is_empty() { self.asfh.force_flush(); break; } // If frame is empty, break
             let samples = frame.len();
 

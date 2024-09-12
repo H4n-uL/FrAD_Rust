@@ -26,41 +26,38 @@ fn cut_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
  */
 pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     let bits = bits as usize;
-    let mut bytes: Vec<u8> = Vec::new();
     if bits % 8 != 0 { be = true }
 
-    if bits == 12 || bits == 16 {
-        let input: Vec<f16> = input.iter().map(|&x| f16::from_f64(x)).collect();
-        for &x in &input {
-            bytes.extend(
-                if be { u16::to_be_bytes(x.to_bits()) }
-                else  { u16::to_le_bytes(x.to_bits()) }
-                .to_vec()
-            );
-        }
-    }
-    else if bits == 24 || bits == 32 {
-        for &x in &input {
-            bytes.extend(
-                if be { f32::to_be_bytes(x as f32) }
-                else  { f32::to_le_bytes(x as f32) }
-                .to_vec()
-            );
-        }
-    }
-    else if bits == 48 || bits == 64 {
-        for &x in &input {
-            bytes.extend(
-                if be { f64::to_be_bytes(x) }
-                else  { f64::to_le_bytes(x) }
-                .to_vec()
-            );
-        }
-    }
+    let bytes = match bits {
+        12 | 16 => pack_f16(input, be),
+        24 | 32 => pack_f32(input, be),
+        48 | 64 => pack_f64(input, be),
+        _ => panic!("Invalid bit depth")
+    };
 
-    if bits % 3 == 0 { bytes = bitcvt::to_bytes(cut_float3s(bitcvt::to_bits(bytes), bits, be)); }
-
+    if bits % 3 == 0 { 
+        return bitcvt::to_bytes(cut_float3s(bitcvt::to_bits(bytes), bits, be));
+    }
     return bytes;
+}
+
+fn pack_f16(input: Vec<f64>, be: bool) -> Vec<u8> {
+    return input.into_iter().flat_map(|x|
+        if be { u16::to_be_bytes(f16::from_f64(x).to_bits()) }
+        else  { u16::to_le_bytes(f16::from_f64(x).to_bits()) }
+    ).collect();
+}
+fn pack_f32(input: Vec<f64>, be: bool) -> Vec<u8> {
+    return input.into_iter().flat_map(|x|
+        if be { f32::to_be_bytes(x as f32) }
+        else  { f32::to_le_bytes(x as f32) }
+    ).collect();
+}
+fn pack_f64(input: Vec<f64>, be: bool) -> Vec<u8> {
+    return input.into_iter().flat_map(|x|
+        if be { f64::to_be_bytes(x) }
+        else  { f64::to_le_bytes(x) }
+    ).collect();
 }
 
 /** pad_float3s
@@ -82,44 +79,40 @@ fn pad_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
  */
 pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
     let bits = bits as usize;
-    let mut vec: Vec<f64> = Vec::new();
 
     if bits % 8 != 0 { be = true }
     if bits % 3 == 0 { input = bitcvt::to_bytes(pad_float3s(bitcvt::to_bits(input), bits, be)); }
 
-    if bits == 12 || bits == 16 {
-        vec = input
-            .chunks(2)
-            .map(|bytes| {
-                let x = f16::from_bits(
-                    if be { u16::from_be_bytes(bytes.try_into().unwrap()) }
-                    else { u16::from_le_bytes(bytes.try_into().unwrap()) }
-                );
-                f64::from(x)
-            })
-            .collect();
-    }
-    else if bits == 24 || bits == 32 {
-        vec = input
-            .chunks(4)
-            .map(|bytes| {
-                let x =
-                    if be { f32::from_be_bytes(bytes.try_into().unwrap()) }
-                    else { f32::from_le_bytes(bytes.try_into().unwrap()) }
-                ;
-                f64::from(x)
-            })
-            .collect();
-    }
-    else if bits == 48 || bits == 64 {
-        vec = input
-            .chunks(8)
-            .map(|bytes| {
-                if be { f64::from_be_bytes(bytes.try_into().unwrap()) }
-                else { f64::from_le_bytes(bytes.try_into().unwrap()) }
-            })
-            .collect();
-    }
+    return match bits {
+        12 | 16 => unpack_f16(input, be),
+        24 | 32 => unpack_f32(input, be),
+        48 | 64 => unpack_f64(input, be),
+        _ => panic!("Invalid bit depth")
+    };
+}
 
-    return vec;
+fn unpack_f16(input: Vec<u8>, be: bool) -> Vec<f64> {
+    return input.chunks(2)
+    .map(|bytes| {
+        f64::from(f16::from_bits(
+            if be { u16::from_be_bytes(bytes.try_into().unwrap()) }
+            else  { u16::from_le_bytes(bytes.try_into().unwrap()) }
+        ))
+    }).collect();
+}
+fn unpack_f32(input: Vec<u8>, be: bool) -> Vec<f64> {
+    return input.chunks(4)
+    .map(|bytes| {
+        f64::from(
+            if be { f32::from_be_bytes(bytes.try_into().unwrap()) }
+            else  { f32::from_le_bytes(bytes.try_into().unwrap()) }
+        )
+    }).collect();
+}
+fn unpack_f64(input: Vec<u8>, be: bool) -> Vec<f64> {
+    return input.chunks(8)
+    .map(|bytes| {
+        if be { f64::from_be_bytes(bytes.try_into().unwrap()) }
+        else  { f64::from_le_bytes(bytes.try_into().unwrap()) }
+    }).collect();
 }
