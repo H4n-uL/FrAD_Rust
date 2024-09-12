@@ -82,7 +82,7 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
     encoder.set_little_endian(params.little_endian);
     encoder.set_bit_depth(params.bits);
-    encoder.set_overlap(params.overlap);
+    encoder.set_overlap_ratio(params.overlap_ratio);
 
     encoder.set_loss_level(params.losslevel);
 

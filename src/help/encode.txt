@@ -39,8 +39,8 @@ Optional settings:
         FrAD Profile from 0 to 7 (alias: prf)
     --loss-level <level>
         Lossy compression level (default: 0, alias: lv, level)
-    --overlap <ratio>
-        Overlap ratio in 1/<ratio> (alias: olap)
+    --overlap-ratio <ratio>
+        Overlap ratio in 1/<ratio> (alias: overlap, olap)
 
     --meta <key> <value>
         Metadata in <key> <value> (alias: m, tag)

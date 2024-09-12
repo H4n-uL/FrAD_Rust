@@ -69,8 +69,8 @@ impl Repair {
                 // 1.0. If the buffer is not enough to decode the frame, break
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
-                let samples = if self.asfh.olap == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
-                    (self.asfh.fsize as usize * (self.asfh.olap as usize - 1)) / self.asfh.olap as usize };
+                let samples = if self.asfh.overlap_ratio == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
+                    (self.asfh.fsize as usize * (self.asfh.overlap_ratio as usize - 1)) / self.asfh.overlap_ratio as usize };
                 self.olap_len = self.asfh.fsize as usize - samples;
 
                 // 1.1. Split out the frame data

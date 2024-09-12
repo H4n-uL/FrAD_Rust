@@ -54,12 +54,12 @@ impl Decode {
 
         // 2. if COMPACT profile and overlap is enabled, split this frame
         let mut next_overlap = Vec::new();
-        if COMPACT.contains(&self.asfh.profile) && self.asfh.olap != 0 {
-            let olap = self.asfh.olap.max(2);
-            // return_frame         = frame[0 ~ (len*(olap-1)) / olap]
-            // new_overlap_fragment = frame[(len*(olap-1)) / olap ~ len]
-            // = [2048], olap=16 -> [1920, 128]
-            next_overlap = frame.split_off((frame.len() * (olap as usize - 1)) / olap as usize);
+        if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
+            let overlap_ratio = self.asfh.overlap_ratio.max(2);
+            // return_frame         = frame[0 ~ (len*(overlap_ratio-1)) / overlap_ratio]
+            // new_overlap_fragment = frame[(len*(overlap_ratio-1)) / overlap_ratio ~ len]
+            // = [2048], overlap_ratio=16 -> [1920, 128]
+            next_overlap = frame.split_off((frame.len() * (overlap_ratio as usize - 1)) / overlap_ratio as usize);
         }
         self.overlap_fragment = next_overlap;
         return frame;

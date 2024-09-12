@@ -80,7 +80,10 @@ impl Encode {
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
     // pub fn set_profile(&mut self, profile: u8) { self.asfh.profile = profile; }
     pub fn set_loss_level(&mut self, loss_level: u8) { self.loss_level = loss_level; }
-    pub fn set_overlap(&mut self, mut overlap: u16) { if overlap != 0 { overlap = overlap.max(2).min(256); } self.asfh.olap = overlap; }
+    pub fn set_overlap_ratio(&mut self, mut overlap_ratio: u16) {
+        if overlap_ratio != 0 { overlap_ratio = overlap_ratio.max(2).min(256); }
+        self.asfh.overlap_ratio = overlap_ratio;
+    }
 
 
     /** overlap
@@ -97,9 +100,9 @@ impl Encode {
 
         // 2. If overlap is enabled and profile uses overlap
         let mut next_overlap = Vec::new();
-        if COMPACT.contains(&self.asfh.profile) && self.asfh.olap > 1 {
+        if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio > 1 {
             // Copy the last olap samples to the next overlap fragment
-            let cutoff = (frame.len() * (self.asfh.olap as usize - 1)) / self.asfh.olap as usize;
+            let cutoff = (frame.len() * (self.asfh.overlap_ratio as usize - 1)) / self.asfh.overlap_ratio as usize;
             next_overlap = frame[cutoff..].to_vec();
         }
         self.overlap_fragment = next_overlap;
@@ -121,10 +124,10 @@ impl Encode {
             // self.bit_depth = *BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
             // self.set_frame_size(*compact::SAMPLES_LI.choose(rng).unwrap());
             // self.set_loss_level(rng.gen_range(0..21));
-            // let ecc_dsize = rng.gen_range(1..254);
-            // let ecc_codesize = rng.gen_range(1..255 - ecc_dsize);
-            // self.set_ecc(rng.gen_bool(0.5), [ecc_dsize, ecc_codesize]);
-            // self.set_overlap(rng.gen_range(2..256));
+            // let ecc_data = rng.gen_range(1..254);
+            // let ecc_parity = rng.gen_range(1..255 - ecc_data);
+            // self.set_ecc(rng.gen_bool(0.5), [ecc_data, ecc_parity]);
+            // self.set_overlap_ratio(rng.gen_range(2..256));
 
             // 0. Set read length in samples
             let mut rlen = self.fsize as usize;

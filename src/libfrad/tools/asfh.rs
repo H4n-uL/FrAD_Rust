@@ -95,7 +95,7 @@ pub struct ASFH {
     pub crc32: [u8; 4],
 
     // COMPACT
-    pub olap: u16,
+    pub overlap_ratio: u16,
     pub crc16: [u8; 2],
 }
 
@@ -110,7 +110,7 @@ impl ASFH {
 
             ecc: false, ecc_ratio: [0; 2],
             profile: 0,
-            olap: 0, crc16: [0; 2], crc32: [0; 4],
+            overlap_ratio: 0, crc16: [0; 2], crc32: [0; 4],
         }
     }
 
@@ -131,7 +131,7 @@ impl ASFH {
 
         if COMPACT.contains(&self.profile) {
             fhead.extend(encode_css(self.channels, self.srate, self.fsize, false));
-            fhead.push((self.olap.max(1) - 1) as u8);
+            fhead.push((self.overlap_ratio.max(1) - 1) as u8);
             if self.ecc {
                 fhead.extend(self.ecc_ratio.to_vec());
                 fhead.extend(crc16_ansi(&frad).to_vec());
@@ -201,7 +201,7 @@ impl ASFH {
 
             let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
             if force_flush { self.all_set = true; return Ok(true); }
-            self.olap = self.buffer[0xb] as u16; if self.olap != 0 { self.olap += 1; }
+            self.overlap_ratio = self.buffer[0xb] as u16; if self.overlap_ratio != 0 { self.overlap_ratio += 1; }
 
             if self.ecc {
                 if !self.fill_buffer(buffer, 16) { return Err(()) }
