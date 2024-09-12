@@ -1,4 +1,4 @@
-/**                                Decode app                                 */
+/**                            Decode application                             */
 /**
  * Copyright 2024 HaמuL
  * Description: Decoder implementation example

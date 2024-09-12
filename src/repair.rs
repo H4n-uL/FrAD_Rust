@@ -1,4 +1,4 @@
-/**                                Repair app                                 */
+/**                            Repair application                             */
 /**
  * Copyright 2024 HaמuL
  * Description: Repairer implementation example

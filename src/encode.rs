@@ -1,4 +1,4 @@
-/**                                Encode app                                 */
+/**                            Encode application                             */
 /**
  * Copyright 2024 HaמuL
  * Description: Encoder implementation example

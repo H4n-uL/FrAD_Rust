@@ -1,4 +1,4 @@
-/**                             Common app tools                              */
+/**                         Common application tools                          */
 /**
  * Copyright 2024 HaמuL
  * Description: Common tools for FrAD Executable
