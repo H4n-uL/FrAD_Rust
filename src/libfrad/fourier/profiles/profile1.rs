@@ -44,8 +44,8 @@ fn get_quant_factors(bit_depth: i16) -> (f64, f64) {
     return (pcm_quant, thres_quant);
 }
 
-fn finite(x: Vec<f64>) -> Vec<f64> {
-    return x.iter().map(|x| if x.is_finite() { *x } else { 0.0 }).collect();
+fn finite(x: f64) -> f64 {
+    return if x.is_finite() { x } else { 0.0 };
 }
 
 /** analogue
@@ -68,13 +68,13 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: 
     let mut thresholds: Vec<Vec<f64>> = vec![vec![0.0; p1tools::MOSLEN]; channels];
 
     for c in 0..channels {
-        let mapping = p1tools::mapping_to_opus(&freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>(), srate);
-        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * loss_level).collect();
+        let freqs_map_opus = p1tools::mapping_to_opus(&freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>(), srate);
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&freqs_map_opus, p1tools::SPREAD_ALPHA).iter().map(|x| x * loss_level).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
-        let masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y)).collect();
+        let chnl_masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| finite(p1tools::quant(x / y))).collect();
 
-        (freqs_masked[c], thresholds[c]) = (finite(masked), finite(thres_channel.iter().map(|x| (x * thres_quant)).collect()));
+        (freqs_masked[c], thresholds[c]) = (chnl_masked, thres_channel.iter().map(|x| finite(x * thres_quant)).collect());
     }
 
     let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
