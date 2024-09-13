@@ -11,6 +11,7 @@ use crate::{
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 };
 
+use std::process::exit;
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 
 /** Encode
@@ -29,7 +30,7 @@ pub struct Encode {
 
 impl Encode {
     pub fn new(profile: u8, pcm_format: PCMFormat) -> Encode {
-        if !AVAILABLE.contains(&profile) { panic!("Invalid profile! Available: {:?}", AVAILABLE); }
+        if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
         let mut asfh = ASFH::new();
         asfh.profile = profile;
         Encode {
@@ -46,27 +47,35 @@ impl Encode {
 
     // true dynamic info - set every frame
     pub fn set_channels(&mut self, channels: i16) {
-        if channels == 0 { panic!("Channel count cannot be zero"); }
+        if channels == 0 { eprintln!("Channel count cannot be zero"); exit(1); }
         self.channels = channels;
     }
     pub fn set_frame_size(&mut self, frame_size: u32) {
-        if frame_size == 0 { panic!("Frame size cannot be zero"); }
-        if frame_size > SEGMAX[self.asfh.profile as usize] { panic!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); }
+        if frame_size == 0 { eprintln!("Frame size cannot be zero"); exit(1); }
+        if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
         self.fsize = frame_size;
     }
     pub fn set_srate(&mut self, mut srate: u32) {
-        if srate == 0 { panic!("Sample rate cannot be zero"); }
+        if srate == 0 { eprintln!("Sample rate cannot be zero"); exit(1); }
         if COMPACT.contains(&self.asfh.profile) {
-            srate = compact::get_valid_srate(srate);
+            let x = compact::get_valid_srate(srate);
+            if x != srate {
+                eprintln!("Invalid sample rate! Valid rates for profile {}: {:?}",
+                self.asfh.profile, compact::SRATES.iter().rev().filter(|&&x| x != 0).cloned().collect::<Vec<u32>>());
+                eprintln!("Auto-adjusting to: {}", x);
+            }
+            srate = x;
         }
         self.srate = srate;
     }
 
-    // half-dynamic info - This will be conveted to bit depth index for ASFH on encoding
+    // half-dynamic info - This will be conveted to bit depth index for ASFH on encoding each frame
     pub fn set_bit_depth(&mut self, bit_depth: i16) {
-        if bit_depth == 0 { panic!("Bit depth cannot be zero"); }
+        if bit_depth == 0 { eprintln!("Bit depth cannot be zero"); exit(1); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
-            panic!("Invalid bit depth! Valid depths for profile {}: {:?}", self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<i16>>());
+            eprintln!("Invalid bit depth! Valid depths for profile {}: {:?}",
+            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<i16>>());
+            exit(1);
         }
         self.bit_depth = bit_depth;
     }
