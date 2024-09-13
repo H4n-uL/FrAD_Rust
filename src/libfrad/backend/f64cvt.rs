@@ -4,7 +4,7 @@
  * Description: float64 <-> PCM format converter
  */
 
-use crate::backend::{PCMFormat, Endian};
+use crate::{PCMFormat, Endian};
 use half::f16;
 
 /** norm_into
