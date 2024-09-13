@@ -53,7 +53,7 @@ impl Decode {
         // 2. if COMPACT profile and overlap is enabled, split this frame
         let mut next_overlap = Vec::new();
         if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
-            let overlap_ratio = self.asfh.overlap_ratio.max(2) as usize;
+            let overlap_ratio = self.asfh.overlap_ratio as usize;
             let frame_cutout = frame.len() * (overlap_ratio - 1) / overlap_ratio;
             next_overlap = frame.split_off(frame_cutout); // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
         }
