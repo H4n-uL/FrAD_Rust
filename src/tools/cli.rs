@@ -4,7 +4,7 @@
  * Description: Simple CLI parser for FrAD Executable
  */
 
-use frad::common::{Endian::{Big, Little}, PCMFormat};
+use frad::{Endian::{Big, Little}, PCMFormat};
 use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};

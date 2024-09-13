@@ -6,7 +6,7 @@
 
 use crate::{
     backend::{Prepend, SplitFront},
-    common:: {any_to_f64, PCMFormat},
+    backend::{f64cvt::any_to_f64, PCMFormat},
     fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 };

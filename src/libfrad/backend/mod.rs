@@ -4,7 +4,8 @@
  * Description: Backend for FrAD Library
  */
 
-pub mod bitcvt;
+pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
+pub use pcmformat::{PCMFormat, Endian};
 
 /** linspace
  * Generates a linear spaced vector
