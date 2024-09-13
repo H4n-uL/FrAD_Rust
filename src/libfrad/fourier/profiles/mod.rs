@@ -20,7 +20,7 @@ pub mod compact {
     pub const SRATES: [u32; 12] = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
 
     pub fn get_valid_srate(srate: u32) -> u32 {
-        return SRATES.iter().rev().find(|&&x| x >= srate).unwrap_or(&48000).to_owned();
+        return SRATES.iter().rev().find(|&&x| x >= srate).unwrap_or(SRATES.iter().max().unwrap()).to_owned();
     }
 
     pub fn get_srate_index(srate: u32) -> u16 {
