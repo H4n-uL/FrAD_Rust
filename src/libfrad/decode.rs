@@ -41,25 +41,21 @@ impl Decode {
      * Returns: PCM with overlap applied
      */
     fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
-        // 1. If overlap buffer not empty, apply Forward-linear overlap-add
+        // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
-            let fade_in: Vec<f64> = linspace(0.0, 1.0, self.overlap_fragment.len());
-            let fade_out: Vec<f64> = linspace(1.0, 0.0, self.overlap_fragment.len());
-            for c in 0..self.asfh.channels as usize {
-                for i in 0..self.overlap_fragment.len() {
-                    frame[i][c] = frame[i][c] * fade_in[i] + self.overlap_fragment[i][c] * fade_out[i];
-                }
-            }
+            let fade: Vec<f64> = linspace(0.0, 1.0, self.overlap_fragment.len());
+            frame.iter_mut().zip(self.overlap_fragment.iter()).zip(fade.iter().zip(fade.iter().rev()))
+            .for_each(|((sample, overlap_sample), (&fade_in, &fade_out))| {
+                sample.iter_mut().zip(overlap_sample.iter()).for_each(|(s, &o)| { *s = *s * fade_in + o * fade_out; });
+            });
         }
 
         // 2. if COMPACT profile and overlap is enabled, split this frame
         let mut next_overlap = Vec::new();
         if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
-            let overlap_ratio = self.asfh.overlap_ratio.max(2);
-            // return_frame         = frame[0 ~ (len*(overlap_ratio-1)) / overlap_ratio]
-            // new_overlap_fragment = frame[(len*(overlap_ratio-1)) / overlap_ratio ~ len]
-            // = [2048], overlap_ratio=16 -> [1920, 128]
-            next_overlap = frame.split_off((frame.len() * (overlap_ratio as usize - 1)) / overlap_ratio as usize);
+            let overlap_ratio = self.asfh.overlap_ratio.max(2) as usize;
+            let frame_cutout = frame.len() * (overlap_ratio - 1) / overlap_ratio;
+            next_overlap = frame.split_off(frame_cutout); // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
         }
         self.overlap_fragment = next_overlap;
         return frame;
