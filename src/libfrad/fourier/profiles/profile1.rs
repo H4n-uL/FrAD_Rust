@@ -49,7 +49,7 @@ fn get_quant_factors(bit_depth: i16) -> (f64, f64) {
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (Vec<u8>, i16, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, loss_level: f64) -> (Vec<u8>, i16, i16) {
     let (pcm_quant, thres_quant) = get_quant_factors(bit_depth);
 
     let pcm = pad_pcm(pcm);
@@ -58,15 +58,13 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (V
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
-    let const_factor = 1.25_f64.powi(level as i32) / 19.0 + 0.5;
-
     // Subband masking and quantisation
-    let mut freqs_masked: Vec<Vec<f64>> = vec![vec![0.0; freqs[0].len()]; channels as usize];
-    let mut thresholds: Vec<Vec<f64>> = vec![vec![0.0; p1tools::MOSLEN]; channels as usize];
+    let mut freqs_masked: Vec<Vec<f64>> = vec![vec![0.0; freqs[0].len()]; channels];
+    let mut thresholds: Vec<Vec<f64>> = vec![vec![0.0; p1tools::MOSLEN]; channels];
 
-    for c in 0..channels as usize {
+    for c in 0..channels {
         let mapping = p1tools::mapping_to_opus(&freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>(), srate);
-        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * const_factor).collect();
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&mapping, p1tools::SPREAD_ALPHA).iter().map(|x| x * loss_level).collect();
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         let masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y)).collect();
@@ -90,17 +88,18 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, level: u8) -> (V
 
 /** digital
  * Decodes FrAD Profile 1 to PCM
- * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate(for dequantisation)
+ * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
  * Returns: f64 PCM
  */
-pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -> Vec<Vec<f64>> {
+pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let (pcm_quant, thres_quant) = get_quant_factors(bit_depth);
 
     let mut decoder = ZlibDecoder::new(&frad[..]);
     let frad = {
         let mut buf = Vec::new();
-        decoder.read_to_end(&mut buf).unwrap();
+        let _ = decoder.read_to_end(&mut buf)
+        .map_err(|_| { return vec![vec![0.0; channels]; fsize as usize]; });
         buf
     };
 
@@ -116,9 +115,9 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32) -
     let thresholds: Vec<Vec<f64>> = (0..channels).map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
     let freqs_masked: Vec<Vec<f64>> = (0..channels).map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
-    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; freqs_masked[0].len()]; channels as usize];
+    let mut freqs: Vec<Vec<f64>> = vec![vec![0.0; freqs_masked[0].len()]; channels];
 
-    for c in 0..channels as usize {
+    for c in 0..channels {
         freqs[c] = freqs_masked[c].iter()
             .zip(p1tools::mapping_from_opus(&thresholds[c], freqs_masked[c].len(), srate))
             .map(|(x, y)| p1tools::dequant(*x) * y)

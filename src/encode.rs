@@ -84,7 +84,8 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
     encoder.set_bit_depth(params.bits);
     encoder.set_overlap_ratio(params.overlap_ratio);
 
-    encoder.set_loss_level(params.losslevel);
+    let loss_level = 1.25_f64.powi(params.losslevel as i32) / 19.0 + 0.5;
+    encoder.set_loss_level(loss_level);
 
     let (mut rfile, mut wfile) = set_files(input, params.output, params.profile, params.overwrite);
 
