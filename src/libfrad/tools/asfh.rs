@@ -7,7 +7,7 @@
 use crate::{
     backend::SplitFront,
     common::{crc16_ansi, crc32, FRM_SIGN},
-    fourier::profiles::{compact, COMPACT}
+    fourier::profiles::{compact::{self, get_srate_index}, COMPACT}
 };
 
 /** encode_pfb
@@ -29,7 +29,7 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> 
  */
 fn encode_css(channels: i16, srate: u32, fsize: u32, force_flush: bool) -> Vec<u8> {
     let chnl = (channels as u16 - 1) << 10;
-    let srate = (compact::SRATES.iter().position(|&x| x == srate).unwrap() as u16) << 6;
+    let srate = get_srate_index(srate) << 6;
     let fsize = *compact::SAMPLES_LI.iter().find(|&&x| x >= fsize).unwrap();
     let mult = compact::get_samples_from_value(&fsize);
     let px = (compact::SAMPLES.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;

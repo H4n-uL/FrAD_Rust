@@ -8,7 +8,7 @@
 use crate::backend::Transpose;
 use super::{
     super::backend::core::{dct, idct},
-    compact::SAMPLES_LI,
+    compact::{get_valid_srate, SAMPLES_LI},
     tools::p1tools
 };
 
@@ -44,13 +44,18 @@ fn get_quant_factors(bit_depth: i16) -> (f64, f64) {
     return (pcm_quant, thres_quant);
 }
 
+fn finite(x: Vec<f64>) -> Vec<f64> {
+    return x.iter().map(|x| if x.is_finite() { *x } else { 0.0 }).collect();
+}
+
 /** analogue
  * Encodes PCM to FrAD Profile 1
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, loss_level: f64) -> (Vec<u8>, i16, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: f64) -> (Vec<u8>, i16, i16, u32) {
     let (pcm_quant, thres_quant) = get_quant_factors(bit_depth);
+    srate = get_valid_srate(srate);
 
     let pcm = pad_pcm(pcm);
     let pcm_trans: Vec<Vec<f64>> = pcm.trans().iter().map(|x| x.iter().map(|y| y * pcm_quant).collect()).collect();
@@ -68,7 +73,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, loss_level: f64)
 
         let div_factor = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         let masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| p1tools::quant(x / y)).collect();
-        (freqs_masked[c], thresholds[c]) = (masked, thres_channel.iter().map(|x| (x * thres_quant)).collect());
+
+        (freqs_masked[c], thresholds[c]) = (finite(masked), finite(thres_channel.iter().map(|x| (x * thres_quant)).collect()));
     }
 
     let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
@@ -83,7 +89,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, loss_level: f64)
     encoder.write_all(&frad).unwrap();
     let frad = encoder.finish().unwrap();
 
-    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16);
+    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16, srate);
 }
 
 /** digital

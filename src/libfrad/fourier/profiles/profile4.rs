@@ -22,7 +22,7 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
  * Parameters: f64 PCM, Bit depth, Little endian toggle (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, little_endian: bool) -> (Vec<u8>, i16, i16) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, little_endian: bool) -> (Vec<u8>, i16, i16, u32) {
     let channels = pcm[0].len();
 
     let pcm_flat: Vec<f64> = pcm.iter().flat_map(|x| x.iter()).cloned().collect();
@@ -33,7 +33,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, little_endian: bool) -> (Vec
     .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
 
     let frad = u8pack::pack(pcm_flat, DEPTHS[bit_depth_index], !little_endian);
-    return (frad, bit_depth_index as i16, channels as i16);
+    return (frad, bit_depth_index as i16, channels as i16, srate);
 }
 
 /** digital

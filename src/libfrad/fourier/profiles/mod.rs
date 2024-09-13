@@ -18,6 +18,18 @@ pub const COMPACT: [u8; 1] = [1];
 pub mod compact {
     // Sample rate table
     pub const SRATES: [u32; 12] = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
+
+    pub fn get_valid_srate(srate: u32) -> u32 {
+        return SRATES.iter().rev().find(|&&x| x >= srate).unwrap_or(&48000).to_owned();
+    }
+
+    pub fn get_srate_index(srate: u32) -> u16 {
+        return SRATES.iter().enumerate()
+            .filter(|&(_, &x)| x >= srate)
+            .min_by_key(|&(_, &x)| x)
+            .map(|(index, _)| index).unwrap_or(0) as u16;
+    }
+
     // Sample count table
     pub const SAMPLES: [(u32, [u32; 8]); 3] = [
         (128, [   128,   256,   512,  1024,  2048,  4096,  8192, 16384]),

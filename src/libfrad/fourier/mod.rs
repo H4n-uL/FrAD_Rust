@@ -7,6 +7,8 @@
 pub mod backend; pub mod profiles;
 use profiles::{compact, profile0, profile1, profile4};
 
+pub const AVAILABLE: [u8; 3] = [0, 1, 4];
+
 pub const SEGMAX: [u32; 8] =
 [
     u32::MAX, // Profile 0

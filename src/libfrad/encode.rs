@@ -7,7 +7,7 @@
 use crate::{
     backend::{Prepend, SplitFront},
     common:: {any_to_f64, PCMFormat},
-    fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT}, BIT_DEPTHS, SEGMAX},
+    fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 };
 
@@ -17,9 +17,9 @@ use crate::{
  * Struct for FrAD encoder
  */
 pub struct Encode {
-    asfh: ASFH,
-    bit_depth: i16, channels: i16, fsize: u32,
-    buffer: Vec<u8>,
+    asfh: ASFH, buffer: Vec<u8>,
+    bit_depth: i16, channels: i16,
+    fsize: u32, srate: u32,
     overlap_fragment: Vec<Vec<f64>>,
     pub streaminfo: StreamInfo,
 
@@ -29,12 +29,13 @@ pub struct Encode {
 
 impl Encode {
     pub fn new(profile: u8, pcm_format: PCMFormat) -> Encode {
+        if !AVAILABLE.contains(&profile) { panic!("Invalid profile! Available: {:?}", AVAILABLE); }
         let mut asfh = ASFH::new();
         asfh.profile = profile;
         Encode {
-            asfh,
-            bit_depth: 0, channels: 0, fsize: 0,
-            buffer: Vec::new(),
+            asfh, buffer: Vec::new(),
+            bit_depth: 0, channels: 0,
+            fsize: 0, srate: 0,
             overlap_fragment: Vec::new(),
             streaminfo: StreamInfo::new(),
 
@@ -53,15 +54,24 @@ impl Encode {
         if frame_size > SEGMAX[self.asfh.profile as usize] { panic!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); }
         self.fsize = frame_size;
     }
+    pub fn set_srate(&mut self, mut srate: u32) {
+        if srate == 0 { panic!("Sample rate cannot be zero"); }
+        if COMPACT.contains(&self.asfh.profile) {
+            srate = compact::get_valid_srate(srate);
+        }
+        self.srate = srate;
+    }
 
-    // half-dynamic info - should be converted to bit depth index
-    pub fn set_bit_depth(&mut self, bit_depth: i16) { self.bit_depth = bit_depth; }
+    // half-dynamic info - This will be conveted to bit depth index for ASFH on encoding
+    pub fn set_bit_depth(&mut self, bit_depth: i16) {
+        if bit_depth == 0 { panic!("Bit depth cannot be zero"); }
+        if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
+            panic!("Invalid bit depth! Valid depths for profile {}: {:?}", self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<i16>>());
+        }
+        self.bit_depth = bit_depth;
+    }
 
     // static info - set once before encoding
-    pub fn set_srate(&mut self, srate: u32) {
-        if srate == 0 { panic!("Sample rate cannot be zero"); }
-        self.asfh.srate = srate;
-    }
     pub fn set_ecc(&mut self, ecc: bool, ecc_ratio: [u8; 2]) {
         self.asfh.ecc = ecc;
         if ecc_ratio[0] == 0 {
@@ -122,7 +132,7 @@ impl Encode {
         // let rng = &mut rand::thread_rng();
 
         loop {
-            // self.asfh.profile = *vec![0, 1, 4].choose(rng).unwrap();
+            // self.asfh.profile = *AVAILABLE.choose(rng).unwrap();
             // self.bit_depth = *BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
             // self.set_frame_size(*compact::SAMPLES_LI.choose(rng).unwrap());
             // self.set_loss_level(rng.gen_range(0.5..5.0));
@@ -163,10 +173,10 @@ impl Encode {
 
             // 3. Encode the frame
             if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
-            let (mut frad, bit_ind, chnl) = match self.asfh.profile {
-                1 => profile1::analogue(frame, self.bit_depth, self.asfh.srate, self.loss_level),
-                4 => profile4::analogue(frame, self.bit_depth, self.asfh.endian),
-                _ => profile0::analogue(frame, self.bit_depth, self.asfh.endian)
+            let (mut frad, bit_ind, chnl, srate) = match self.asfh.profile {
+                1 => profile1::analogue(frame, self.bit_depth, self.srate, self.loss_level),
+                4 => profile4::analogue(frame, self.bit_depth, self.srate, self.asfh.endian),
+                _ => profile0::analogue(frame, self.bit_depth, self.srate, self.asfh.endian)
             };
 
             // 4. Create Reed-Solomon error correction code
@@ -175,7 +185,7 @@ impl Encode {
             }
 
             // 5. Write the frame to the buffer
-            (self.asfh.bit_depth, self.asfh.channels, self.asfh.fsize) = (bit_ind, chnl, fsize);
+            (self.asfh.bit_depth, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_ind, chnl, fsize, srate);
             ret.extend(self.asfh.write(frad));
 
             // Logging

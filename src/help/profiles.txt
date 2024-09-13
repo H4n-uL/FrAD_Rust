@@ -1,10 +1,31 @@
 ------------------------------ Available profiles ------------------------------
 
     Profile 0 - DCT Archiving, Recommended for extreme environments
+        Bit depth: 12, 16, 24, 32, 48, 64
+        Sample rate: 1 Hz ~ 4 GHz
+        Channels: 1 ~ 256
+        Samples per channel: 1 ~ 2^32-1 samples
+
     Profile 1 - Compact file size, Low complexity
-    Profile 2 - In development
+        Bit depth: 8, 12, 16, 24, 32, 48, 64
+        Sample rate:
+            8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000,
+            64000, 88200, 96000 Hz
+        Channels: 1 ~ 8
+        Samples per channel:
+            128 × 2^(n), 144 × 2^(n), 192 × 2^(n)
+            n = 0 ~ 7
+        Overlap ratio: 0 or 1/<2~256>
+
+    Profile 2 - (Reserved)
     Profile 3 - (Reserved)
+
     Profile 4 - PCM Archiving, Recommended for general use
+        Bit depth: 12, 16, 24, 32, 48, 64
+        Sample rate: 1 Hz ~ 4 GHz
+        Channels: 1 ~ 256
+        Samples per channel: 1 ~ 2^32-1 samples
+
     Profile 5 - (Reserved)
     Profile 6 - (Reserved)
     Profile 7 - (Reserved)
