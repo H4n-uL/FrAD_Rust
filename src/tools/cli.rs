@@ -77,22 +77,22 @@ impl CliParams {
         let json_meta: Vec<Value> = match from_str(&contents) { Ok(m) => m, Err(_) => { return; } };
 
         for item in json_meta {
-            let key = item["key"].as_str().map(String::from);
+            let key = item["key"].as_str();
             let item_type = item["type"].as_str();
             let value_str = item["value"].as_str();
 
-            match (key, item_type, value_str) {
-                (Some(k), Some(t), Some(v)) => {
-                    let value = if t == "base64" {
-                        match BASE64_STANDARD.decode(v) {
-                            Ok(decoded) => decoded,
-                            Err(_) => { continue; }
-                        }
-                    } else { v.as_bytes().to_vec() };
-                    self.meta.push((k, value));
+            if key.is_none() && value_str.is_none() { continue; }
+            let key = key.unwrap_or_else(|| "");
+            let value_str = value_str.unwrap_or_else(|| "");
+
+            let value = if item_type == Some("base64") {
+                match BASE64_STANDARD.decode(value_str) {
+                    Ok(decoded) => decoded,
+                    Err(_) => { continue; }
                 }
-                _ => { continue; }
             }
+            else { value_str.as_bytes().to_vec() };
+            self.meta.push((key.to_string(), value));
         }
     }
     pub fn set_meta_from_vorbis(&mut self, meta_path: String) {
