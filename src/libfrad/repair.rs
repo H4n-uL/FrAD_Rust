@@ -8,7 +8,7 @@ use crate::{
     backend::{SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::profiles::{COMPACT, LOSSLESS},
-    tools::  {asfh::ASFH, ecc, stream::StreamInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
 /** Repair
@@ -122,16 +122,16 @@ impl Repair {
                 // 2.3. Check header parsing result
                 match force_flush {
                     // 2.3.1. If header is complete and not forced to flush, continue
-                    Ok(false) => {},
+                    Complete => {},
                     // 2.3.2. If header is complete and forced to flush, flush and return
-                    Ok(true) => {
+                    ForceFlush => {
                         self.streaminfo.update(&0, self.olap_len, &self.asfh.srate);
                         ret.extend(self.asfh.force_flush());
                         self.olap_len = 0;
                         break;
                     },
                     // 2.3.3. If header is incomplete, return
-                    Err(_) => break,
+                    Incomplete => break,
                 }
             }
         }

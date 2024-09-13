@@ -8,7 +8,7 @@ use crate::{
     backend::{linspace, SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
-    tools::  {asfh::ASFH, ecc, stream::StreamInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
 /** Decode
@@ -122,7 +122,7 @@ impl Decode {
                             self.buffer.split_front(i);
                             self.asfh.buffer = self.buffer.split_front(FRM_SIGN.len());
                         },
-                        // 2.1.2. else, Split out the buffer to the last 4 bytes and return
+                        // 2.1.2. else, Split out the buffer to the last 3 bytes and return
                         None => {
                             self.buffer.split_front(self.buffer.len().saturating_sub(FRM_SIGN.len() - 1));
                             break;
@@ -130,27 +130,26 @@ impl Decode {
                     }
                 }
                 // 2.2. If header buffer found, try parsing the header
-                let force_flush = self.asfh.read(&mut self.buffer);
+                let header_result = self.asfh.read(&mut self.buffer);
 
                 // 2.3. Check header parsing result
-                match force_flush {
+                match header_result {
                     // 2.3.1. If header is complete and not forced to flush, continue
-                    Ok(false) => {
+                    Complete => {
                         // 2.3.1.1. If any critical parameter has changed, flush the overlap buffer
                         if !self.asfh.criteq(&self.info) {
-                            if self.info.srate != 0 || self.info.channels != 0 { // If the info struct is not empty
+                            let (srate, chnl) = (self.info.srate, self.info.channels);
+                            self.info = self.asfh.clone();
+                            if srate != 0 || chnl != 0 { // If the info struct is not empty
                                 ret.extend(self.flush().0); // Flush the overlap buffer
-                                let srate = self.info.srate; // Save the sample rate
-                                self.info = self.asfh.clone(); // Update the info struct
                                 return (ret, srate, true); // and return
                             }
-                            self.info = self.asfh.clone(); // else, Update the info struct and continue
                         }
                     },
                     // 2.3.2. If header is complete and forced to flush, flush and return
-                    Ok(true) => { ret.extend(self.flush().0); break; },
+                    ForceFlush => { ret.extend(self.flush().0); break; },
                     // 2.3.3. If header is incomplete, return
-                    Err(_) => break,
+                    Incomplete => break,
                 }
             }
         }
@@ -160,9 +159,9 @@ impl Decode {
     /** flush
      * Flush the overlap buffer
      * Parameters: None
-     * Returns: Overlap buffer, Sample rate
+     * Returns: Overlap buffer, Sample rate, true(flushed by user)
      */
-    pub fn flush(&mut self) -> (Vec<Vec<f64>>, u32) {
+    pub fn flush(&mut self) -> (Vec<Vec<f64>>, u32, bool) {
         // 1. Extract the overlap buffer
         // 2. Update stream info
         // 3. Clear the overlap buffer
@@ -173,6 +172,6 @@ impl Decode {
         self.streaminfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
-        return (ret, self.asfh.srate);
+        return (ret, self.asfh.srate, true);
     }
 }

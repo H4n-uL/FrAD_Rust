@@ -103,7 +103,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
         }
     }
-    let (pcm, srate) = decoder.flush();
+    let (pcm, srate, _) = decoder.flush();
     write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
     logging(loglevel, &decoder.streaminfo, true);
     if play { sink.sleep_until_end(); }

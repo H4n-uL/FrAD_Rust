@@ -191,27 +191,27 @@ impl ASFH {
      * Parameters: Input buffer
      * Returns: Frame complete flag as Result, Force flush flag as boolean
      */
-    pub fn read(&mut self, buffer: &mut Vec<u8>) -> Result<bool, ()> {
-        if !self.fill_buffer(buffer, 9) { return Err(()) } // If buffer not filled, return error
+    pub fn read(&mut self, buffer: &mut Vec<u8>) -> ParseResult {
+        if !self.fill_buffer(buffer, 9) { return ParseResult::Incomplete } // If buffer not filled, return error
         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
         (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
 
         if COMPACT.contains(&self.profile) {
-            if !self.fill_buffer(buffer, 12) { return Err(()) }
+            if !self.fill_buffer(buffer, 12) { return ParseResult::Incomplete }
 
             let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
-            if force_flush { self.all_set = true; return Ok(true); }
+            if force_flush { self.all_set = true; return ParseResult::ForceFlush; }
             self.overlap_ratio = self.buffer[0xb] as u16; if self.overlap_ratio != 0 { self.overlap_ratio += 1; }
 
             if self.ecc {
-                if !self.fill_buffer(buffer, 16) { return Err(()) }
+                if !self.fill_buffer(buffer, 16) { return ParseResult::Incomplete }
 
                 self.ecc_ratio = [self.buffer[0xc], self.buffer[0xd]];
                 self.crc16 = self.buffer[0xe..0x10].try_into().unwrap();
             }
         }
         else {
-            if !self.fill_buffer(buffer, 32) { return Err(()) }
+            if !self.fill_buffer(buffer, 32) { return ParseResult::Incomplete }
 
             self.channels = self.buffer[0x9] as i16 + 1;
             self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
@@ -222,18 +222,24 @@ impl ASFH {
         }
 
         if self.frmbytes == u32::MAX as u64 {
-            if !self.fill_buffer(buffer, self.header_bytes + 8) { return Err(()) }
+            if !self.fill_buffer(buffer, self.header_bytes + 8) { return ParseResult::Incomplete }
             self.frmbytes = u64::from_be_bytes(self.buffer[self.buffer.len()-8..].try_into().unwrap());
         }
 
         self.total_bytes = self.header_bytes as u128 + self.frmbytes as u128;
 
         self.all_set = true;
-        return Ok(false);
+        return ParseResult::Complete;
     }
 
     pub fn clear(&mut self) {
         self.all_set = false;
         self.buffer.clear();
     }
+}
+
+pub enum ParseResult {
+    Complete,
+    Incomplete,
+    ForceFlush,
 }
