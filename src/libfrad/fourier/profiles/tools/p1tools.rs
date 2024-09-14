@@ -29,17 +29,20 @@ fn get_bin_range(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
 
 /** mask_thres_mos
  * Calculates the masking threshold for each subband
- * Parameters: DCT Array, Spread alpha(Constant for now)
+ * Parameters: RMS of the subbands, Spread alpha(Constant for now)
  * Returns: Masking threshold array
  */
-pub fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
+pub fn mask_thres_mos(mapped_freqs: &[f64], alpha: f64) -> Vec<f64> {
     let mut thres = vec![0.0; MOSLEN];
 
+    // for each subband
     for i in 0..MOSLEN {
+        // Centre frequency of the subband
         let f = (MODIFIED_OPUS_SUBBANDS[i] as f64 + MODIFIED_OPUS_SUBBANDS[i + 1] as f64) / 2.0;
         // Absolute Threshold of Hearing(in dB SPL)
         let abs = (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)).min(96.0);
-        thres[i] = freqs[i].powf(alpha).max(10.0_f64.powf((abs - 96.0) / 20.0));
+        // Larger value between mapped_freq[i]^alpha and ATH in absolute amplitude
+        thres[i] = mapped_freqs[i].powf(alpha).max(10.0_f64.powf((abs - 96.0) / 20.0));
     }
 
     return thres;
@@ -48,7 +51,7 @@ pub fn mask_thres_mos(freqs: &[f64], alpha: f64) -> Vec<f64> {
 /** mapping_to_opus
  * Maps the frequencies to the modified Opus subbands
  * Parameters: DCT Array, Sample rate
- * Returns: Power-averages of the subbands
+ * Returns: Root mean square of the subbands
  */
 pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     let mut mapped_freqs = [0.0; MOSLEN].to_vec();
@@ -56,6 +59,7 @@ pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
     for i in 0..MOSLEN {
         let subfreqs = freqs[get_bin_range(freqs.len(), srate, i)].to_vec();
         if !subfreqs.is_empty() {
+            // Root mean square
             let sfq: f64 = subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64;
             mapped_freqs[i] = sfq.sqrt();
         }
@@ -73,9 +77,9 @@ pub fn mapping_from_opus(mapped_freqs: &[f64], freqs_len: usize, srate: u32) -> 
     let mut freqs = vec![0.0; freqs_len];
 
     for i in 0..MOSLEN-1 {
-        let start = get_bin_range(freqs_len, srate, i).start;
-        let end = get_bin_range(freqs_len, srate, i + 1).start;
-        freqs[start..end].copy_from_slice(&linspace(mapped_freqs[i], mapped_freqs[i + 1], end - start));
+        let range = get_bin_range(freqs_len, srate, i);
+        // Linearly spaced values between the mapped frequencies
+        freqs[range.clone()].copy_from_slice(&linspace(mapped_freqs[i], mapped_freqs[i + 1], range.end - range.start));
     }
 
     return freqs;
