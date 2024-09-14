@@ -49,11 +49,11 @@ impl<T: Clone> SplitFront<T> for Vec<T> {
     }
 }
 
-pub trait VecPatternFind<T: PartialEq> {
+pub trait VecPatternFind<T: Eq> {
     fn find_pattern(&self, pattern: &[T]) -> Option<usize>;
 }
 
-impl<T: PartialEq> VecPatternFind<T> for Vec<T> {
+impl<T: Eq> VecPatternFind<T> for Vec<T> {
     fn find_pattern(&self, pattern: &[T]) -> Option<usize> {
         if self.is_empty() || self.len() < pattern.len() { return None; }
         if pattern.is_empty() { return Some(0); }
