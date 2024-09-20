@@ -35,7 +35,7 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
         _ => panic!("Invalid bit depth")
     };
 
-    if bits % 3 == 0 { 
+    if bits % 3 == 0 {
         return bitcvt::to_bytes(cut_float3s(bitcvt::to_bits(bytes), bits, be));
     }
     return bytes;
