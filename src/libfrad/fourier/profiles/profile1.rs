@@ -90,8 +90,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: 
     let thres_flat: Vec<i64> = thresholds.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
 
     // 5. Exponential Golomb-Rice encoding
-    let freqs_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(freqs_flat);
-    let thres_gol: Vec<u8> = p1tools::exp_golomb_rice_encode(thres_flat);
+    let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(freqs_flat);
+    let thres_gol: Vec<u8> = p1tools::exp_golomb_encode(thres_flat);
 
     // 6. Connecting data
     //    [ Thresholds length in u32be | Thresholds | Frequencies ]
@@ -128,8 +128,8 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, f
     let thres_gol = frad.split_front(thres_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let thres_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(thres_gol).into_iter().map(|x| x as f64 / thres_scale).collect();
-    let freqs_flat: Vec<f64> = p1tools::exp_golomb_rice_decode(frad).into_iter().map(|x| x as f64).collect();
+    let thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| x as f64 / thres_scale).collect();
+    let freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64).collect();
 
     // 4. Unflattening frequencies and thresholds
     let thresholds: Vec<Vec<f64>> = (0..channels).map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
