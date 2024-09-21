@@ -5,7 +5,7 @@
  */
 
 use frad::StreamInfo;
-use std::{fs::File, io::{Read, Write}};
+use std::{fs::File, io::{IsTerminal, Read, Write}, path::Path, process::exit};
 
 // Pipe and null device
 pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
@@ -101,5 +101,21 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
         }
         if total_read == 0 { break; }
         writefile.write_all(&buf[..total_read]).unwrap();
+    }
+}
+
+pub fn check_overwrite(writefile: &str, overwrite: bool) {
+    if Path::new(writefile).exists() && !overwrite {
+        if std::io::stdin().is_terminal() {
+            eprintln!("Output file already exists, overwrite? (Y/N)");
+            loop {
+                eprint!("> ");
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if input.trim().to_lowercase() == "y" { break; }
+                else if input.trim().to_lowercase() == "n" { eprintln!("Aborted."); exit(0); }
+            }
+        }
+        else { eprintln!("Output file already exists, please provide --force(-y) flag to overwrite."); exit(0); }
     }
 }

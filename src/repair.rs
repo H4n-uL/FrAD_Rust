@@ -6,7 +6,7 @@
 
 use frad::Repair;
 use crate::{
-    common::{logging, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -38,18 +38,7 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
             wfile = [wfrf[..wfrf.len() - 1].join("."), "recov".to_string(), wfrf[wfrf.len() - 1].clone()].join(".");
         }
 
-        if Path::new(&wfile).exists() && !params.overwrite {
-            eprintln!("Output file already exists, overwrite? (Y/N)");
-            loop {
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
-                if input.trim().to_lowercase() == "y" { break; }
-                else if input.trim().to_lowercase() == "n" {
-                    eprintln!("Aborted.");
-                    std::process::exit(0);
-                }
-            }
-        }
+        check_overwrite(&wfile, params.overwrite);
     }
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };

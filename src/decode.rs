@@ -6,7 +6,7 @@
 
 use frad::{f64cvt::f64_to_any, PCMFormat, Decode};
 use crate::{
-    common::{logging, read_exact, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
@@ -64,18 +64,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
         }
         else if wfile.ends_with(".pcm") { wfile = wfile[..wfile.len() - 4].to_string(); }
 
-        if Path::new(&wfile).exists() && !params.overwrite {
-            eprintln!("Output file already exists, overwrite? (Y/N)");
-            loop {
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
-                if input.trim().to_lowercase() == "y" { break; }
-                else if input.trim().to_lowercase() == "n" {
-                    eprintln!("Aborted.");
-                    std::process::exit(0);
-                }
-            }
-        }
+        check_overwrite(&wfile, params.overwrite);
     }
     let play = params.play;
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };

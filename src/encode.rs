@@ -6,10 +6,10 @@
 
 use frad::{Encode, profiles::LOSSLESS, head, StreamInfo};
 use crate::{
-    common::{logging, read_exact, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
-use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
+use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
 
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 use same_file::is_same_file;
@@ -19,47 +19,36 @@ use same_file::is_same_file;
  * Parameters: Input file, Output file, Profile, Overwrite flag
  * Returns: Input file reader, Output file writer
  */
-pub fn set_files(input: String, mut output: String, profile: u8, overwrite: bool) -> (Box<dyn Read>, Box<dyn Write>) {
+pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool) -> (Box<dyn Read>, Box<dyn Write>) {
     let (mut rpipe, mut wpipe) = (false, false);
-    if PIPEIN.contains(&input.as_str()) { rpipe = true; }
-    else if !Path::new(&input).exists() { eprintln!("Input file doesn't exist"); exit(1); }
-    if PIPEOUT.contains(&output.as_str()) { wpipe = true; }
+    if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
+    else if !Path::new(&rfile).exists() { eprintln!("Input file doesn't exist"); exit(1); }
+    if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
     else {
-        match is_same_file(&input, &output) {
-            Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
+        match is_same_file(&rfile, &wfile) {
+            Ok(true) => { eprintln!("Input and wfile files cannot be the same"); exit(1); }
             _ => {}
         }
     }
 
-    if output.is_empty() {
-        let wfrf = Path::new(&input).file_name().unwrap().to_str().unwrap().to_string();
-        output = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
+    if wfile.is_empty() {
+        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
+        wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
     }
-    if !(output.ends_with(".frad") || output.ends_with(".dsin")
-        || output.ends_with(".fra") || output.ends_with(".dsn")) {
+    if !(wfile.ends_with(".frad") || wfile.ends_with(".dsin")
+        || wfile.ends_with(".fra") || wfile.ends_with(".dsn")) {
         if LOSSLESS.contains(&profile) {
-            if output.len() <= 8 { output = format!("{}.fra", output); }
-            else { output = format!("{}.frad", output); }
+            if wfile.len() <= 8 { wfile = format!("{}.fra", wfile); }
+            else { wfile = format!("{}.frad", wfile); }
         }
-        else if output.len() <= 8 { output = format!("{}.dsn", output); }
-        else { output = format!("{}.dsin", output); }
+        else if wfile.len() <= 8 { wfile = format!("{}.dsn", wfile); }
+        else { wfile = format!("{}.dsin", wfile); }
     }
 
-    if Path::new(&output).exists() && !overwrite {
-        if std::io::stdin().is_terminal() {
-            eprintln!("Output file already exists, overwrite? (Y/N)");
-            loop {
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
-                if input.trim().to_lowercase() == "y" { break; }
-                else if input.trim().to_lowercase() == "n" { eprintln!("Aborted."); exit(0); }
-            }
-        }
-        else { eprintln!("Output file already exists, please provide -y flag to overwrite."); exit(0); }
-    }
+    check_overwrite(&wfile, overwrite);
 
-    let readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(input).unwrap()) } else { Box::new(std::io::stdin()) };
-    let writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(&output).unwrap()) } else { Box::new(std::io::stdout()) };
+    let readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
+    let writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
     return (readfile, writefile);
 }
