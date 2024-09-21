@@ -4,11 +4,6 @@
  * Description: Configuration for each FrAD profiles and profiles group
  */
 
-pub mod tools;
-pub mod profile0;
-pub mod profile1;
-pub mod profile4;
-
 // LOSSLESS profiles
 pub const LOSSLESS: [u8; 2] = [0, 4];
 // Compact profiles

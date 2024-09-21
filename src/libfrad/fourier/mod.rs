@@ -4,8 +4,20 @@
  * Description: Main Fourier tools
  */
 
-pub mod backend; pub mod profiles;
-use profiles::{compact, profile0, profile1, profile4};
+pub mod profile0;
+pub mod profile1;
+// pub mod profile2;
+// pub mod profile3;
+pub mod profile4;
+// pub mod profile5;
+// pub mod profile6;
+// pub mod profile7;
+
+pub mod backend;
+pub mod profiles;
+pub mod tools;
+
+use profiles::compact;
 
 pub const AVAILABLE: [u8; 3] = [0, 1, 4];
 

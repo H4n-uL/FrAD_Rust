@@ -7,7 +7,7 @@
 use crate::{
     backend::{linspace, SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
-    fourier::profiles::{profile0, profile1, profile4, COMPACT, LOSSLESS},
+    fourier::{self, profiles::{COMPACT, LOSSLESS}},
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
@@ -97,9 +97,9 @@ impl Decode {
                 // 1.3. Decode the FrAD frame
                 let mut pcm =
                 match self.asfh.profile {
-                    1 => profile1::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.srate, self.asfh.fsize),
-                    4 => profile4::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian),
-                    _ => profile0::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian)
+                    1 => fourier::profile1::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.srate, self.asfh.fsize),
+                    4 => fourier::profile4::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian),
+                    _ => fourier::profile0::digital(frad, self.asfh.bit_depth, self.asfh.channels, self.asfh.endian)
                 };
 
                 // 1.4. Apply overlap

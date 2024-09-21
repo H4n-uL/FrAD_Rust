@@ -7,7 +7,7 @@
 
 use crate::backend::{SplitFront, Transpose};
 use super::{
-    super::backend::core::{dct, idct},
+    backend::core::{dct, idct},
     compact::{get_valid_srate, SAMPLES_LI},
     tools::p1tools
 };

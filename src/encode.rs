@@ -4,7 +4,7 @@
  * Description: Encoder implementation example
  */
 
-use frad::{Encode, fourier::profiles::LOSSLESS, tools::{head, stream::StreamInfo}};
+use frad::{Encode, profiles::LOSSLESS, head, StreamInfo};
 use crate::{
     common::{logging, read_exact, PIPEIN, PIPEOUT},
     tools::cli::CliParams
@@ -98,8 +98,7 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
         }
     }
 
-    let header = head::builder(&params.meta, image);
-    wfile.write_all(&header).unwrap_or_else(
+    wfile.write_all(&head::builder(&params.meta, image)).unwrap_or_else(
         |err| { eprintln!("Error writing to stdout: {}", err);
         if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
     );

@@ -4,7 +4,7 @@
  * Description: Metadata modificator for FrAD
  */
 
-use frad::{common::SIGNATURE, tools::head};
+use frad::{common::SIGNATURE, head};
 use crate::{
     common::move_all,
     tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}

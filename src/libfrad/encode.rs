@@ -7,7 +7,7 @@
 use crate::{
     PCMFormat, f64cvt::any_to_f64,
     backend::{Prepend, SplitFront},
-    fourier::{profiles::{compact, profile0, profile1, profile4, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
+    fourier::{self, profiles::{compact, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
     tools::  {asfh::ASFH, ecc, stream::StreamInfo},
 };
 
@@ -183,9 +183,9 @@ impl Encode {
             // 3. Encode the frame
             if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
             let (mut frad, bit_ind, chnl, srate) = match self.asfh.profile {
-                1 => profile1::analogue(frame, self.bit_depth, self.srate, self.loss_level),
-                4 => profile4::analogue(frame, self.bit_depth, self.srate, self.asfh.endian),
-                _ => profile0::analogue(frame, self.bit_depth, self.srate, self.asfh.endian)
+                1 => fourier::profile1::analogue(frame, self.bit_depth, self.srate, self.loss_level),
+                4 => fourier::profile4::analogue(frame, self.bit_depth, self.srate, self.asfh.endian),
+                _ => fourier::profile0::analogue(frame, self.bit_depth, self.srate, self.asfh.endian)
             };
 
             // 4. Create Reed-Solomon error correction code

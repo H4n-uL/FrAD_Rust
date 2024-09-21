@@ -4,7 +4,7 @@
  * Description: Common tools for FrAD Executable
  */
 
-use frad::tools::stream::StreamInfo;
+use frad::StreamInfo;
 use std::{fs::File, io::{Read, Write}};
 
 // Pipe and null device
