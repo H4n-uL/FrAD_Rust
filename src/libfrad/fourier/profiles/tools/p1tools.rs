@@ -113,11 +113,9 @@ pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
     for n in data {
         let n = if n > 0 { 2 * n - 1 } else { -2 * n };
         let x = (n + 2_i64.pow(k as u32)).to_be_bytes().to_vec();
-        let mut bcode: Vec<bool> = bitcvt::to_bits(x).iter().skip_while(|&x| !x).cloned().collect();
-        let m = bcode.len() - (k + 1) as usize;
-        let mut un_bin = vec![false; m];
-        un_bin.append(&mut bcode);
-        encoded_binary.extend(un_bin);
+        let code: Vec<bool> = bitcvt::to_bits(x).iter().skip_while(|&x| !x).cloned().collect();
+        encoded_binary.extend(std::iter::repeat(false).take(code.len() - (k + 1) as usize));
+        encoded_binary.extend(code);
     }
     let mut encoded = vec![k];
     encoded.extend(bitcvt::to_bytes(encoded_binary));
