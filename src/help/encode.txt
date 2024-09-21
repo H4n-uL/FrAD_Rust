@@ -21,7 +21,7 @@ Required settings:
 Optional settings:
 
     --format <pcm format>
-        Input format, default: f64be (alias: fmt, pcm)
+        Input format, default: f64be (alias: fmt, f, pcm)
 
     --ecc <data> <code>
         Enable ECC and set size ratio in --ecc <data> <code>
