@@ -135,7 +135,7 @@ pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
     let mut data = bitcvt::to_bits(data.iter().skip(1).cloned().collect());
 
     while !data.is_empty() {
-        let m = data.iter().position(|&x| x == true).unwrap_or(data.len());
+        let m = data.iter().position(|&x| x).unwrap_or(data.len());
         if m == data.len() { break; }
 
         let codeword: Vec<bool> = data.split_front((m * 2) + k as usize + 1);
