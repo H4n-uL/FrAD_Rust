@@ -184,14 +184,14 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             match key {
                 // universal
                 "output" | "out" | "o" => params.output = args.pop_front().unwrap(),
-                "pcm" | "format" | "fmt" => params.set_pcm_format(&args.pop_front().unwrap()),
+                "pcm" | "format" | "fmt" | "f" => params.set_pcm_format(&args.pop_front().unwrap()),
                 "ecc" | "enable-ecc" | "e" => {
                     params.enable_ecc = true;
                     if !args.is_empty() && args[0].parse::<u8>().is_ok() {
                         params.ecc_ratio = [args.pop_front().unwrap().parse().unwrap(), args.pop_front().unwrap().parse().unwrap()];
                     }
                 }
-                "y" | "f" => params.overwrite = true,
+                "y" | "force" => params.overwrite = true,
 
                 // encode settings
                 "bits" | "bit" | "b" => params.bits = args.pop_front().unwrap().parse().unwrap(),
@@ -210,7 +210,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                     else { params.meta.push((value, args.pop_front().unwrap().as_bytes().to_vec())); }
                 }
                 "jsonmeta" | "jm" => params.set_meta_from_json(args.pop_front().unwrap()),
-                "vorbis-meta" | "vm" => params.set_meta_from_vorbis(args.pop_front().unwrap()),
+                "vorbismeta" | "vm" => params.set_meta_from_vorbis(args.pop_front().unwrap()),
                 "img" | "image" => params.image_path = args.pop_front().unwrap(),
                 "log" | "v" => {
                     if !args.is_empty() && args[0].parse::<u8>().is_ok() {
