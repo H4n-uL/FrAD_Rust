@@ -138,16 +138,19 @@ impl Encode {
     fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret: Vec<u8> = Vec::new();
-        // let rng = &mut rand::thread_rng();
 
         loop {
+            // let rng = &mut rand::thread_rng();
             // self.asfh.profile = *AVAILABLE.choose(rng).unwrap();
             // self.bit_depth = *BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
-            // self.set_frame_size(*compact::SAMPLES_LI.choose(rng).unwrap());
+            // self.set_frame_size(
+            //     if COMPACT.contains(&self.asfh.profile)
+            //     { *compact::SAMPLES_LI.choose(rng).unwrap() }
+            //     else { rng.gen_range(128..32768) }
+            // );
             // self.set_loss_level(rng.gen_range(0.5..5.0));
-            // let ecc_data = rng.gen_range(1..254);
-            // let ecc_parity = rng.gen_range(1..255 - ecc_data);
-            // self.set_ecc(rng.gen_bool(0.5), [ecc_data, ecc_parity]);
+            // let ecc_data = rng.gen_range(1..255);
+            // self.set_ecc(rng.gen_bool(0.5), [ecc_data, rng.gen_range(0..(255 - ecc_data))]);
             // self.set_overlap_ratio(rng.gen_range(2..256));
 
             // 0. Set read length in samples
