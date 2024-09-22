@@ -16,24 +16,26 @@ Actions:
 Options:
 
     add & overwrite
-    --meta <key> <value>
-        Metadata in <key> <value> (alias: m, tag)
-    --jsonmeta <path/to/meta.json>
-        JSONMeta format file path to embed (alias: jm)
-        type `{frad} help jsonmeta` for JSONMeta format
-    --vorbis-meta <path/to/meta.tags>
-        VorbisMeta format file path to embed (alias: vm)
-        type `{frad} help vorbismeta` for VorbisMeta format
-    --image <path/to/image.file>
-        Image file path to embed, replace if exists (alias: img)
+        --meta <key> <value>
+            Metadata in <key> <value> (alias: m, tag)
+
+        --jsonmeta <path/to/meta.json>
+            JSONMeta format file path to embed (alias: jm)
+            type `{frad} help jsonmeta` for JSONMeta format
+
+        --vorbis-meta <path/to/meta.tags>
+            VorbisMeta format file path to embed (alias: vm)
+            type `{frad} help vorbismeta` for VorbisMeta format
+
+        --image <path/to/image.file>
+            Image file path to embed, replace if exists (alias: img)
 
     remove
-    --meta <key>
-        Metadata key to remove (alias: m, tag)
+        --meta <key>
+            Metadata key to remove (alias: m, tag)
 
-    rm-img
-    No option for this action.
+    rm-img: No option for this action.
 
     parse
-    --output <path/to/meta.json>
-        Output file path (default: <input>.[json|image], alias: o, out)
+        --output <path/to/meta.json>
+            Output file path (default: <input>.[json|image], alias: o, out)

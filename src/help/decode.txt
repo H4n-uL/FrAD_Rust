@@ -6,10 +6,11 @@ This action supports pipe input/output.
 Usage: {frad} decode <path/to/audio.frad> [kwargs...]
 
 Options:
-
     --format <pcm format>
         Output format (default: f64be, alias: fmt, f, pcm)
+
     --ecc
         Check and fix errors (default: false, alias: e, enable-ecc)
+
     --output <path/to/audio.pcm>
         Output file path (alias: o, out)

@@ -8,9 +8,9 @@ Usage: {frad} repair <path/to/audio.frad>
         [kwargs...]
 
 Options:
-
     --output <path/to/repaired.frad>
         Output file path (REQUIRED, alias: o, out)
+
     --ecc <data> <code>
         Enable ECC and set size ratio in --ecc <data size> <ecc code size>
         (default: 96 24, alias: e, enable-ecc)

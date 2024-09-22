@@ -10,16 +10,16 @@ Usage: {frad} encode <path/to/audio.pcm>
         [kwargs...]
 
 Required settings:
-
     --sample-rate <sample rate>
         Input sample rate (alias: sr, srate)
+
     --channels <channels>
         Input channels (alias: ch, chnl, channel)
+
     --bits <bit depth>
         Output bit depth (alias: b, bit)
 
-Optional settings:
-
+Common options:
     --format <pcm format>
         Input format, default: f64be (alias: fmt, f, pcm)
 
@@ -30,25 +30,33 @@ Optional settings:
     --output <path/to/audio.frad>
         Output file path (default: <input>.frad, alias: o, out)
 
-    --fsize <frame size>
-        Samples per frame (default: 2048, alias: fr, frame-size)
-    --little-endian
-        Little Endian Toggle (alias: le)
-
     --profile <0-7>
         FrAD Profile from 0 to 7 (alias: prf)
+
     --loss-level <level>
         Lossy compression level (default: 0, alias: lv, level)
+
+Advanced options:
     --overlap-ratio <ratio>
         Overlap ratio in 1/<ratio> (alias: overlap, olap)
 
+    --fsize <frame size>
+        Samples per frame (default: 2048, alias: fr, frame-size)
+
+    --little-endian
+        Little Endian Toggle (alias: le)
+
+Metadata settings:
     --meta <key> <value>
         Metadata in <key> <value> (alias: m, tag)
+
     --jsonmeta <path/to/meta.json>
         JSONMeta format file path to embed (alias: jm)
         type `{frad} help jsonmeta` for JSONMeta format
+
     --vorbis-meta <path/to/meta.tags>
         VorbisMeta format file path to embed (alias: vm)
         type `{frad} help vorbismeta` for VorbisMeta format
+
     --image <path/to/image.file>
         Image file path to embed (alias: img)
