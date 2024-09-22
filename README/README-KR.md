@@ -62,14 +62,20 @@ export PATH=/path/to/bin:$PATH
 
 ### Cargo 크레이트
 
+#### 라이브러리용
+
+1. flate2
+2. half
+3. rustfft
+
+#### 어플리케이션용
+
 1. base64
-2. flate2
-3. half
-4. rodio
-5. rustfft
-6. same_file
-7. serde_json
-8. tempfile
+2. infer
+3. rodio
+4. same_file
+5. serde_json
+6. tempfile
 
 ## 기여 방법
 
