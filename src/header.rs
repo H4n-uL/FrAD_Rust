@@ -12,6 +12,7 @@ use crate::{
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
+use infer;
 use serde_json::{json, Value};
 use tempfile::NamedTempFile;
 
@@ -53,7 +54,10 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
             wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
         }
         File::create(format!("{}.json", wfile)).unwrap().write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
-        File::create(format!("{}.image", wfile)).unwrap().write_all(&img_old).unwrap();
+        if !img_old.is_empty() {
+            let img_suffix = if let Some(imgtype) = infer::get(&img_old) { imgtype.extension() } else { "img" };
+            File::create(format!("{}.{}", wfile, img_suffix)).unwrap().write_all(&img_old).unwrap();
+        }
 
         return;
     }
