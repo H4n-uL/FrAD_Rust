@@ -43,7 +43,7 @@ fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<
  * Parameters: Input file, CLI parameters
  * Returns: Decoded PCM on File or stdout
  */
-pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
+pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
     let mut wfile = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
@@ -66,7 +66,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8) {
 
         check_overwrite(&wfile, params.overwrite);
     }
-    let play = params.play;
+
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe && !play { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();

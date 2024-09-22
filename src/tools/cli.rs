@@ -45,7 +45,6 @@ pub struct CliParams {
     pub meta: Vec<(String, Vec<u8>)>,
     pub image_path: String,
     pub loglevel: u8,
-    pub play: bool,
     pub speed: f64,
 }
 
@@ -68,7 +67,6 @@ impl CliParams {
             meta: Vec::new(),
             image_path: String::new(),
             loglevel: 0,
-            play: false,
             speed: 1.0,
         }
     }
@@ -165,7 +163,6 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
     if args.is_empty() { return (String::new(), String::new(), String::new(), params); }
 
     let action = args.pop_front().unwrap();
-    if PLAY_OPT.contains(&action.as_str()) { params.play = true; }
     let mut metaaction = String::new();
     if METADATA_OPT.contains(&action.as_str()) {
         metaaction = args.pop_front().unwrap_or_else(

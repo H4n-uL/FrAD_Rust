@@ -34,9 +34,11 @@ fn main() {
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
         encode::encode(input, params, loglevel);
     }
-    else if tools::cli::DECODE_OPT.contains(&action.as_str())
-        || tools::cli::PLAY_OPT.contains(&action.as_str()) {
-        decode::decode(input, params, loglevel);
+    else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
+        decode::decode(input, params, loglevel, false);
+    }
+    else if tools::cli::PLAY_OPT.contains(&action.as_str()) {
+        decode::decode(input, params, loglevel, true);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
         repair::repair(input, params, loglevel);
