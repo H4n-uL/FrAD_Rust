@@ -10,8 +10,6 @@ use crate::{
     tools::cli::CliParams
 };
 use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
-
-// use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 use same_file::is_same_file;
 
 /** set_files
@@ -66,6 +64,7 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
 
     encoder.set_srate(params.srate);
     encoder.set_channels(params.channels as i16);
+
     encoder.set_frame_size(params.frame_size);
 
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
@@ -79,7 +78,6 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
     let (mut rfile, mut wfile) = set_files(input, params.output, params.profile, params.overwrite);
 
     let mut image = Vec::new();
-
     if !params.image_path.is_empty() {
         match File::open(&params.image_path) {
             Ok(mut imgfile) => { imgfile.read_to_end(&mut image).unwrap(); },
