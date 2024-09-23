@@ -14,15 +14,15 @@ const BANNER: &str =
                              Original Author - HaמuL
 ";
 
-const GENERAL_HELP: &str = include_str!("help/general.txt");
-const ENCODE_HELP: &str = include_str!("help/encode.txt");
-const DECODE_HELP: &str = include_str!("help/decode.txt");
-const PLAY_HELP: &str = include_str!("help/play.txt");
-const REPAIR_HELP: &str = include_str!("help/repair.txt");
-const METADATA_HELP: &str = include_str!("help/metadata.txt");
-const JSONMETA_HELP: &str = include_str!("help/jsonmeta.txt");
+const GENERAL_HELP:    &str = include_str!("help/general.txt");
+const ENCODE_HELP:     &str = include_str!("help/encode.txt");
+const DECODE_HELP:     &str = include_str!("help/decode.txt");
+const REPAIR_HELP:     &str = include_str!("help/repair.txt");
+const PLAY_HELP:       &str = include_str!("help/play.txt");
+const METADATA_HELP:   &str = include_str!("help/metadata.txt");
+const JSONMETA_HELP:   &str = include_str!("help/jsonmeta.txt");
 const VORBISMETA_HELP: &str = include_str!("help/vorbismeta.txt");
-const PROFILES_HELP: &str = include_str!("help/profiles.txt");
+const PROFILES_HELP:   &str = include_str!("help/profiles.txt");
 
 /** Main function  */
 fn main() {
