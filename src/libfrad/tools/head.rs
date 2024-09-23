@@ -15,9 +15,8 @@ const IMAGE: [u8; 1] = [0xf5];
  * Returns: Comment block
  */
 fn comment(title: &str, data: &[u8]) -> Vec<u8> {
-    let title_length = title.len() as u32;
-    let title_length = title_length.to_be_bytes();
     let mut data_comb = title.as_bytes().to_vec();
+    let title_length = (data_comb.len() as u32).to_be_bytes();
     data_comb.extend(data);
     let block_length = (data_comb.len() + 12).to_be_bytes()[2..].to_vec();
 
