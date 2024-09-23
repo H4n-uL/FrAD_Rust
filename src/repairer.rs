@@ -18,7 +18,7 @@ use same_file::is_same_file;
  * Parameters: Input file, CLI parameters
  * Returns: Repaired FrAD stream on File
  */
-pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
+pub fn repair(rfile: String, params: CliParams) {
     let mut wfile = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
@@ -52,8 +52,8 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
 
         let mut repaired = repairer.process(buffer[..bytes_read].to_vec());
         writefile.write_all(&mut repaired).unwrap();
-        logging(loglevel, &repairer.streaminfo, false);
+        logging(params.loglevel, &repairer.streaminfo, false);
     }
     writefile.write_all(&mut repairer.flush()).unwrap();
-    logging(loglevel, &repairer.streaminfo, true);
+    logging(params.loglevel, &repairer.streaminfo, true);
 }

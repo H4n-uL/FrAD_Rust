@@ -43,7 +43,7 @@ fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<
  * Parameters: Input file, CLI parameters
  * Returns: Decoded PCM on File or stdout
  */
-pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
+pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut wfile = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
@@ -73,7 +73,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
     let mut sink = Sink::try_new(&stream_handle).unwrap();
     sink.set_speed(params.speed as f32);
 
-    if play { loglevel = 0; }
+    if play { params.loglevel = 0; }
     let mut decoder = Decoder::new(params.enable_ecc);
     let pcm_fmt = params.pcm;
 
@@ -86,7 +86,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
 
         let (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
-        logging(loglevel, &decoder.streaminfo, false);
+        logging(params.loglevel, &decoder.streaminfo, false);
 
         if critical_info_modified && !(wpipe || play) {
             no += 1; writefile = Box::new(File::create(format!("{}.{}.pcm", wfile, no)).unwrap());
@@ -94,6 +94,6 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
     }
     let (pcm, srate, _) = decoder.flush();
     write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
-    logging(loglevel, &decoder.streaminfo, true);
+    logging(params.loglevel, &decoder.streaminfo, true);
     if play { sink.sleep_until_end(); }
 }

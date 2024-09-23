@@ -30,18 +30,17 @@ fn main() {
     let executable = Path::new(&exepath).file_name().unwrap().to_str().unwrap();
     let (action, metaaction, input, params) = tools::cli::parse(env::args());
 
-    let loglevel = params.loglevel;
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
-        encoder::encode(input, params, loglevel);
+        encoder::encode(input, params);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
-        decoder::decode(input, params, loglevel, false);
+        decoder::decode(input, params, false);
     }
     else if tools::cli::PLAY_OPT.contains(&action.as_str()) {
-        decoder::decode(input, params, loglevel, true);
+        decoder::decode(input, params, true);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
-        repairer::repair(input, params, loglevel);
+        repairer::repair(input, params);
     }
     else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);

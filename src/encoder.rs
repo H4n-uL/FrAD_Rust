@@ -55,7 +55,7 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
  * Encodes PCM to FrAD
  * Parameters: Input file, CLI parameters, Log level
  */
-pub fn encode(input: String, params: CliParams, loglevel: u8) {
+pub fn encode(input: String, params: CliParams) {
     if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
     let mut encoder = Encoder::new(params.profile, params.pcm);
@@ -96,8 +96,8 @@ pub fn encode(input: String, params: CliParams, loglevel: u8) {
         let readlen = read_exact(&mut rfile, &mut pcm_buf);
         if readlen == 0 { break; }
         wfile.write_all(&encoder.process(pcm_buf[..readlen].to_vec())).unwrap();
-        logging(loglevel, &encoder.streaminfo, false);
+        logging(params.loglevel, &encoder.streaminfo, false);
     }
     wfile.write_all(&encoder.flush()).unwrap();
-    logging(loglevel, &encoder.streaminfo, true);
+    logging(params.loglevel, &encoder.streaminfo, true);
 }
