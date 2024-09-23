@@ -185,7 +185,7 @@ impl Encode {
 
             // 3. Encode the frame
             if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
-            let (mut frad, bit_ind, chnl, srate) = match self.asfh.profile {
+            let (mut frad, bit_depth_index, channels, srate) = match self.asfh.profile {
                 1 => fourier::profile1::analogue(frame, self.bit_depth, self.srate, self.loss_level),
                 4 => fourier::profile4::analogue(frame, self.bit_depth, self.srate, self.asfh.endian),
                 _ => fourier::profile0::analogue(frame, self.bit_depth, self.srate, self.asfh.endian)
@@ -197,7 +197,7 @@ impl Encode {
             }
 
             // 5. Write the frame to the buffer
-            (self.asfh.bit_depth, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_ind, chnl, fsize, srate);
+            (self.asfh.bit_depth_index, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_depth_index, channels, fsize, srate);
             ret.extend(self.asfh.write(frad));
 
             // Logging

@@ -15,11 +15,11 @@ use crate::{
  * Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
  * Returns: Encoded byte
  */
-fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bits: i16) -> u8 {
+fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_index: i16) -> u8 {
     let prf = profile << 5;
     let ecc = (enable_ecc as u8) << 4;
     let endian = (little_endian as u8) << 3;
-    return prf | ecc | endian | bits as u8;
+    return prf | ecc | endian | bit_depth_index as u8;
 }
 
 /** encode_css
@@ -46,8 +46,8 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
     let prf = pfb >> 5;
     let ecc = (pfb >> 4) & 1 == 1;
     let endian = (pfb >> 3) & 1 == 1;
-    let bits = pfb & 0b111;
-    return (prf, ecc, endian, bits as i16);
+    let bit_depth_index = pfb & 0b111;
+    return (prf, ecc, endian, bit_depth_index as i16);
 }
 
 /** decode_css
@@ -82,7 +82,7 @@ pub struct ASFH {
 
     // Audio structure data
     pub endian: bool,
-    pub bit_depth: i16, pub channels: i16,
+    pub bit_depth_index: i16, pub channels: i16,
     pub srate: u32, pub fsize: u32,
 
     // Error correction
@@ -105,7 +105,7 @@ impl ASFH {
             total_bytes: 0, frmbytes: 0, buffer: Vec::new(),
             header_bytes: 0, all_set: false,
 
-            endian: false, bit_depth: 0,
+            endian: false, bit_depth_index: 0,
             channels: 0, srate: 0, fsize: 0,
 
             ecc: false, ecc_ratio: [0; 2],
@@ -127,7 +127,7 @@ impl ASFH {
         let mut fhead = FRM_SIGN.to_vec();
 
         fhead.extend(&(frad.len() as u32).to_be_bytes().to_vec());
-        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
+        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth_index));
 
         if COMPACT.contains(&self.profile) {
             fhead.extend(encode_css(self.channels, self.srate, self.fsize, false));
@@ -159,7 +159,7 @@ impl ASFH {
     pub fn force_flush(&mut self) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
         fhead.extend([0u8; 4].to_vec());
-        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth));
+        fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth_index));
 
         if COMPACT.contains(&self.profile) {
             fhead.extend(encode_css(self.channels, self.srate, self.fsize, true));
@@ -194,7 +194,7 @@ impl ASFH {
     pub fn read(&mut self, buffer: &mut Vec<u8>) -> ParseResult {
         if !self.fill_buffer(buffer, 9) { return ParseResult::Incomplete } // If buffer not filled, return error
         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
-        (self.profile, self.ecc, self.endian, self.bit_depth) = decode_pfb(self.buffer[0x8]);
+        (self.profile, self.ecc, self.endian, self.bit_depth_index) = decode_pfb(self.buffer[0x8]);
 
         if COMPACT.contains(&self.profile) {
             if !self.fill_buffer(buffer, 12) { return ParseResult::Incomplete }
