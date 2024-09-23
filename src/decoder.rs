@@ -47,25 +47,21 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut wfile = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
-    let mut rpipe = false;
+    let (mut rpipe, mut wpipe) = (false, false);
     if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { eprintln!("Input file does not exist"); exit(1); }
-
-    let mut wpipe = false;
     if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
-    else {
-        match is_same_file(&rfile, &wfile) {
-            Ok(true) => { eprintln!("Input and output files cannot be the same"); exit(1); }
-            _ => {}
-        }
-        if wfile.is_empty() {
-            let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-            wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-        }
-        else if wfile.ends_with(".pcm") { wfile = wfile[..wfile.len() - 4].to_string(); }
-
-        check_overwrite(&wfile, params.overwrite);
+    else if let Ok(true) = is_same_file(&rfile, &wfile) {
+        eprintln!("Input and output files cannot be the same"); exit(1);
     }
+
+    if wfile.is_empty() {
+        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
+        wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
+    }
+    else if wfile.ends_with(".pcm") { wfile = wfile[..wfile.len() - 4].to_string(); }
+
+    check_overwrite(&wfile, params.overwrite);
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe && !play { Box::new(File::create(format!("{}.pcm", wfile)).unwrap()) } else { Box::new(std::io::stdout()) };

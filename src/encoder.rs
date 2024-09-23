@@ -22,11 +22,8 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
     if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
     else if !Path::new(&rfile).exists() { eprintln!("Input file doesn't exist"); exit(1); }
     if PIPEOUT.contains(&wfile.as_str()) { wpipe = true; }
-    else {
-        match is_same_file(&rfile, &wfile) {
-            Ok(true) => { eprintln!("Input and wfile files cannot be the same"); exit(1); }
-            _ => {}
-        }
+    else if let Ok(true) = is_same_file(&rfile, &wfile) {
+        eprintln!("Input and output files cannot be the same"); exit(1);
     }
 
     if wfile.is_empty() {
