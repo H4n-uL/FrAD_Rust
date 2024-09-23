@@ -5,7 +5,7 @@
  */
 
 mod tools; mod common;
-mod encode; mod decode; mod repair; mod header;
+mod encoder; mod decoder; mod repairer; mod header;
 
 use std::{env, path::Path};
 
@@ -32,16 +32,16 @@ fn main() {
 
     let loglevel = params.loglevel;
     if tools::cli::ENCODE_OPT.contains(&action.as_str()) {
-        encode::encode(input, params, loglevel);
+        encoder::encode(input, params, loglevel);
     }
     else if tools::cli::DECODE_OPT.contains(&action.as_str()) {
-        decode::decode(input, params, loglevel, false);
+        decoder::decode(input, params, loglevel, false);
     }
     else if tools::cli::PLAY_OPT.contains(&action.as_str()) {
-        decode::decode(input, params, loglevel, true);
+        decoder::decode(input, params, loglevel, true);
     }
     else if tools::cli::REPAIR_OPT.contains(&action.as_str()) {
-        repair::repair(input, params, loglevel);
+        repairer::repair(input, params, loglevel);
     }
     else if tools::cli::METADATA_OPT.contains(&action.as_str()) {
         header::modify(input, metaaction, params);

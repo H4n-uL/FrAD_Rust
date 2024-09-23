@@ -4,7 +4,7 @@
  * Description: Repairer implementation example
  */
 
-use frad::Repair;
+use frad::Repairer;
 use crate::{
     common::{check_overwrite, logging, PIPEIN, PIPEOUT},
     tools::cli::CliParams
@@ -44,7 +44,7 @@ pub fn repair(rfile: String, params: CliParams, loglevel: u8) {
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let mut repairer = Repair::new(params.ecc_ratio);
+    let mut repairer = Repairer::new(params.ecc_ratio);
     loop {
         let mut buffer = vec![0; 32768];
         let bytes_read = readfile.read(&mut buffer).unwrap();

@@ -1,4 +1,4 @@
-/**                                  Repair                                   */
+/**                                 Repairer                                  */
 /**
  * Copyright 2024 HaמuL
  * Description: FrAD repairer
@@ -11,21 +11,20 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
-/** Repair
+/** Repairer
 * Struct for FrAD repairer
 */
-pub struct Repair {
+pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
     pub streaminfo: StreamInfo,
 
-    fix_error: bool,
     olap_len: usize,
     ecc_ratio: [u8; 2],
 }
 
-impl Repair {
-    pub fn new(mut ecc_ratio: [u8; 2]) -> Repair {
+impl Repairer {
+    pub fn new(mut ecc_ratio: [u8; 2]) -> Repairer {
         if ecc_ratio[0] == 0 {
             eprintln!("ECC data size must not be zero");
             eprintln!("Setting ECC to default 96 24");
@@ -38,12 +37,11 @@ impl Repair {
             ecc_ratio = [96, 24];
         }
 
-        Repair {
+        Repairer {
             asfh: ASFH::new(),
             buffer: Vec::new(),
             streaminfo: StreamInfo::new(),
 
-            fix_error: true,
             olap_len: 0,
             ecc_ratio,
         }
@@ -78,11 +76,9 @@ impl Repair {
 
                 // 1.2. Correct the error if ECC is enabled
                 if self.asfh.ecc {
-                    let repair =  self.fix_error && ( // and if the user requested
-                        // and if CRC mismatch
+                    let repair = // and if CRC mismatch
                         LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
-                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16
-                    );
+                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16;
                     frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
                 }
 

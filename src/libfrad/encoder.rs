@@ -1,4 +1,4 @@
-/**                                  Encode                                   */
+/**                                  Encoder                                  */
 /**
  * Copyright 2024 HaמuL
  * Description: FrAD encoder
@@ -14,10 +14,10 @@ use crate::{
 use std::process::exit;
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
 
-/** Encode
+/** Encoder
  * Struct for FrAD encoder
  */
-pub struct Encode {
+pub struct Encoder {
     asfh: ASFH, buffer: Vec<u8>,
     bit_depth: i16, channels: i16,
     fsize: u32, srate: u32,
@@ -28,12 +28,12 @@ pub struct Encode {
     loss_level: f64,
 }
 
-impl Encode {
-    pub fn new(profile: u8, pcm_format: PCMFormat) -> Encode {
+impl Encoder {
+    pub fn new(profile: u8, pcm_format: PCMFormat) -> Encoder {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
         let mut asfh = ASFH::new();
         asfh.profile = profile;
-        Encode {
+        Encoder {
             asfh, buffer: Vec::new(),
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,

@@ -4,7 +4,7 @@
  * Description: Decoder implementation example
  */
 
-use frad::{f64cvt::f64_to_any, PCMFormat, Decode};
+use frad::{f64cvt::f64_to_any, PCMFormat, Decoder};
 use crate::{
     common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
     tools::cli::CliParams
@@ -74,7 +74,7 @@ pub fn decode(rfile: String, params: CliParams, mut loglevel: u8, play: bool) {
     sink.set_speed(params.speed as f32);
 
     if play { loglevel = 0; }
-    let mut decoder = Decode::new(params.enable_ecc);
+    let mut decoder = Decoder::new(params.enable_ecc);
     let pcm_fmt = params.pcm;
 
     let mut no = 0;

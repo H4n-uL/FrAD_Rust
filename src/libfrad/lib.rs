@@ -8,15 +8,15 @@ mod backend;
 mod fourier;
 mod tools;
 
-mod encode;
-mod decode;
-mod repair;
+mod encoder;
+mod decoder;
+mod repairer;
 
 pub use backend::{PCMFormat, Endian, f64cvt};
 pub use fourier::profiles;
 pub use tools::{head, stream::StreamInfo};
 
 pub mod common;
-pub use encode::Encode;
-pub use decode::Decode;
-pub use repair::Repair;
+pub use encoder::Encoder;
+pub use decoder::Decoder;
+pub use repairer::Repairer;

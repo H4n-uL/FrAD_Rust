@@ -4,7 +4,7 @@
  * Description: Encoder implementation example
  */
 
-use frad::{Encode, profiles::LOSSLESS, head, StreamInfo};
+use frad::{Encoder, profiles::LOSSLESS, head, StreamInfo};
 use crate::{
     common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
     tools::cli::CliParams
@@ -58,7 +58,7 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
 pub fn encode(input: String, params: CliParams, loglevel: u8) {
     if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
-    let mut encoder = Encode::new(params.profile, params.pcm);
+    let mut encoder = Encoder::new(params.profile, params.pcm);
     if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
     if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
 

@@ -1,4 +1,4 @@
-/**                                  Decode                                   */
+/**                                  Decoder                                  */
 /**
  * Copyright 2024 HaמuL
  * Description: FrAD decoder
@@ -11,10 +11,10 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
-/** Decode
+/** Decoder
  * Struct for FrAD decoder
  */
-pub struct Decode {
+pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
@@ -23,9 +23,9 @@ pub struct Decode {
     fix_error: bool,
 }
 
-impl Decode {
-    pub fn new(fix_error: bool) -> Decode {
-        Decode {
+impl Decoder {
+    pub fn new(fix_error: bool) -> Decoder {
+        Decoder {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
