@@ -33,10 +33,10 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
     if !(wfile.ends_with(".frad") || wfile.ends_with(".dsin")
         || wfile.ends_with(".fra") || wfile.ends_with(".dsn")) {
         if LOSSLESS.contains(&profile) {
-            if wfile.len() <= 8 { wfile = format!("{}.fra", wfile); }
+            if wfile.len() <= 8 && wfile.is_ascii() { wfile = format!("{}.fra", wfile); }
             else { wfile = format!("{}.frad", wfile); }
         }
-        else if wfile.len() <= 8 { wfile = format!("{}.dsn", wfile); }
+        else if wfile.len() <= 8 && wfile.is_ascii() { wfile = format!("{}.dsn", wfile); }
         else { wfile = format!("{}.dsin", wfile); }
     }
 
