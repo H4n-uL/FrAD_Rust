@@ -6,7 +6,7 @@
 
 use frad::Repairer;
 use crate::{
-    common::{check_overwrite, logging, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -45,13 +45,13 @@ pub fn repair(rfile: String, params: CliParams) {
     let mut repairer = Repairer::new(params.ecc_ratio);
     loop {
         let mut buffer = vec![0; 32768];
-        let bytes_read = readfile.read(&mut buffer).unwrap();
+        let bytes_read = read_exact(&mut readfile, &mut buffer);
         if bytes_read == 0 && repairer.is_empty() { break; }
 
-        let mut repaired = repairer.process(buffer[..bytes_read].to_vec());
-        writefile.write_all(&mut repaired).unwrap();
+        let repaired = repairer.process(buffer[..bytes_read].to_vec());
+        write_safe(&mut writefile, &repaired);
         logging(params.loglevel, &repairer.streaminfo, false);
     }
-    writefile.write_all(&mut repairer.flush()).unwrap();
+    write_safe(&mut writefile, &repairer.flush());
     logging(params.loglevel, &repairer.streaminfo, true);
 }

@@ -5,11 +5,40 @@
  */
 
 use frad::StreamInfo;
-use std::{fs::File, io::{IsTerminal, Read, Write}, path::Path, process::exit};
+use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
 // Pipe and null device
 pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
 pub const PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
+
+/** read_exact
+ * Reads a file or stdin to a buffer with exact size
+ * Parameters: File(&mut), Buffer(&mut)
+ * Returns: Total bytes read
+ */
+pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
+    let mut total_read = 0;
+
+    while total_read < buf.len() {
+        let read_size = file.read(&mut buf[total_read..]).unwrap();
+        if read_size == 0 { break; }
+        total_read += read_size;
+    }
+    return total_read;
+}
+
+/** write_safe
+ * Writes data to stdout with broken pipe handling
+ * Parameters: Output file writer, Data buffer
+ */
+pub fn write_safe(wfile: &mut Box<dyn Write>, buf: &[u8]) {
+    wfile.write_all(buf).unwrap_or_else(|err| {
+        match err.kind() {
+            ErrorKind::BrokenPipe => { exit(0); },
+            _ => { panic!("Error writing to stdout: {}", err); }
+        }
+    });
+}
 
 /** format_time
  * Formats time in seconds to human-readable format
@@ -71,22 +100,6 @@ pub fn logging(loglevel: u8, log: &StreamInfo, linefeed: bool) {
         format_bytes(log.total_size as f64), format_time(log.get_duration()), format_bytes(log.get_bitrate()), format_speed(log.get_speed())
     );
     if linefeed { eprintln!(); }
-}
-
-/** read_exact
- * Reads a file or stdin to a buffer with exact size
- * Parameters: File(&mut), Buffer(&mut)
- * Returns: Total bytes read
- */
-pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
-    let mut total_read = 0;
-
-    while total_read < buf.len() {
-        let read_size = file.read(&mut buf[total_read..]).unwrap();
-        if read_size == 0 { break; }
-        total_read += read_size;
-    }
-    return total_read;
 }
 
 pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {

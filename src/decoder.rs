@@ -6,10 +6,10 @@
 
 use frad::{f64cvt::f64_to_any, PCMFormat, Decoder};
 use crate::{
-    common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
-use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
+use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 use same_file::is_same_file;
@@ -31,10 +31,7 @@ fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<
     }
     else {
         let pcm_bytes: Vec<u8> = pcm.into_iter().flatten().flat_map(|x| f64_to_any(x, fmt)).collect();
-        file.write_all(&pcm_bytes)
-        .unwrap_or_else(|err|
-            if err.kind() == ErrorKind::BrokenPipe { std::process::exit(0); } else { panic!("Error writing to stdout: {}", err); }
-        );
+        write_safe(file, &pcm_bytes);
     }
 }
 

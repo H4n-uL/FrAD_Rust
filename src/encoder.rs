@@ -6,10 +6,10 @@
 
 use frad::{Encoder, profiles::LOSSLESS, head, StreamInfo};
 use crate::{
-    common::{check_overwrite, logging, read_exact, PIPEIN, PIPEOUT},
+    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
-use std::{fs::File, io::{ErrorKind, Read, Write}, path::Path, process::exit};
+use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
 
 /** set_files
@@ -82,19 +82,16 @@ pub fn encode(input: String, params: CliParams) {
         }
     }
 
-    wfile.write_all(&head::builder(&params.meta, image)).unwrap_or_else(
-        |err| { eprintln!("Error writing to stdout: {}", err);
-        if err.kind() == ErrorKind::BrokenPipe { exit(0); } else { panic!("Error writing to stdout: {}", err); } }
-    );
+    write_safe(&mut wfile, &head::builder(&params.meta, image));
 
     encoder.streaminfo = StreamInfo::new();
     loop {
         let mut pcm_buf = vec![0u8; 32768];
         let readlen = read_exact(&mut rfile, &mut pcm_buf);
         if readlen == 0 { break; }
-        wfile.write_all(&encoder.process(pcm_buf[..readlen].to_vec())).unwrap();
+        write_safe(&mut wfile, &encoder.process(pcm_buf[..readlen].to_vec()));
         logging(params.loglevel, &encoder.streaminfo, false);
     }
-    wfile.write_all(&encoder.flush()).unwrap();
+    write_safe(&mut wfile, &encoder.flush());
     logging(params.loglevel, &encoder.streaminfo, true);
 }
