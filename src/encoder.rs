@@ -72,7 +72,7 @@ pub fn encode(input: String, params: CliParams) {
     let loss_level = 1.25_f64.powi(params.losslevel as i32) / 19.0 + 0.5;
     encoder.set_loss_level(loss_level);
 
-    let (mut rfile, mut wfile) = set_files(input, params.output, params.profile, params.overwrite);
+    let (mut readfile, mut writefile) = set_files(input, params.output, params.profile, params.overwrite);
 
     let mut image = Vec::new();
     if !params.image_path.is_empty() {
@@ -82,16 +82,16 @@ pub fn encode(input: String, params: CliParams) {
         }
     }
 
-    write_safe(&mut wfile, &head::builder(&params.meta, image));
+    write_safe(&mut writefile, &head::builder(&params.meta, image));
 
     encoder.streaminfo = StreamInfo::new();
     loop {
         let mut pcm_buf = vec![0u8; 32768];
-        let readlen = read_exact(&mut rfile, &mut pcm_buf);
+        let readlen = read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
-        write_safe(&mut wfile, &encoder.process(pcm_buf[..readlen].to_vec()));
+        write_safe(&mut writefile, &encoder.process(pcm_buf[..readlen].to_vec()));
         logging(params.loglevel, &encoder.streaminfo, false);
     }
-    write_safe(&mut wfile, &encoder.flush());
+    write_safe(&mut writefile, &encoder.flush());
     logging(params.loglevel, &encoder.streaminfo, true);
 }
