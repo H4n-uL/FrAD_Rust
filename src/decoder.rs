@@ -59,10 +59,10 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     else if wfile_prim.ends_with(".pcm") { wfile_prim = wfile_prim[..wfile_prim.len() - 4].to_string(); }
 
     let mut wfile = format!("{}.pcm", wfile_prim);
-    if wpipe { check_overwrite(&wfile, params.overwrite); }
+    if !wpipe { check_overwrite(&wfile, params.overwrite); }
 
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
-    let mut writefile: Box<dyn Write> = if wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let mut sink = Sink::try_new(&stream_handle).unwrap();
     sink.set_speed(params.speed as f32);
@@ -82,9 +82,11 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
         logging(params.loglevel, &decoder.streaminfo, false);
 
-        if critical_info_modified && wpipe {
+        if critical_info_modified && !wpipe {
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
+            let x = std::time::Instant::now();
             check_overwrite(&wfile, params.overwrite);
+            decoder.streaminfo.start_time += x.elapsed();
             writefile = Box::new(File::create(wfile).unwrap());
         }
     }
