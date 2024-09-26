@@ -10,7 +10,7 @@ use std::{collections::HashMap, time::Instant};
  * Struct for stream information
  */
 pub struct StreamInfo {
-    pub start_time: Instant,
+    start_time: Instant,
     t_block: Option<Instant>,
     total_size: u128,
     duration: HashMap<u32, u128>,
