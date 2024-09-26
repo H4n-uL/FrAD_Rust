@@ -84,9 +84,9 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
 
         if critical_info_modified && !wpipe {
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
-            let x = std::time::Instant::now();
+            decoder.streaminfo.block();
             check_overwrite(&wfile, params.overwrite);
-            decoder.streaminfo.start_time += x.elapsed();
+            decoder.streaminfo.unblock();
             writefile = Box::new(File::create(wfile).unwrap());
         }
     }

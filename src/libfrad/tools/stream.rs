@@ -11,7 +11,8 @@ use std::{collections::HashMap, time::Instant};
  */
 pub struct StreamInfo {
     pub start_time: Instant,
-    pub total_size: u128,
+    t_block: Option<Instant>,
+    total_size: u128,
     duration: HashMap<u32, u128>,
     bitrate: HashMap<u32, u128>,
 }
@@ -20,6 +21,7 @@ impl StreamInfo {
     pub fn new() -> StreamInfo {
         StreamInfo {
             start_time: Instant::now(),
+            t_block: None,
             duration: HashMap::new(),
             total_size: 0,
             bitrate: HashMap::new(),
@@ -46,5 +48,20 @@ impl StreamInfo {
         let encoding_time = self.start_time.elapsed().as_secs_f64();
         let total_duration: f64 = self.duration.iter().map(|(k, v)| *v as f64 / *k as f64).sum();
         return if encoding_time > 0.0 { total_duration / encoding_time } else { 0.0 };
+    }
+
+    pub fn get_total_size(&self) -> u128 {
+        return self.total_size;
+    }
+
+    pub fn block(&mut self) {
+        self.t_block = Some(Instant::now());
+    }
+
+    pub fn unblock(&mut self) {
+        if let Some(t_block) = self.t_block {
+            self.start_time += t_block.elapsed();
+            self.t_block = None;
+        }
     }
 }

@@ -97,7 +97,7 @@ pub fn format_speed(n: f64) -> String {
 pub fn logging(loglevel: u8, log: &StreamInfo, linefeed: bool) {
     if loglevel == 0 { return; }
     eprint!("size={}B time={} bitrate={}bits/s speed={}x    \r",
-        format_bytes(log.total_size as f64), format_time(log.get_duration()), format_bytes(log.get_bitrate()), format_speed(log.get_speed())
+        format_bytes(log.get_total_size() as f64), format_time(log.get_duration()), format_bytes(log.get_bitrate()), format_speed(log.get_speed())
     );
     if linefeed { eprintln!(); }
 }
