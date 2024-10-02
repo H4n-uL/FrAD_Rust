@@ -20,12 +20,12 @@ use same_file::is_same_file;
  * Parameters: Output file, PCM data
  * Returns: None
  */
-fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: &u32) {
+fn write(isplay: bool, file: &mut Box<dyn Write>, sink: &mut Sink, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: u32) {
     if pcm.is_empty() { return; }
     if isplay {
         sink.append(SamplesBuffer::new(
             pcm[0].len() as u16,
-            *srate,
+            srate,
             pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
         ));
     }
@@ -78,11 +78,11 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
 
         if readlen == 0 && decoder.is_empty() && (!play || sink.empty()) { break; }
 
-        let (pcm, srate, critical_info_modified) = decoder.process(buf[..readlen].to_vec());
-        write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
+        let decoded = decoder.process(buf[..readlen].to_vec());
+        write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
         logging(params.loglevel, &decoder.streaminfo, false);
 
-        if critical_info_modified && !wpipe {
+        if decoded.crit && !wpipe {
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
             decoder.streaminfo.block();
             check_overwrite(&wfile, params.overwrite);
@@ -90,8 +90,8 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
             writefile = Box::new(File::create(wfile).unwrap());
         }
     }
-    let (pcm, srate, _) = decoder.flush();
-    write(play, &mut writefile, &mut sink, pcm, &pcm_fmt, &srate);
+    let decoded = decoder.flush();
+    write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
     logging(params.loglevel, &decoder.streaminfo, true);
     if play { sink.sleep_until_end(); }
 }

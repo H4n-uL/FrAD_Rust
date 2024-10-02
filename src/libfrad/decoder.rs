@@ -11,6 +11,13 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
 };
 
+pub struct DecodeResult {
+    pub pcm: Vec<Vec<f64>>,
+    pub srate: u32,
+    pub frames: usize,
+    pub crit: bool,
+}
+
 /** Decoder
  * Struct for FrAD decoder
  */
@@ -70,9 +77,9 @@ impl Decoder {
      * Parameters: Input stream
      * Returns: Decoded PCM, Sample rate, Critical info modification flag
      */
-    pub fn process(&mut self, stream: Vec<u8>) -> (Vec<Vec<f64>>, u32, bool) {
+    pub fn process(&mut self, stream: Vec<u8>) -> DecodeResult {
         self.buffer.extend(stream);
-        let mut ret = Vec::new();
+        let (mut ret_pcm, mut frames, mut crit) = (Vec::new(), 0, false);
 
         loop {
             // If every parameter in the ASFH struct is set,
@@ -107,7 +114,7 @@ impl Decoder {
                 self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Append the decoded PCM and clear header
-                ret.extend(pcm);
+                ret_pcm.extend(pcm); frames += 1;
                 self.asfh.clear();
             }
 
@@ -141,19 +148,24 @@ impl Decoder {
                             let (srate, chnl) = (self.info.srate, self.info.channels);
                             self.info = self.asfh.clone();
                             if srate != 0 || chnl != 0 { // If the info struct is not empty
-                                ret.extend(self.flush().0); // Flush the overlap buffer
-                                return (ret, srate, true); // and return
+                                ret_pcm.extend(self.flush().pcm); // Flush the overlap buffer
+                                crit = true; break; // Set the critical flag and break
                             }
                         }
                     },
                     // 2.3.2. If header is complete and forced to flush, flush and return
-                    ForceFlush => { ret.extend(self.flush().0); break; },
+                    ForceFlush => { ret_pcm.extend(self.flush().pcm); break; },
                     // 2.3.3. If header is incomplete, return
                     Incomplete => break,
                 }
             }
         }
-        return (ret, self.asfh.srate, false);
+        return DecodeResult {
+            pcm: ret_pcm,
+            srate: self.asfh.srate,
+            frames,
+            crit,
+        };
     }
 
     /** flush
@@ -161,17 +173,22 @@ impl Decoder {
      * Parameters: None
      * Returns: Overlap buffer, Sample rate, true(flushed by user)
      */
-    pub fn flush(&mut self) -> (Vec<Vec<f64>>, u32, bool) {
+    pub fn flush(&mut self) -> DecodeResult {
         // 1. Extract the overlap buffer
         // 2. Update stream info
         // 3. Clear the overlap buffer
         // 4. Clear the ASFH struct
         // 5. Return exctacted buffer
 
-        let ret = self.overlap_fragment.clone();
+        let ret_pcm = self.overlap_fragment.clone();
         self.streaminfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
-        return (ret, self.asfh.srate, true);
+        return DecodeResult {
+            pcm: ret_pcm,
+            srate: self.asfh.srate,
+            frames: 0,
+            crit: true,
+        };
     }
 }
