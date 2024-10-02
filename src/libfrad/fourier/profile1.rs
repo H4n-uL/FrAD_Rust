@@ -112,7 +112,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: 
  */
 pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
-    let (pcm_scale, thres_scale) = get_scale_factors(bit_depth);
+    let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 
     // 1. Zlib decompression
     let mut decompressor = ZlibDecoder::new(&frad[..]);
@@ -128,8 +128,10 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, f
     let thres_gol = frad.split_front(thres_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| x as f64 / thres_scale).collect();
-    let freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64).collect();
+    let mut thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| x as f64 / thres_scale).collect();
+    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64).collect();
+    thres_flat.resize(p1tools::MOSLEN * channels, 0.0);
+    freqs_flat.resize(fsize * channels, 0.0);
 
     // 4. Unflattening frequencies and thresholds
     let thresholds: Vec<Vec<f64>> = (0..channels).map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
@@ -139,7 +141,7 @@ pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, f
     let mut freqs: Vec<Vec<f64>> = Vec::new();
     for c in 0..channels {
         freqs.push(freqs_masked[c].iter()
-        .zip(p1tools::mapping_from_opus(&thresholds[c], freqs_masked[c].len(), srate))
+        .zip(p1tools::mapping_from_opus(&thresholds[c], fsize, srate))
         .map(|(x, y)| p1tools::dequant(*x) * y).collect());
     }
 
