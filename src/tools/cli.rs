@@ -145,7 +145,7 @@ impl CliParams {
             "f64be" => PCMFormat::F64(Big),
             "f64le" => PCMFormat::F64(Little),
 
-            _ => PCMFormat::F64(Big)
+            _ => { eprintln!("Invalid format: {fmt}"); exit(1); }
         };
     }
     pub fn set_loglevel(&mut self, loglevel: String) { self.loglevel = loglevel.parse().unwrap(); }
