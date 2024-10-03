@@ -35,7 +35,7 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
     let mut head_old = vec![0u8; head_len as usize];
     rfile.read_exact(&mut head_old).unwrap();
 
-    let (mut meta_old, img_old) = head::parser(head_old);
+    let (mut meta_old, img_old, _itype) = head::parser(head_old);
     let (mut meta_new, mut img_new) = (Vec::new(), Vec::new());
 
     if modtype == META_PARSE {
@@ -95,7 +95,7 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
         _ => { eprintln!("Invalid modification type."); std::process::exit(1); }
     }
 
-    let head_new = head::builder(&meta_new, img_new);
+    let head_new = head::builder(&meta_new, img_new, None);
 
     let mut wfile = File::create(&file_name).unwrap();
     wfile.write_all(&head_new).unwrap();

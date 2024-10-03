@@ -82,7 +82,7 @@ pub fn encode(input: String, params: CliParams) {
         }
     }
 
-    write_safe(&mut writefile, &head::builder(&params.meta, image));
+    write_safe(&mut writefile, &head::builder(&params.meta, image, None));
 
     encoder.streaminfo = StreamInfo::new();
     loop {
