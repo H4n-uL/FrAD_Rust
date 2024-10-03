@@ -44,6 +44,11 @@ fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
     return (pcm_scale, thres_scale);
 }
 
+/** finite
+ * Assigns 0.0 to infinite or NaN values
+ * Parameters: f64 value
+ * Returns: Finite f64 value
+ */
 fn finite(x: f64) -> f64 {
     return if x.is_finite() { x } else { 0.0 };
 }
