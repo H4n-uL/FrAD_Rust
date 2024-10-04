@@ -208,10 +208,19 @@ impl Encoder {
         return ret;
     }
 
+    /** process
+     * Processes the input stream
+     * Parameters: Input stream
+     * Returns: Encoded audio data
+     */
     pub fn process(&mut self, stream: Vec<u8>) -> Vec<u8> {
         return self.inner(stream, false);
     }
 
+    /** flush
+     * Encodes the remaining data in the buffer and flush
+     * Returns: Encoded audio data
+     */
     pub fn flush(&mut self) -> Vec<u8> {
         return self.inner(Vec::new(), true);
     }

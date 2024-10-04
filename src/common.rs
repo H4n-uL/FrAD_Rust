@@ -102,6 +102,10 @@ pub fn logging(loglevel: u8, log: &StreamInfo, linefeed: bool) {
     if linefeed { eprintln!(); }
 }
 
+/** move_all
+ * Moves all data from readfile to writefile with given buffer size
+ * Parameters: Input file reader, Output file writer, Buffer size
+ */
 pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
     loop {
         let mut buf: Vec<u8> = vec![0; bufsize];
@@ -117,6 +121,10 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
     }
 }
 
+/** check_overwrite
+ * Checks if the output file exists and asks for overwrite
+ * Parameters: Output file, Overwrite flag
+ */
 pub fn check_overwrite(writefile: &str, overwrite: bool) {
     if Path::new(writefile).exists() && !overwrite {
         if std::io::stdin().is_terminal() {

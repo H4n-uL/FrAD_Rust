@@ -47,6 +47,10 @@ impl Repairer {
         }
     }
 
+    /** is_empty
+     * Check if the buffer is shorter than the frame sign(, which means it's virtually empty)
+     * Returns: Empty flag
+     */
     pub fn is_empty(&self) -> bool {
         return self.buffer.len() < FRM_SIGN.len();
     }

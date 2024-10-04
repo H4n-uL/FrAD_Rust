@@ -14,10 +14,12 @@ pub mod compact {
     // Sample rate table
     pub const SRATES: [u32; 12] = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
 
+    // Get valid sample rate eq or larger than given sample rate
     pub fn get_valid_srate(srate: u32) -> u32 {
         return SRATES.iter().rev().find(|&&x| x >= srate).unwrap_or(SRATES.iter().max().unwrap()).to_owned();
     }
 
+    // Get sample rate index of given sample rate
     pub fn get_srate_index(srate: u32) -> u16 {
         return SRATES.iter().enumerate()
             .filter(|&(_, &x)| x >= srate)
