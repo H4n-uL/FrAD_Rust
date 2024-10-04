@@ -114,20 +114,6 @@ impl ASFH {
         }
     }
 
-    pub fn loose_clone(&self) -> ASFH {
-        ASFH {
-            total_bytes: self.total_bytes, frmbytes: self.frmbytes, buffer: Vec::new(),
-            header_bytes: self.header_bytes, all_set: self.all_set,
-
-            endian: self.endian, bit_depth_index: self.bit_depth_index,
-            channels: self.channels, srate: self.srate, fsize: self.fsize,
-
-            ecc: self.ecc, ecc_ratio: self.ecc_ratio,
-            profile: self.profile,
-            overlap_ratio: self.overlap_ratio, crc16: self.crc16, crc32: self.crc32,
-        }
-    }
-
     /** criteq
      * Compares two ASFH headers' channels and sample rates
      * Parameters: Another ASFH header
