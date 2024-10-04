@@ -8,7 +8,7 @@ use crate::{
     PCMFormat, f64cvt::any_to_f64,
     backend::{Prepend, SplitFront},
     fourier::{self, profiles::{compact, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
-    tools::  {asfh::ASFH, ecc, stream::StreamInfo},
+    tools::  {asfh::ASFH, ecc, process::ProcessInfo},
 };
 
 use std::process::exit;
@@ -22,7 +22,7 @@ pub struct Encoder {
     bit_depth: i16, channels: i16,
     fsize: u32, srate: u32,
     overlap_fragment: Vec<Vec<f64>>,
-    pub streaminfo: StreamInfo,
+    pub procinfo: ProcessInfo,
 
     pcm_format: PCMFormat,
     loss_level: f64,
@@ -38,7 +38,7 @@ impl Encoder {
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,
             overlap_fragment: Vec::new(),
-            streaminfo: StreamInfo::new(),
+            procinfo: ProcessInfo::new(),
 
             pcm_format,
             loss_level: 0.5,
@@ -202,7 +202,7 @@ impl Encoder {
             if flush { ret.extend(self.asfh.force_flush()); }
 
             // Logging
-            self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+            self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
         }
 
         return ret;

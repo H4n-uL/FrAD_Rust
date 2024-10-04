@@ -4,7 +4,7 @@
  * Description: Encoder implementation example
  */
 
-use frad::{Encoder, profiles::LOSSLESS, head, StreamInfo};
+use frad::{Encoder, profiles::LOSSLESS, head, ProcessInfo};
 use crate::{
     common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
@@ -84,14 +84,14 @@ pub fn encode(input: String, params: CliParams) {
 
     write_safe(&mut writefile, &head::builder(&params.meta, image, None));
 
-    encoder.streaminfo = StreamInfo::new();
+    encoder.procinfo = ProcessInfo::new();
     loop {
         let mut pcm_buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
         write_safe(&mut writefile, &encoder.process(pcm_buf[..readlen].to_vec()));
-        logging(params.loglevel, &encoder.streaminfo, false);
+        logging(params.loglevel, &encoder.procinfo, false);
     }
     write_safe(&mut writefile, &encoder.flush());
-    logging(params.loglevel, &encoder.streaminfo, true);
+    logging(params.loglevel, &encoder.procinfo, true);
 }

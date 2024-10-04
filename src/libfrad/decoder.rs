@@ -8,7 +8,7 @@ use crate::{
     backend::{linspace, SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::{self, profiles::{COMPACT, LOSSLESS}},
-    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, process::ProcessInfo},
 };
 
 pub struct DecodeResult {
@@ -25,7 +25,7 @@ pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
-    pub streaminfo: StreamInfo,
+    pub procinfo: ProcessInfo,
 
     fix_error: bool,
 }
@@ -36,7 +36,7 @@ impl Decoder {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
-            streaminfo: StreamInfo::new(),
+            procinfo: ProcessInfo::new(),
 
             fix_error,
         }
@@ -72,9 +72,7 @@ impl Decoder {
      * Check if the buffer is shorter than the frame sign(, which means it's virtually empty)
      * Returns: Empty flag
      */
-    pub fn is_empty(&self) -> bool {
-        return self.buffer.len() < FRM_SIGN.len();
-    }
+    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len(); }
 
     /** get_asfh
      * Get a reference to the ASFH struct
@@ -121,7 +119,7 @@ impl Decoder {
 
                 // 1.4. Apply overlap
                 pcm = self.overlap(pcm); let samples = pcm.len();
-                self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+                self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Append the decoded PCM and clear header
                 ret_pcm.extend(pcm); frames += 1;
@@ -190,7 +188,7 @@ impl Decoder {
         // 5. Return exctacted buffer
 
         let ret_pcm = self.overlap_fragment.clone();
-        self.streaminfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
+        self.procinfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
         return DecodeResult {

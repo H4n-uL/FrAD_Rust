@@ -1,15 +1,15 @@
-/**                                Stream Info                                */
+/**                               Process Info                                */
 /**
  * Copyright 2024 HaמuL
- * Description: Stream information container
+ * Description: Process information container
  */
 
 use std::{collections::HashMap, time::Instant};
 
-/** StreamInfo
- * Struct for stream information
+/** ProcessInfo
+ * Struct for process information
  */
-pub struct StreamInfo {
+pub struct ProcessInfo {
     start_time: Instant,
     t_block: Option<Instant>,
     total_size: u128,
@@ -17,9 +17,9 @@ pub struct StreamInfo {
     bitrate: HashMap<u32, u128>,
 }
 
-impl StreamInfo {
-    pub fn new() -> StreamInfo {
-        StreamInfo {
+impl ProcessInfo {
+    pub fn new() -> ProcessInfo {
+        ProcessInfo {
             start_time: Instant::now(),
             t_block: None,
             duration: HashMap::new(),

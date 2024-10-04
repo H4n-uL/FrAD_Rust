@@ -50,8 +50,8 @@ pub fn repair(rfile: String, params: CliParams) {
 
         let repaired = repairer.process(buffer[..bytes_read].to_vec());
         write_safe(&mut writefile, &repaired);
-        logging(params.loglevel, &repairer.streaminfo, false);
+        logging(params.loglevel, &repairer.procinfo, false);
     }
     write_safe(&mut writefile, &repairer.flush());
-    logging(params.loglevel, &repairer.streaminfo, true);
+    logging(params.loglevel, &repairer.procinfo, true);
 }

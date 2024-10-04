@@ -14,7 +14,7 @@ mod repairer;
 
 pub use backend::{PCMFormat, Endian, f64cvt};
 pub use fourier::profiles;
-pub use tools::{head, stream::StreamInfo};
+pub use tools::{head, process::ProcessInfo};
 
 pub mod common;
 pub use encoder::Encoder;

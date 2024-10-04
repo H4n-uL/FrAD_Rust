@@ -8,7 +8,7 @@ use crate::{
     backend::{SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::profiles::{COMPACT, LOSSLESS},
-    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, stream::StreamInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, process::ProcessInfo},
 };
 
 /** Repairer
@@ -17,7 +17,7 @@ use crate::{
 pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
-    pub streaminfo: StreamInfo,
+    pub procinfo: ProcessInfo,
 
     olap_len: usize,
     ecc_ratio: [u8; 2],
@@ -40,7 +40,7 @@ impl Repairer {
         Repairer {
             asfh: ASFH::new(),
             buffer: Vec::new(),
-            streaminfo: StreamInfo::new(),
+            procinfo: ProcessInfo::new(),
 
             olap_len: 0,
             ecc_ratio,
@@ -92,7 +92,7 @@ impl Repairer {
 
                 // 1.4. Write the frame data to the buffer
                 ret.extend(self.asfh.write(frad));
-                self.streaminfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+                self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Clear the ASFH struct
                 self.asfh.clear();
@@ -125,7 +125,7 @@ impl Repairer {
                     Complete => {},
                     // 2.3.2. If header is complete and forced to flush, flush and return
                     ForceFlush => {
-                        self.streaminfo.update(&0, self.olap_len, &self.asfh.srate);
+                        self.procinfo.update(&0, self.olap_len, &self.asfh.srate);
                         ret.extend(self.asfh.force_flush());
                         self.olap_len = 0;
                         break;

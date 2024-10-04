@@ -80,18 +80,18 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
 
         let decoded = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
-        logging(params.loglevel, &decoder.streaminfo, false);
+        logging(params.loglevel, &decoder.procinfo, false);
 
         if decoded.crit && !wpipe {
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
-            decoder.streaminfo.block();
+            decoder.procinfo.block();
             check_overwrite(&wfile, params.overwrite);
-            decoder.streaminfo.unblock();
+            decoder.procinfo.unblock();
             writefile = Box::new(File::create(wfile).unwrap());
         }
     }
     let decoded = decoder.flush();
     write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
-    logging(params.loglevel, &decoder.streaminfo, true);
+    logging(params.loglevel, &decoder.procinfo, true);
     if play { sink.sleep_until_end(); }
 }
