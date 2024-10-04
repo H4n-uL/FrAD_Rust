@@ -115,17 +115,17 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: 
  * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
  * Returns: f64 PCM
  */
-pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
+pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 
     // 1. Zlib decompression
-    let mut decompressor = ZlibDecoder::new(&frad[..]);
-    let mut frad = {
+    frad = {
         let mut buf = Vec::new();
-        // If decompression fails, return silence
-        let _ = decompressor.read_to_end(&mut buf).map_err(|_| { return vec![vec![0.0; channels]; fsize as usize]; });
-        buf
+        match ZlibDecoder::new(&frad[..]).read_to_end(&mut buf) {
+            Ok(_) => buf,
+            Err(_) => return vec![vec![0.0; channels]; fsize as usize],
+        }
     };
 
     // 2. Splitting thresholds and frequencies
