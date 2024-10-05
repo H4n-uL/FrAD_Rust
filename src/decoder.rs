@@ -4,9 +4,9 @@
  * Description: Decoder implementation example
  */
 
-use frad::{f64cvt::f64_to_any, PCMFormat, Decoder};
+use frad::{f64cvt::f64_to_any, Decoder, PCMFormat, ASFH};
 use crate::{
-    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
+    common::{self, check_overwrite, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -80,7 +80,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
 
         let decoded = decoder.process(buf[..readlen].to_vec());
         write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
-        logging(params.loglevel, &decoder.procinfo, false);
+        logging_decode(params.loglevel, &decoder.procinfo, false, decoder.get_asfh());
 
         if decoded.crit && !wpipe {
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
@@ -92,6 +92,27 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     }
     let decoded = decoder.flush();
     write(play, &mut writefile, &mut sink, decoded.pcm, &pcm_fmt, decoded.srate);
-    logging(params.loglevel, &decoder.procinfo, true);
+    logging_decode(params.loglevel, &decoder.procinfo, true, decoder.get_asfh());
     if play { sink.sleep_until_end(); }
+}
+
+fn logging_decode(loglevel: u8, log: &frad::ProcessInfo, linefeed: bool, asfh: &ASFH) {
+    if loglevel == 0 { return; }
+
+    let mut out = Vec::new();
+
+    out.push(format!("size={}B time={} bitrate={}bits/s speed={}x    ",
+        common::format_bytes(log.get_total_size() as f64), common::format_time(log.get_duration()), common::format_bytes(log.get_bitrate()), common::format_speed(log.get_speed())
+    ));
+    if loglevel > 1 {
+        out.push(format!("Profile {}, {}bits {}ch@{}, ECC={}    ", asfh.profile,
+            frad::BIT_DEPTHS[asfh.profile as usize][asfh.bit_depth_index as usize], asfh.channels, asfh.srate,
+            if asfh.ecc { format!("{}/{}", asfh.ecc_ratio[0], asfh.ecc_ratio[1]) } else { "disabled".to_string() }
+        ));
+    }
+
+    let line_count = out.len() - 1;
+    eprint!("{}", out.join("\n"));
+
+    if !linefeed { for _ in 0..line_count { eprint!("\x1b[1A"); } eprint!("\r"); }
 }
