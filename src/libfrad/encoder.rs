@@ -99,7 +99,7 @@ impl Encoder {
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
     // pub fn set_profile(&mut self, profile: u8) { self.asfh.profile = profile; }
     pub fn set_loss_level(&mut self, loss_level: f64) {
-        self.loss_level = loss_level;
+        self.loss_level = loss_level.abs().max(0.125);
     }
     pub fn set_overlap_ratio(&mut self, mut overlap_ratio: u16) {
         if overlap_ratio != 0 { overlap_ratio = overlap_ratio.max(2).min(256); }
@@ -148,7 +148,7 @@ impl Encoder {
             //     { *compact::SAMPLES_LI.choose(rng).unwrap() }
             //     else { rng.gen_range(128..32768) }
             // );
-            // self.set_loss_level(rng.gen_range(0.5..5.0));
+            // self.set_loss_level(rng.gen_range(0.125..10.0));
             // let ecc_data = rng.gen_range(1..255);
             // self.set_ecc(rng.gen_bool(0.5), [ecc_data, rng.gen_range(0..(255 - ecc_data))]);
             // self.set_overlap_ratio(rng.gen_range(2..256));

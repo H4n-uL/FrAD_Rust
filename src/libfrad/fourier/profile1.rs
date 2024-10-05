@@ -58,9 +58,9 @@ fn finite(x: f64) -> f64 {
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, loss_level: f64) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_level: f64) -> (Vec<u8>, i16, i16, u32) {
     let (pcm_scale, thres_scale) = get_scale_factors(bit_depth);
-    srate = get_valid_srate(srate);
+    (srate, loss_level) = (get_valid_srate(srate), loss_level.abs().max(0.125));
 
     // 1. Pad and transform PCM with scaling
     let pcm = pad_pcm(pcm);
