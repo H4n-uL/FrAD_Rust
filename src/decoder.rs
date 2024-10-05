@@ -114,5 +114,6 @@ fn logging_decode(loglevel: u8, log: &frad::ProcessInfo, linefeed: bool, asfh: &
     let line_count = out.len() - 1;
     eprint!("{}", out.join("\n"));
 
-    if !linefeed { for _ in 0..line_count { eprint!("\x1b[1A"); } eprint!("\r"); }
+    if linefeed { eprintln!(); }
+    else { for _ in 0..line_count { eprint!("\x1b[1A"); } eprint!("\r"); }
 }
