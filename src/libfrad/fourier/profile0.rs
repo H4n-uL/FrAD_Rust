@@ -26,7 +26,7 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
 pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, little_endian: bool) -> (Vec<u8>, i16, i16, u32) {
     let channels = pcm[0].len();
 
-    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x: &Vec<f64>| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x.to_vec())).collect();
     let freqs_flat: Vec<f64> = freqs.trans().iter().flat_map(|x| x.iter()).cloned().collect();
     let max_abs = freqs_flat.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
 
