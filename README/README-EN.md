@@ -31,7 +31,7 @@ Unsigned Integer
 4. register the variable in PATH
 
 ```bash
-git clone https://github.com/h4n-ul/FrAD_Rust.git
+git clone https://github.com/H4n-uL/FrAD_Rust.git
 cd FrAD_Rust
 cargo build --release
 mv target/release/frad /path/to/bin/frad
@@ -83,7 +83,7 @@ Metadata JSON
 
 ### Contributing to the FrAD format
 
-Contributions to the FrAD format itself should be made [here](https://github.com/h4n-ul/Fourier_Analogue-in-Digital) or by emailing me directly. For suggestions, improvements, etc. to the standard, please create an issue or PR in the repository at the link.
+Contributions to the FrAD format itself should be made [here](https://github.com/H4n-uL/Fourier_Analogue-in-Digital) or by emailing me directly. For suggestions, improvements, etc. to the standard, please create an issue or PR in the repository at the link.
 
 ### Contributions to Rust implementations
 

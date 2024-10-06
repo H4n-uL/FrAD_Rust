@@ -31,7 +31,7 @@
 4. PATH에 변수 등록
 
 ```bash
-git clone https://github.com/h4n-ul/FrAD_Rust.git
+git clone https://github.com/H4n-uL/FrAD_Rust.git
 cd FrAD_Rust
 cargo build --release
 mv target/release/frad /path/to/bin/frad
@@ -81,7 +81,7 @@ export PATH=/path/to/bin:$PATH
 
 ### FrAD 포맷에 대한 기여
 
-FrAD 포맷 자체에 대한 기여는 [여기](https://github.com/h4n-ul/Fourier_Analogue-in-Digital)에 해주시거나 저에게 직접 메일을 작성하셔야 합니다. 표준에 대한 제안, 개선사항 등은 링크에 있는 레포지토리에 이슈나 PR을 생성해주시기 바랍니다.
+FrAD 포맷 자체에 대한 기여는 [여기](https://github.com/H4n-uL/Fourier_Analogue-in-Digital)에 해주시거나 저에게 직접 메일을 작성하셔야 합니다. 표준에 대한 제안, 개선사항 등은 링크에 있는 레포지토리에 이슈나 PR을 생성해주시기 바랍니다.
 
 ### Rust 구현체에 대한 기여
 
