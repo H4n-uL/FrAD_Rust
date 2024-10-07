@@ -95,6 +95,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         (Some(_stream), Some(stream_handle), Some(sink))
     } else { (None, None, None) };
 
+    params.speed = if params.speed > 0.0 { params.speed } else { 1.0 };
     sink.as_mut().map(|s| { s.set_speed(params.speed as f32); params.loglevel = 0; });
 
     let mut decoder = Decoder::new(params.enable_ecc);
