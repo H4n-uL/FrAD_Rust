@@ -40,22 +40,6 @@ export PATH=/path/to/bin:$PATH
 
 **警告： `--release`なしでビルドすると実行速度が極端に遅くなるので、必ず `--release`と一緒にビルドしてください。**
 
-## メタデータJSON例
-
-```json
-[
-    {"key": "KEY",                          "type": "string", "value": "VALUE"},
-    {"key": "AUTHOR",                       "type": "string", "value": "ハンウル"},
-    {"key": "キーとStringタイプのエンコーディング", "type": "string", "value": "UTF-8"},
-    {"key": "Base64 サポート",                "type": "base64", "value": "QmFzZTY044Gu5L6L"},
-    {"key": "ファイルサポート",                 "type": "base64", "value": "5pyA5aSnMjU2IFRpQuOBvuOBp+OCteODneODvOODiA=="},
-    {"key": "未対応文字なし",                  "type": "string", "value": "Unicodeにあるどの文字でも互換性があります！"},
-    {"key": "重複キーサポート",                 "type": "string", "value": "キーが重複するようにすると？"},
-    {"key": "重複キーサポート",                 "type": "string", "value": "パンパカパーン！"},
-    {"key": "",                             "type": "string", "value": "キーなしのメタデータもサポート"}
-]
-```
-
 ## 外部リソース
 
 [Rust](https://github.com/rust-lang/rust)

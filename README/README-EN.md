@@ -40,24 +40,6 @@ export PATH=/path/to/bin:$PATH
 
 **Warning: Building without `--release` will result in extremely slow execution, so be sure to build with `--release`.**
 
-## Metadata JSON example
-
-Metadata JSON
-
-```json
-[
-    {"key": "KEY",                              "type": "string", "value": "VALUE"},
-    {"key": "AUTHOR",                           "type": "string", "value": "H4n_uL"},
-    {"key": "Key & String value encoding type", "type": "string", "value": "UTF-8"},
-    {"key": "Base64 type Value",                "type": "base64", "value": "QmFzZTY0IEV4YW1wbGU="},
-    {"key": "File is also available",           "type": "base64", "value": "U3VwcG9ydHMgdXAgdG8gMjU2IFRpQg=="},
-    {"key": "No unsupported characters",        "type": "string", "value": "All utf-8/base64 metadata is allowed!"},
-    {"key": "Supports duplicate keys",          "type": "string", "value": "See what happens!"},
-    {"key": "Supports duplicate keys",          "type": "string", "value": "Voilà!"},
-    {"key": "",                                 "type": "string", "value": "Also supports keyless metadata"}
-]
-```
-
 ## External Resources
 
 [Rust](https://github.com/rust-lang/rust)
