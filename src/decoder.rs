@@ -101,7 +101,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut decoder = Decoder::new(params.enable_ecc);
     let pcm_fmt = params.pcm;
 
-    let mut no = 0;
+    let (mut _frames, mut no) = (0, 0);
     loop {
         let mut buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut buf);
@@ -109,6 +109,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
 
         let decoded = decoder.process(buf[..readlen].to_vec());
+        _frames += decoded.frames;
         write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
         logging_decode(params.loglevel, &decoder.procinfo, false, decoder.get_asfh());
 
