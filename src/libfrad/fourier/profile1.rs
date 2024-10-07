@@ -70,11 +70,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
-    // 3. Subband masking and quantisation
-    let mut freqs_masked: Vec<Vec<f64>> = Vec::new();
-    let mut thresholds: Vec<Vec<f64>> = Vec::new();
-
-    for c in 0..channels {
+    let (freqs_masked, thresholds): (Vec<Vec<f64>>, Vec<Vec<f64>>) = (0..channels)
+    .into_iter().map(|c| {
         // 3.1. Mapping frequencies to Modified Opus Subbands
         // 3.2. Masking threshold calculation
         let freqs_map_opus: Vec<f64> = p1tools::mapping_to_opus(&freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>(), srate);
@@ -83,12 +80,14 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
         // 3.3. Remapping thresholds to DCT bins
         // 3.4. Masking and quantisation with remapped thresholds
         let div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
-        let chnl_masked: Vec<f64> = freqs[c].iter().zip(div_factor).map(|(x, y)| finite(p1tools::quant(x / y))).collect();
+        let chnl_masked: Vec<f64> = freqs[c].iter().zip(&div_factor).map(|(x, y)| finite(p1tools::quant(x / y))).collect();
 
         // 3.5. Multiplying thresholds by threshold scale factor
-        freqs_masked.push(chnl_masked);
-        thresholds.push(thres_channel.iter().map(|x| finite(x * thres_scale)).collect());
-    }
+        let thresholds_scaled: Vec<f64> = thres_channel.iter().map(|x| finite(x * thres_scale)).collect();
+
+        (chnl_masked, thresholds_scaled)
+    })
+    .unzip();
 
     // 4. Flattening frequencies and thresholds
     let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
@@ -143,12 +142,10 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u3
     let freqs_masked: Vec<Vec<f64>> = (0..channels).map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
     // 5. Dequantisation and inverse masking
-    let mut freqs: Vec<Vec<f64>> = Vec::new();
-    for c in 0..channels {
-        freqs.push(freqs_masked[c].iter()
-        .zip(p1tools::mapping_from_opus(&thresholds[c], fsize, srate))
-        .map(|(x, y)| p1tools::dequant(*x) * y).collect());
-    }
+    let freqs = (0..channels).into_iter().map(|c| {
+        freqs_masked[c].iter().zip(p1tools::mapping_from_opus(&thresholds[c], fsize, srate))
+        .map(|(x, y)| p1tools::dequant(*x) * y).collect()
+    }).collect::<Vec<Vec<f64>>>();
 
     // 6. Inverse DCT and scaling
     return freqs.iter().map(|x|
