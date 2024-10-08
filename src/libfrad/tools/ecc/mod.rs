@@ -35,7 +35,7 @@ pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
         if repair {
             match rs.decode(chunk, None) {
                 Ok(chunk) => chunk,
-                Err(_) => vec![0; data_size]
+                Err(_) => vec![0; chunk.len() - parity_size]
             }
         } else { chunk.iter().take(chunk.len() - parity_size).cloned().collect() }
     }).flatten().collect();
