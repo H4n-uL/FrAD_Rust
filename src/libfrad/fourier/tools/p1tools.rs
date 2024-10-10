@@ -5,6 +5,7 @@
  */
 
 use crate::backend::{bitcvt, linspace};
+use std::iter::repeat;
 
 pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
@@ -105,21 +106,19 @@ pub fn dequant(y: f64) -> f64 { return y.signum() * y.abs().powf(1.0 / QUANT_ALP
  * Returns: Encoded binary data
  */
 pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
+    if data.is_empty() { return vec![0]; }
     let dmax = data.iter().map(|x| x.abs()).max().unwrap();
     let k = if dmax > 0 { (dmax as f64).log2().ceil() as u8 } else { 0 };
 
-    let mut encoded_binary: Vec<bool> = Vec::new();
+    let mut encoded_binary: Vec<bool> = bitcvt::to_bits(vec![k]);
 
     for n in data {
-        let n = if n > 0 { 2 * n - 1 } else { -2 * n };
-        let x = (n + 2_i64.pow(k as u32)).to_be_bytes().to_vec();
-        let code: Vec<bool> = bitcvt::to_bits(x).iter().skip_while(|&x| !x).cloned().collect();
-        encoded_binary.extend(std::iter::repeat(false).take(code.len() - (k + 1) as usize));
+        let x = if n > 0 { (n << 1) - 1 } else { -n << 1 } + (1 << k);
+        let code: Vec<bool> = bitcvt::to_bits(x.to_be_bytes().to_vec()).iter().skip_while(|&x| !x).cloned().collect();
+        encoded_binary.extend(repeat(false).take(code.len() - (k + 1) as usize));
         encoded_binary.extend(code);
     }
-    let mut encoded = vec![k];
-    encoded.extend(bitcvt::to_bytes(encoded_binary));
-    return encoded;
+    return bitcvt::to_bytes(encoded_binary);
 }
 
 /** exp_golomb_decode
@@ -136,12 +135,12 @@ pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
         let m = data[idx..].iter().position(|&x| x).unwrap_or(data.len());
         if m == data.len() { break; }
         let cwlen = (m * 2) + k + 1;
-        cache.push(&data[idx+m..idx+cwlen]);
+        cache.push(&data[idx+m..idx+cwlen.min(data.len())]);
         idx += cwlen;
     }
 
     return cache.into_iter().map(|codeword| {
-        let n = codeword.iter().fold(0i64, |acc, &bit| { (acc << 1) | (bit as i64) }) - kx;
+        let n = codeword.iter().fold(0_i64, |acc, &bit| { (acc << 1) | (bit as i64) }) - kx;
         if n & 1 == 1 { (n + 1) >> 1 } else { -(n >> 1) }
     }).collect();
 }
