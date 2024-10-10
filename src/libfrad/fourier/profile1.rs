@@ -70,6 +70,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
+    // 3. Subband masking and quantisation
     let (freqs_masked, thresholds): (Vec<Vec<f64>>, Vec<Vec<f64>>) = (0..channels)
     .into_iter().map(|c| {
         // 3.1. Mapping frequencies to Modified Opus Subbands
@@ -86,8 +87,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
         let thresholds_scaled: Vec<f64> = thres_channel.iter().map(|x| finite(x * thres_scale)).collect();
 
         (chnl_masked, thresholds_scaled)
-    })
-    .unzip();
+    }).unzip();
 
     // 4. Flattening frequencies and thresholds
     let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
