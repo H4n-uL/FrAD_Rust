@@ -13,10 +13,13 @@ use half::f16;
  * Parameters: Bitstream, Bit depth divisable by 3
  * Returns: bitstream
  */
-fn cut_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
-    return bstr.chunks(bits * 4 / 3).flat_map(|x| {
-        x.iter().skip(if be { 0 } else { bits / 3 }).take(bits).cloned()
-    }).collect();
+fn cut_float3s(bytes: Vec<u8>, bits: usize, be: bool) -> Vec<u8> {
+    let size = if bits % 8 == 0 { bits / 8 } else { bits };
+    let skip = if be { 0 } else { size / 3 };
+    
+    return if bits % 8 != 0 { let bstr = bitcvt::to_bits(bytes);
+        bitcvt::to_bytes(bstr.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect()) }
+    else { bytes.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect() }
 }
 
 /** pack
@@ -36,7 +39,7 @@ pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
     };
 
     if bits % 3 == 0 {
-        return bitcvt::to_bytes(cut_float3s(bitcvt::to_bits(bytes), bits, be));
+        return cut_float3s(bytes, bits, be);
     }
     return bytes;
 }
@@ -65,11 +68,19 @@ fn pack_f64(input: Vec<f64>, be: bool) -> Vec<u8> {
  * Parameters: Bitstream, Bit depth divisable by 3
  * Returns: bitstream
  */
-fn pad_float3s(bstr: Vec<bool>, bits: usize, be: bool) -> Vec<bool> {
-    let pad = vec![false; bits / 3];
-    return bstr.chunks(bits).filter(|y| y.len() == bits)
-    .flat_map(|y| { if be { y.iter().chain(pad.iter()) } else { pad.iter().chain(y.iter()) } })
-    .copied().collect();
+fn pad_float3s(bstr: Vec<u8>, bits: usize, be: bool) -> Vec<u8> {
+    let (pad_bits, pad_bytes) = (vec![false; bits / 3], vec![0; bits / 24]);
+    return if bits % 8 != 0 {
+        bitcvt::to_bytes(bitcvt::to_bits(bstr)
+        .chunks(bits).filter(|x| x.len() == bits).flat_map(|x| {
+        if be { x.iter().chain(pad_bits.iter()) } else { pad_bits.iter().chain(x.iter()) }
+        }).cloned().collect())
+    }
+    else {
+        bstr.chunks(bits / 8).filter(|x| x.len() == bits / 8).flat_map(|x| {
+        if be { x.iter().chain(pad_bytes.iter()) } else { pad_bytes.iter().chain(x.iter()) }
+        }).cloned().collect()
+    }
 }
 
 /** unpack
@@ -81,7 +92,7 @@ pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
     let bits = bits as usize;
 
     if bits % 8 != 0 { be = true }
-    if bits % 3 == 0 { input = bitcvt::to_bytes(pad_float3s(bitcvt::to_bits(input), bits, be)); }
+    if bits % 3 == 0 { input = pad_float3s(input, bits, be); }
 
     return match bits {
         12 | 16 => unpack_f16(input, be),
