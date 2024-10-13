@@ -32,6 +32,7 @@ Common options:
 
     --profile <0-7>
         FrAD Profile from 0 to 7 (alias: prf)
+        type `{frad} help profiles` for more about FrAD profiles
 
     --loss-level <level>
         Lossy compression level (default: 0, alias: lv, level)
@@ -52,11 +53,11 @@ Metadata settings:
 
     --jsonmeta <path/to/meta.json>
         JSONMeta format file path to embed (alias: jm)
-        type `{frad} help jsonmeta` for JSONMeta format
+        type `{frad} help jsonmeta` for more about JSONMeta format
 
     --vorbis-meta <path/to/meta.tags>
         VorbisMeta format file path to embed (alias: vm)
-        type `{frad} help vorbismeta` for VorbisMeta format
+        type `{frad} help vorbismeta` for more about VorbisMeta format
 
     --image <path/to/image.file>
         Image file path to embed (alias: img)
