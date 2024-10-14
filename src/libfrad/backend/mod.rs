@@ -16,7 +16,7 @@ pub use pcmformat::{PCMFormat, Endian};
 */
 pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num == 0 { return vec![]; }
-    if num == 1 { return vec![start]; }
+    if num == 1 { return vec![(start + stop) / 2.0]; }
     let step = (stop - start) / (num - 1) as f64;
 
     let mut result = Vec::with_capacity(num);
@@ -29,6 +29,8 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
 }
 
 pub fn hanning_in(olap_len: usize) -> Vec<f64> {
+    if olap_len == 0 { return vec![]; }
+    if olap_len == 1 { return vec![0.5]; }
     return (0..olap_len).map(|i| {
         0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 - 1.0)).cos())
     }).collect();
