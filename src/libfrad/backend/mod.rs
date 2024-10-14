@@ -5,6 +5,8 @@
  */
 
 pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
+use std::f64::consts::PI;
+
 pub use pcmformat::{PCMFormat, Endian};
 
 /** linspace
@@ -24,6 +26,12 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
         result.push(value);
     }
     return result;
+}
+
+pub fn hanning_in(olap_len: usize) -> Vec<f64> {
+    return (0..olap_len).map(|i| {
+        0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 - 1.0)).cos())
+    }).collect();
 }
 
 pub trait Transpose<T> {

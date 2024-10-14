@@ -5,7 +5,7 @@
  */
 
 use crate::{
-    backend::{linspace, SplitFront, VecPatternFind},
+    backend::{hanning_in, SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::{self, profiles::{COMPACT, LOSSLESS}},
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, process::ProcessInfo},
@@ -50,8 +50,8 @@ impl Decoder {
     fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
         // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
-            let fade: Vec<f64> = linspace(0.0, 1.0, self.overlap_fragment.len());
-            frame.iter_mut().zip(self.overlap_fragment.iter()).zip(fade.iter().zip(fade.iter().rev()))
+            let fade_in = hanning_in(self.overlap_fragment.len());
+            frame.iter_mut().zip(self.overlap_fragment.iter()).zip(fade_in.iter().zip(fade_in.iter().rev()))
             .for_each(|((sample, overlap_sample), (&fade_in, &fade_out))| {
                 sample.iter_mut().zip(overlap_sample.iter()).for_each(|(s, &o)| { *s = *s * fade_in + o * fade_out; });
             });
