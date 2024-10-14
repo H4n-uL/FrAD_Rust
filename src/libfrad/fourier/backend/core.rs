@@ -10,45 +10,30 @@ use rustfft::{FftPlanner, num_complex::Complex};
 
 pub fn dct(x: Vec<f64>) -> Vec<f64> {
     let n = x.len();
-    let mut beta = vec![Complex::new(0.0, 0.0); 2 * n];
 
-    for i in 0..n {
-        beta[i] = Complex::new(x[i] / (2.0 * n as f64), 0.0);
-        beta[2 * n - 1 - i] = Complex::new(x[i] / (2.0 * n as f64), 0.0);
-    }
+    let mut beta: Vec<Complex<f64>> = (0..n).map(|i| Complex::new(x[i] / (2.0 * n as f64), 0.0))
+    .chain((0..n).map(|i| Complex::new(x[i] / (2.0 * n as f64), 0.0)).rev()).collect();
+    FftPlanner::new().plan_fft_forward(2 * n).process(&mut beta);
 
-    let mut planner = FftPlanner::new();
-    let fft = planner.plan_fft_forward(2 * n);
-    fft.process(&mut beta);
-
-    let mut y = vec![0.0; n];
-    for k in 0..n {
+    let y = (0..n).map(|k| {
         let angle = -PI * k as f64 / (2.0 * n as f64);
-        y[k] = beta[k].re * angle.cos() - beta[k].im * angle.sin();
-    }
-
+        beta[k].re * angle.cos() - beta[k].im * angle.sin()
+    }).collect();
     return y;
 }
 
 pub fn idct(y: Vec<f64>) -> Vec<f64> {
     let n = y.len();
-    let mut beta = vec![Complex::new(0.0, 0.0); 2 * n];
 
-    beta[0] = Complex::new(y[0], 0.0);
-    for k in 1..n {
+    let alpha: Vec<Complex<f64>> = (0..n).map(|k| {
         let angle = -PI * k as f64 / (2.0 * n as f64);
-        beta[k] = Complex::new(y[k] * angle.cos(), -y[k] * angle.sin());
-        beta[2 * n - k] = Complex::new(y[k] * angle.cos(), y[k] * angle.sin());
-    }
+        Complex::new(y[k] * angle.cos(), y[k] * angle.sin())
+    }).collect();
+    
+    let mut beta: Vec<Complex<f64>> = alpha.iter().map(|&z| Complex::new(z.re, -z.im))
+    .chain([Complex::new(0.0, 0.0)]).chain(alpha[1..].iter().rev().cloned()).collect();
 
-    let mut planner = FftPlanner::new();
-    let fft = planner.plan_fft_inverse(2 * n);
-    fft.process(&mut beta);
-
-    let mut x = vec![0.0; n];
-    for i in 0..n {
-        x[i] = beta[i].re;
-    }
-
+    FftPlanner::new().plan_fft_inverse(2 * n).process(&mut beta);
+    let x = beta[..n].iter().map(|c| c.re).collect();
     return x;
 }
