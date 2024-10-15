@@ -45,9 +45,12 @@ pub fn _hanning_math(size: usize) -> Vec<f64> {
  * Returns: Fade-in Hanning window
  */
 pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
-    return (1..olap_len+1).map(|i| {
+    let res = ((olap_len+1)/2+1..=olap_len).map(|i| {
         0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 + 1.0)).cos())
-    }).collect();
+    });
+    return res.clone().rev().map(|x| 1.0 - x)
+    .chain(if olap_len & 1 == 1 { Some(0.5) } else { None })
+    .chain(res).collect();
 }
 
 pub trait Transpose<T> {
