@@ -28,15 +28,14 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     return result;
 }
 
-/** hanning_in_math
- * Generates a fade-in Hanning window (Mathematically precise)
+/** hanning_math
+ * Generates a Hanning window (Mathematically precise)
  * Parameters: Length of the window
- * Returns: Fade-in Hanning window
+ * Returns: Hanning window
  */
-pub fn _hanning_in_math(olap_len: usize) -> Vec<f64> {
-    if olap_len == 1 { return vec![0.5]; }
-    return (0..olap_len).map(|i| {
-        0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 - 1.0)).cos())
+pub fn _hanning_math(size: usize) -> Vec<f64> {
+    return (0..size).map(|n| {
+        0.5 * (1.0 - (2.0 * PI * n as f64 / (size - 1) as f64).cos())
     }).collect();
 }
 
