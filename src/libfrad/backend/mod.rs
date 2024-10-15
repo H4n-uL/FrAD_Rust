@@ -28,11 +28,26 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     return result;
 }
 
-pub fn hanning_in(olap_len: usize) -> Vec<f64> {
-    if olap_len == 0 { return vec![]; }
+/** hanning_in_math
+ * Generates a fade-in Hanning window (Mathematically precise)
+ * Parameters: Length of the window
+ * Returns: Fade-in Hanning window
+ */
+pub fn _hanning_in_math(olap_len: usize) -> Vec<f64> {
     if olap_len == 1 { return vec![0.5]; }
     return (0..olap_len).map(|i| {
         0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 - 1.0)).cos())
+    }).collect();
+}
+
+/** hanning_in_overlap
+ * Generates a fade-in Hanning window (Optimised for overlap-add)
+ * Parameters: Length of the window
+ * Returns: Fade-in Hanning window
+ */
+pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
+    return (1..olap_len+1).map(|i| {
+        0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 + 1.0)).cos())
     }).collect();
 }
 
