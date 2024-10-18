@@ -66,16 +66,17 @@ pub fn format_time(mut n: f64) -> String {
     };
 }
 
-/** format_bytes
- * Formats bytes count to human-readable format
- * Parameters: Bytes count
- * Returns: Formatted bytes count string
+const UNITS: [&str; 11] = ["", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"];
+
+/** format_si
+ * Formats a number to SI prefixed format
+ * Parameters: Number
+ * Returns: Formatted number string
  */
-pub fn format_bytes(n: f64) -> String {
+pub fn format_si(n: f64) -> String {
     if n < 1000.0 { return format!("{}", n); }
-    let exp = (n as f64).log10().floor() as u8 / 3;
-    let unit = ["", "k", "M", "G", "T", "P", "E", "Z", "Y"];
-    format!("{:.3} {}", n as f64 / 1000.0f64.powi(exp as i32), unit[exp as usize])
+    let exp = ((n as f64).log10().floor() as usize / 3).min(UNITS.len() - 1);
+    format!("{:.3} {}", n as f64 / 1000.0f64.powi(exp as i32), UNITS[exp])
 }
 
 /** format_speed
@@ -97,7 +98,7 @@ pub fn format_speed(n: f64) -> String {
 pub fn logging(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if loglevel == 0 { return; }
     eprint!("size={}B time={} bitrate={}bits/s speed={}x    \r",
-        format_bytes(log.get_total_size() as f64), format_time(log.get_duration()), format_bytes(log.get_bitrate()), format_speed(log.get_speed())
+        format_si(log.get_total_size() as f64), format_time(log.get_duration()), format_si(log.get_bitrate()), format_speed(log.get_speed())
     );
     if linefeed { eprintln!(); }
 }

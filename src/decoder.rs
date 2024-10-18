@@ -44,7 +44,7 @@ fn logging_decode(loglevel: u8, log: &frad::ProcessInfo, linefeed: bool, asfh: &
     let mut out = Vec::new();
 
     out.push(format!("size={}B time={} bitrate={}bits/s speed={}x    ",
-        common::format_bytes(log.get_total_size() as f64), common::format_time(log.get_duration()), common::format_bytes(log.get_bitrate()), common::format_speed(log.get_speed())
+        common::format_si(log.get_total_size() as f64), common::format_time(log.get_duration()), common::format_si(log.get_bitrate()), common::format_speed(log.get_speed())
     ));
     if loglevel > 1 {
         out.push(format!("Profile {}, {}bits {}ch@{}Hz, ECC={}    ", asfh.profile,
