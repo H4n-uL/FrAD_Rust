@@ -1,5 +1,5 @@
 [package]
-name = "frad-rs"
+name = "frad"
 version = "0.0.0"
 authors = ["HaמuL"]
 license = "Archivist Licence"
@@ -8,6 +8,10 @@ edition = "2021"
 [lib]
 name = "frad"
 path = "src/libfrad/lib.rs"
+
+[[bin]]
+name = "frad-rs"
+path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22.1"
