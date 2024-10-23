@@ -34,7 +34,7 @@
 git clone https://github.com/H4n-uL/FrAD_Rust.git
 cd FrAD_Rust
 cargo build --release
-mv target/release/frad /path/to/bin/frad
+mv target/release/frad-rs /path/to/bin/frad-rs
 export PATH=/path/to/bin:$PATH
 ```
 
