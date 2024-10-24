@@ -63,9 +63,9 @@ export PATH=/path/to/bin:$PATH
 
 ## 기여 방법
 
-### FrAD 포맷에 대한 기여
+### FrAD 표준에 대한 기여
 
-FrAD 포맷 자체에 대한 기여는 [여기](https://github.com/H4n-uL/Fourier_Analogue-in-Digital)에 해주시거나 저에게 직접 메일을 작성하셔야 합니다. 표준에 대한 제안, 개선사항 등은 링크에 있는 레포지토리에 이슈나 PR을 생성해주시기 바랍니다.
+FrAD 표준 자체에 대한 기여는 [여기](https://github.com/H4n-uL/Fourier_Analogue-in-Digital)에 해주시거나 저에게 직접 메일을 작성하셔야 합니다.
 
 ### Rust 구현체에 대한 기여
 

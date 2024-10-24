@@ -63,9 +63,9 @@ export PATH=/path/to/bin:$PATH
 
 ## 貢献方法
 
-### FrAD フォーマットへの貢献
+### FrAD 規格への貢献
 
-FrADフォーマット自体への貢献は[こちら](https://github.com/H4n-uL/Fourier_Analogue-in-Digital)にしていただくか、私に直接メールを書いてください。標準に対する提案、改善点などは、リンク先にあるリポジトリにissueやPRを作成してください。
+FrAD規格そのものへの貢献は[こちら](https://github.com/H4n-uL/Fourier_Analogue-in-Digital)にしていただくか、私に直接メールを書いてください。
 
 ### Rust実装への貢献
 
@@ -79,7 +79,7 @@ Rust実装に限った貢献なら、このリポジトリに直接投稿して�
 4. mainブランチにプッシュする
 5. このリポジトリでPull Requestを生成する
 
-Pull Requestが生成されたら、検討後、フィードバックをしたり、mergeします。 実際、FrAD標準と互換性があれば、ほとんど問答無用でmergeします。
+Pull Requestが生成されたら、検討後、フィードバックをしたり、mergeします。実際、FrAD標準と互換性があれば、ほとんどの場合、そのまま採用されます。
 
 ## 開発者情報
 

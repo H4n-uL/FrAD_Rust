@@ -1,7 +1,7 @@
 /**                          AAPM@Audio-8151 Library                          */
 /**
  * Copyright 2024 HaמuL
- * Description: Library for AAPM@Audio-8151(Fourier Analogue-in-Digital) codec
+ * Description: Fourier Analogue-in-Digital Rust Master Library
  */
 
 mod backend;

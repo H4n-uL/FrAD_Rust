@@ -1,7 +1,7 @@
 /**                        AAPM@Audio-8151 Executable                         */
 /**
  * Copyright 2024 HaמuL
- * Description: Fourier Analogue-in-Digital Rust Reference
+ * Description: Fourier Analogue-in-Digital Rust Master
  */
 
 mod tools; mod common;
@@ -10,7 +10,7 @@ mod encoder; mod decoder; mod repairer; mod header;
 use std::{env, path::Path};
 
 const BANNER: &str =
-"                   Fourier Analogue-in-Digital Rust Reference
+"                     Fourier Analogue-in-Digital Rust Master
                              Original Author - HaמuL
 ";
 
@@ -61,7 +61,7 @@ fn main() {
         println!();
     }
     else {
-        eprintln!("Fourier Analogue-in-Digital Rust Reference");
+        eprintln!("Fourier Analogue-in-Digital Rust Master");
         eprintln!("Abstract syntax: {executable} [encode|decode|repair] <input> [kwargs...]");
         eprintln!("type `{executable} help` to get help.");
     }
