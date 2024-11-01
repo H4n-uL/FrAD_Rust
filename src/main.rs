@@ -63,6 +63,6 @@ fn main() {
     else {
         eprintln!("Fourier Analogue-in-Digital Rust Master");
         eprintln!("Abstract syntax: {executable} [encode|decode|repair] <input> [kwargs...]");
-        eprintln!("type `{executable} help` to get help.");
+        eprintln!("Type `{executable} help` to get help.");
     }
 }
