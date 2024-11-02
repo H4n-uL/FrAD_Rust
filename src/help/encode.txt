@@ -35,7 +35,8 @@ Common options:
         Type `{frad} help profiles` for more about FrAD profiles
 
     --loss-level <level>
-        Lossy compression level (default: 0, alias: lv, level)
+        Lossy compression level from 0(best) to 20(worst)
+        (default: 0, alias: lv, level)
 
 Advanced options:
     --overlap-ratio <ratio>
