@@ -112,7 +112,7 @@ impl CliParams {
         self.meta = meta;
     }
     pub fn set_pcm_format(&mut self, fmt: &str) {
-        self.pcm = match fmt {
+        self.pcm = match fmt.to_lowercase().as_str() {
             "s8" => PCMFormat::I8,
             "u8" => PCMFormat::U8,
 
@@ -162,12 +162,12 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
     let executable = args.pop_front().unwrap();
     if args.is_empty() { return (String::new(), String::new(), String::new(), params); }
 
-    let action = args.pop_front().unwrap();
+    let action = args.pop_front().unwrap().to_lowercase();
     let mut metaaction = String::new();
     if METADATA_OPT.contains(&action.as_str()) {
         metaaction = args.pop_front().unwrap_or_else(
             || { eprintln!("Metadata action not specified, type `{executable} help meta` for available options."); exit(1); }
-        );
+        ).to_lowercase();
     }
     if args.is_empty() { return (action, String::new(), String::new(), params); }
     let input = args.pop_front().unwrap();
@@ -178,7 +178,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
         if key.starts_with("-") {
             let key = key.trim_start_matches("-");
 
-            match key {
+            match key.to_lowercase().as_str() {
                 // universal
                 "output" | "out" | "o" => params.output = args.pop_front().unwrap(),
                 "pcm" | "format" | "fmt" | "f" => params.set_pcm_format(&args.pop_front().unwrap()),
