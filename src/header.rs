@@ -4,7 +4,7 @@
  * Description: Metadata modificator for FrAD
  */
 
-use frad::{common::SIGNATURE, head};
+use frad::{common::{SIGNATURE, FRM_SIGN}, head};
 use crate::{
     common::move_all,
     tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
@@ -30,7 +30,15 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
     let mut rfile = File::open(&file_name).unwrap();
     rfile.read_exact(&mut head).unwrap();
 
-    let head_len = if head[0..4] == SIGNATURE { u64::from_be_bytes(head[8..16].try_into().unwrap()) } else { 0 };
+    let head_len = match head[0..4] {
+        ref slice if slice == SIGNATURE => u64::from_be_bytes(head[8..16].try_into().unwrap()),
+        ref slice if slice == FRM_SIGN => 0,
+        _ => {
+            eprintln!("It seems this is not a valid FrAD file.");
+            exit(1);
+        }
+    };
+
     rfile.seek(SeekFrom::Start(0)).unwrap();
     let mut head_old = vec![0u8; head_len as usize];
     rfile.read_exact(&mut head_old).unwrap();
