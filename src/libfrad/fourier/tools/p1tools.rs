@@ -135,7 +135,7 @@ pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
         let m = data[idx..].iter().position(|&x| x).unwrap_or(data.len());
         if m == data.len() { break; }
         let cwlen = (m * 2) + k + 1;
-        cache.push(&data[idx+m..idx+cwlen.min(data.len())]);
+        cache.push(&data[idx+m..(idx+cwlen).min(data.len())]);
         idx += cwlen;
     }
 
