@@ -95,4 +95,4 @@ In case of a dispute between the original author and the consumer, or any violat
 
 ## Developer information
 
-Hanul, <jun061119@proton.me>
+HaמuL, <jun061119@proton.me>
