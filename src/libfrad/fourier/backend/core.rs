@@ -29,7 +29,7 @@ pub fn idct(y: Vec<f64>) -> Vec<f64> {
         let angle = -PI * k as f64 / (2.0 * n as f64);
         Complex::new(y[k] * angle.cos(), y[k] * angle.sin())
     }).collect();
-    
+
     let mut beta: Vec<Complex<f64>> = alpha.iter().map(|&z| Complex::new(z.re, -z.im))
     .chain([Complex::new(0.0, 0.0)]).chain(alpha[1..].iter().rev().cloned()).collect();
 

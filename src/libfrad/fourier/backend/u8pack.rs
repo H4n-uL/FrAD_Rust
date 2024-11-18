@@ -16,7 +16,7 @@ use half::f16;
 fn cut_float3s(bytes: Vec<u8>, bits: usize, be: bool) -> Vec<u8> {
     let size = if bits % 8 == 0 { bits / 8 } else { bits };
     let skip = if be { 0 } else { size / 3 };
-    
+
     return if bits % 8 != 0 { let bstr = bitcvt::to_bits(bytes);
         bitcvt::to_bytes(bstr.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect()) }
     else { bytes.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect() }
