@@ -1,0 +1,16 @@
+[package]
+name = "libfrad"
+version = "0.0.0"
+authors = ["HaמuL"]
+license = "Archivist Licence"
+edition = "2021"
+
+[lib]
+name = "frad"
+path = "lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+flate2 = "1.0.35"
+half = "2.4.1"
+rustfft = "6.2.0"
