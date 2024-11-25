@@ -19,5 +19,5 @@ pub use tools::{head, process::ProcessInfo};
 pub mod common;
 pub use tools::asfh::ASFH;
 pub use encoder::Encoder;
-pub use decoder::Decoder;
+pub use decoder::{Decoder, DecodeResult};
 pub use repairer::Repairer;
