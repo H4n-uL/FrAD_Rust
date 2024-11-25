@@ -87,7 +87,7 @@ impl Decoder {
      */
     pub fn process(&mut self, stream: Vec<u8>) -> DecodeResult {
         self.buffer.extend(stream);
-        let (mut ret_pcm, mut frames, mut crit) = (Vec::new(), 0, false);
+        let (mut ret_pcm, mut frames) = (Vec::new(), 0);
 
         loop {
             // If every parameter in the ASFH struct is set,
@@ -157,7 +157,7 @@ impl Decoder {
                             self.info = self.asfh.clone();
                             if srate != 0 || chnl != 0 { // If the info struct is not empty
                                 ret_pcm.extend(self.flush().pcm); // Flush the overlap buffer
-                                crit = true; break; // Set the critical flag and break
+                                return DecodeResult { pcm: ret_pcm, srate, frames, crit: true }; // Set the critical flag and break
                             }
                         }
                     },
@@ -168,12 +168,8 @@ impl Decoder {
                 }
             }
         }
-        return DecodeResult {
-            pcm: ret_pcm,
-            srate: self.asfh.srate,
-            frames,
-            crit,
-        };
+
+        return DecodeResult { pcm: ret_pcm, srate: self.asfh.srate, frames, crit: false };
     }
 
     /** flush
