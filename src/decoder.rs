@@ -4,7 +4,7 @@
  * Description: Decoder implementation example
  */
 
-use frad::{f64cvt::f64_to_any, Decoder, PCMFormat, ASFH};
+use frad::{Decoder, ASFH, PCMFormat, f64cvt::f64_to_any};
 use crate::{
     common::{self, check_overwrite, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams

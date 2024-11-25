@@ -4,7 +4,7 @@
  * Description: Encoder implementation example
  */
 
-use frad::{Encoder, profiles::LOSSLESS, head, ProcessInfo};
+use frad::{Encoder, ProcessInfo, profiles::LOSSLESS, head};
 use crate::{
     common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::cli::CliParams
