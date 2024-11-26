@@ -5,7 +5,7 @@
  */
 
 pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 
 pub use pcmformat::{PCMFormat, Endian};
 
@@ -71,7 +71,7 @@ pub trait SplitFront<T> {
 impl<T: Clone> SplitFront<T> for Vec<T> {
     fn split_front(&mut self, at: usize) -> Self {
         let mut other = if at >= self.len() { Vec::new() } else { self.split_off(at) };
-        std::mem::swap(self, &mut other);
+        core::mem::swap(self, &mut other);
         return other;
     }
 }

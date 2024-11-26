@@ -12,8 +12,7 @@ use super::{
     tools::p1tools
 };
 
-use flate2::{write::ZlibEncoder, read::ZlibDecoder, Compression};
-use std::io::prelude::*;
+use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
 pub const DEPTHS: [i16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
@@ -28,7 +27,7 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let chnl = pcm[0].len();
     let pad_len = *SAMPLES_LI.iter().find(|&&x| x as usize >= len_smpl).unwrap_or(&(len_smpl as u32)) as usize - len_smpl;
 
-    pcm.extend(std::iter::repeat(vec![0.0; chnl]).take(pad_len));
+    pcm.extend(core::iter::repeat(vec![0.0; chnl]).take(pad_len));
     return pcm;
 }
 
@@ -102,9 +101,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     let frad: Vec<u8> = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect();
 
     // 7. Zlib compression
-    let mut compressor = ZlibEncoder::new(Vec::new(), Compression::best());
-    compressor.write_all(&frad).unwrap();
-    let frad = compressor.finish().unwrap();
+    let frad = deflate::compress_to_vec_zlib(&frad, 10);
 
     return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16, srate);
 }
@@ -119,12 +116,9 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u3
     let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 
     // 1. Zlib decompression
-    frad = {
-        let mut buf = Vec::new();
-        match ZlibDecoder::new(&frad[..]).read_to_end(&mut buf) {
-            Ok(_) => buf,
-            Err(_) => return vec![vec![0.0; channels]; fsize as usize],
-        }
+    frad = match inflate::decompress_to_vec_zlib(&frad) {
+        Ok(x) => x,
+        Err(_) => { return vec![vec![0.0; channels]; fsize]; }
     };
 
     // 2. Splitting thresholds and frequencies

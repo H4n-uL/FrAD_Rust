@@ -5,7 +5,7 @@
  * Dependencies: rustfft
 */
 
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 use rustfft::{FftPlanner, num_complex::Complex};
 
 pub fn dct(x: Vec<f64>) -> Vec<f64> {

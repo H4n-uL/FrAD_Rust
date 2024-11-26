@@ -4,7 +4,7 @@
  * Description: DCT-II, Forward normalised
 */
 
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 
 pub fn dct(x: Vec<f64>) -> Vec<f64> {
     return (0..x.len()).map(|i| {

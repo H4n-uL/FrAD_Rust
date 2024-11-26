@@ -4,8 +4,6 @@
  * Copyright - Tomer Filiba
  */
 
-use std::cmp::max;
-
 #[derive(Debug)]
 pub enum RSError {
     DivideByZero,
@@ -61,7 +59,7 @@ fn _gf_poly_scale(p: &[u8], x: u8, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Ve
 }
 
 fn _gf_poly_add(p: &[u8], q: &[u8]) -> Vec<u8> {
-    let mut r = vec![0; max(p.len(), q.len())];
+    let mut r = vec![0; p.len().max(q.len())];
     let rlen = r.len();
     for i in 0..p.len() {
         r[i + rlen - p.len()] = p[i];

@@ -5,7 +5,7 @@
  */
 
 use crate::backend::{bitcvt, linspace};
-use std::iter::repeat;
+use core::iter::repeat;
 
 pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
@@ -22,7 +22,7 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
  * Parameters: Length of the DCT Array, Signal sample rate, Subband index
  * Returns: Range of bins
  */
-fn get_bin_range(len: usize, srate: u32, i: usize) -> std::ops::Range<usize> {
+fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
     let start = (MODIFIED_OPUS_SUBBANDS[i] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     let end = (MODIFIED_OPUS_SUBBANDS[i + 1] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     return start.min(len)..end.min(len);
