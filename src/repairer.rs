@@ -6,12 +6,26 @@
 
 use frad::Repairer;
 use crate::{
-    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
-    tools::cli::CliParams
+    common::{check_overwrite, format_si, read_exact, write_safe, PIPEIN, PIPEOUT},
+    tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
 use same_file::is_same_file;
+
+/** logging_repair
+ * Logs a message to stderr
+ * Parameters: Log level, Processing info, line feed flag
+ */
+pub fn logging_repair(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
+    if loglevel == 0 { return; }
+    let total_size = log.get_total_size() as f64;
+    eprint!("size={}B speed={}B/s    \r",
+        format_si(total_size),
+        format_si(total_size / log.start_time.elapsed().as_secs_f64())
+    );
+    if linefeed { eprintln!(); }
+}
 
 /** repair
  * Repair or Apply ECC to FrAD stream
@@ -43,15 +57,19 @@ pub fn repair(rfile: String, params: CliParams) {
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
     let mut repairer = Repairer::new(params.ecc_ratio);
+    let mut procinfo = ProcessInfo::new();
     loop {
         let mut buffer = vec![0; 32768];
         let bytes_read = read_exact(&mut readfile, &mut buffer);
         if bytes_read == 0 && repairer.is_empty() { break; }
 
         let repaired = repairer.process(buffer[..bytes_read].to_vec());
+        procinfo.update(repaired.len(), 0, 0);
         write_safe(&mut writefile, &repaired);
-        logging(params.loglevel, &repairer.procinfo, false);
+        logging_repair(params.loglevel, &procinfo, false);
     }
-    write_safe(&mut writefile, &repairer.flush());
-    logging(params.loglevel, &repairer.procinfo, true);
+    let repaired = repairer.flush();
+    procinfo.update(repaired.len(), 0, 0);
+    write_safe(&mut writefile, &repaired);
+    logging_repair(params.loglevel, &procinfo, true);
 }

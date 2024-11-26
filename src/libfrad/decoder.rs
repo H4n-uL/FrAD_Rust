@@ -8,7 +8,7 @@ use crate::{
     backend::{hanning_in_overlap, SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::{self, profiles::{COMPACT, LOSSLESS}},
-    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, process::ProcessInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc},
 };
 
 pub struct DecodeResult {
@@ -25,7 +25,6 @@ pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<Vec<f64>>,
-    pub procinfo: ProcessInfo,
 
     fix_error: bool,
 }
@@ -36,7 +35,6 @@ impl Decoder {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
-            procinfo: ProcessInfo::new(),
 
             fix_error,
         }
@@ -118,8 +116,7 @@ impl Decoder {
                 };
 
                 // 1.4. Apply overlap
-                pcm = self.overlap(pcm); let samples = pcm.len();
-                self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
+                pcm = self.overlap(pcm);
 
                 // 1.5. Append the decoded PCM and clear header
                 ret_pcm.extend(pcm); frames += 1;
@@ -184,7 +181,6 @@ impl Decoder {
         // 5. Return exctacted buffer
 
         let ret_pcm = self.overlap_fragment.clone();
-        self.procinfo.update(&0, self.overlap_fragment.len(), &self.asfh.srate);
         self.overlap_fragment.clear();
         self.asfh.clear();
         return DecodeResult {

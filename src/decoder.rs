@@ -7,7 +7,7 @@
 use frad::{Decoder, ASFH, PCMFormat, f64cvt::f64_to_any};
 use crate::{
     common::{self, check_overwrite, read_exact, write_safe, PIPEIN, PIPEOUT},
-    tools::cli::CliParams
+    tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
@@ -35,10 +35,10 @@ fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, pcm: Vec<Vec<f64>>,
 }
 
 /** logging_decode
- * Decoder-exclusive logger
+ * Logs a message to stderr
  * Parameters: Log level, Process info, Linefeed flag, ASFH
  */
-fn logging_decode(loglevel: u8, log: &frad::ProcessInfo, linefeed: bool, asfh: &ASFH) {
+fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) {
     if loglevel == 0 { return; }
 
     let mut out = Vec::new();
@@ -97,32 +97,32 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
 
     params.speed = if params.speed > 0.0 { params.speed } else { 1.0 };
     sink.as_mut().map(|s| { s.set_speed(params.speed as f32); params.loglevel = 0; });
-
-    let mut decoder = Decoder::new(params.enable_ecc);
     let pcm_fmt = params.pcm;
 
-    let (mut _frames, mut no) = (0, 0);
+    let mut decoder = Decoder::new(params.enable_ecc);
+    let (mut no, mut procinfo) = (0, ProcessInfo::new());
     loop {
         let mut buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut buf);
-
         if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
 
         let decoded = decoder.process(buf[..readlen].to_vec());
-        _frames += decoded.frames;
+        procinfo.update(readlen, decoded.pcm.len(), decoder.get_asfh().srate);
         write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
-        logging_decode(params.loglevel, &decoder.procinfo, false, decoder.get_asfh());
+        logging_decode(params.loglevel, &procinfo, false, decoder.get_asfh());
 
         if decoded.crit && !wpipe {
+            procinfo.block();
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
-            decoder.procinfo.block();
             check_overwrite(&wfile, params.overwrite);
-            decoder.procinfo.unblock();
             writefile = Box::new(File::create(wfile).unwrap());
+            procinfo.unblock();
         }
     }
     let decoded = decoder.flush();
+    procinfo.update(0, decoded.pcm.len(), decoder.get_asfh().srate);
     write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
-    logging_decode(params.loglevel, &decoder.procinfo, true, decoder.get_asfh());
+    logging_decode(params.loglevel, &procinfo, true, decoder.get_asfh());
+
     sink.map(|s| s.sleep_until_end());
 }

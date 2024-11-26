@@ -4,7 +4,6 @@
  * Description: Common tools for FrAD Executable
  */
 
-use frad::ProcessInfo;
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
 // Pipe and null device
@@ -89,18 +88,6 @@ pub fn format_speed(n: f64) -> String {
     else if n >= 10.0 { format!("{:.1}", n) }
     else if n >= 1.0 { format!("{:.2}", n) }
     else { format!("{:.3}", n) }
-}
-
-/** logging
- * Logs a message to stderr
- * Parameters: Log level, Processing info, line feed flag
- */
-pub fn logging(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
-    if loglevel == 0 { return; }
-    eprint!("size={}B time={} bitrate={}bits/s speed={}x    \r",
-        format_si(log.get_total_size() as f64), format_time(log.get_duration()), format_si(log.get_bitrate()), format_speed(log.get_speed())
-    );
-    if linefeed { eprintln!(); }
 }
 
 /** move_all

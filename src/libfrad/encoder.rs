@@ -8,11 +8,16 @@ use crate::{
     PCMFormat, f64cvt::any_to_f64,
     backend::{Prepend, SplitFront},
     fourier::{self, profiles::{compact, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
-    tools::  {asfh::ASFH, ecc, process::ProcessInfo},
+    tools::  {asfh::ASFH, ecc},
 };
 
 use std::process::exit;
 // use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
+
+pub struct EncodeResult {
+    pub buf: Vec<u8>,
+    pub samples: usize
+}
 
 /** Encoder
  * Struct for FrAD encoder
@@ -22,7 +27,6 @@ pub struct Encoder {
     bit_depth: i16, channels: i16,
     fsize: u32, srate: u32,
     overlap_fragment: Vec<Vec<f64>>,
-    pub procinfo: ProcessInfo,
 
     pcm_format: PCMFormat,
     loss_level: f64,
@@ -38,7 +42,6 @@ impl Encoder {
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,
             overlap_fragment: Vec::new(),
-            procinfo: ProcessInfo::new(),
 
             pcm_format,
             loss_level: 0.5,
@@ -46,15 +49,18 @@ impl Encoder {
     }
 
     // true dynamic info - set every frame
+    pub fn get_channels(&self) -> i16 { self.channels }
     pub fn set_channels(&mut self, channels: i16) {
         if channels == 0 { eprintln!("Channel count cannot be zero"); exit(1); }
         self.channels = channels;
     }
+    pub fn get_frame_size(&self) -> u32 { self.fsize }
     pub fn set_frame_size(&mut self, frame_size: u32) {
         if frame_size == 0 { eprintln!("Frame size cannot be zero"); exit(1); }
         if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
         self.fsize = frame_size;
     }
+    pub fn get_srate(&self) -> u32 { self.srate }
     pub fn set_srate(&mut self, mut srate: u32) {
         if srate == 0 { eprintln!("Sample rate cannot be zero"); exit(1); }
         if COMPACT.contains(&self.asfh.profile) {
@@ -70,6 +76,7 @@ impl Encoder {
     }
 
     // half-dynamic info - This will be conveted to bit depth index for ASFH on encoding each frame
+    pub fn get_bit_depth(&self) -> i16 { self.bit_depth }
     pub fn set_bit_depth(&mut self, bit_depth: i16) {
         if bit_depth == 0 { eprintln!("Bit depth cannot be zero"); exit(1); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
@@ -135,9 +142,9 @@ impl Encoder {
      * Parameters: PCM stream, Flush flag
      * Returns: Encoded audio data
      */
-    fn inner(&mut self, stream: Vec<u8>, flush: bool) -> Vec<u8> {
+    fn inner(&mut self, stream: Vec<u8>, flush: bool) -> EncodeResult {
         self.buffer.extend(stream);
-        let mut ret: Vec<u8> = Vec::new();
+        let (mut ret, mut samples) = (Vec::new(), 0);
 
         loop {
             // let rng = &mut rand::thread_rng();
@@ -177,7 +184,7 @@ impl Encoder {
             // Unravel flat PCM to 2D PCM array
             let mut frame: Vec<Vec<f64>> = pcm_flat.chunks(self.channels as usize).map(Vec::from).collect();
             if frame.is_empty() { ret.extend(self.asfh.force_flush()); break; } // If frame is empty, break
-            let samples = frame.len();
+            samples += frame.len();
 
             // 2. Overlap the frame with the previous overlap fragment
             frame = self.overlap(frame);
@@ -200,12 +207,9 @@ impl Encoder {
             (self.asfh.bit_depth_index, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_depth_index, channels, fsize, srate);
             ret.extend(self.asfh.write(frad));
             if flush { ret.extend(self.asfh.force_flush()); }
-
-            // Logging
-            self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
         }
 
-        return ret;
+        return EncodeResult { buf: ret, samples };
     }
 
     /** process
@@ -213,7 +217,7 @@ impl Encoder {
      * Parameters: Input stream
      * Returns: Encoded audio data
      */
-    pub fn process(&mut self, stream: Vec<u8>) -> Vec<u8> {
+    pub fn process(&mut self, stream: Vec<u8>) -> EncodeResult {
         return self.inner(stream, false);
     }
 
@@ -221,7 +225,7 @@ impl Encoder {
      * Encodes the remaining data in the buffer and flush
      * Returns: Encoded audio data
      */
-    pub fn flush(&mut self) -> Vec<u8> {
+    pub fn flush(&mut self) -> EncodeResult {
         return self.inner(Vec::new(), true);
     }
 }

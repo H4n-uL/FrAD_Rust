@@ -8,7 +8,7 @@ use crate::{
     backend::{SplitFront, VecPatternFind},
     common:: {crc16_ansi, crc32, FRM_SIGN},
     fourier::profiles::{COMPACT, LOSSLESS},
-    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc, process::ProcessInfo},
+    tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc},
 };
 
 /** Repairer
@@ -17,7 +17,6 @@ use crate::{
 pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
-    pub procinfo: ProcessInfo,
 
     olap_len: usize,
     ecc_ratio: [u8; 2],
@@ -40,7 +39,6 @@ impl Repairer {
         Repairer {
             asfh: ASFH::new(),
             buffer: Vec::new(),
-            procinfo: ProcessInfo::new(),
 
             olap_len: 0,
             ecc_ratio,
@@ -71,9 +69,9 @@ impl Repairer {
                 // 1.0. If the buffer is not enough to decode the frame, break
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
-                let samples = if self.asfh.overlap_ratio == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
+                let samples_real = if self.asfh.overlap_ratio == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
                     (self.asfh.fsize as usize * (self.asfh.overlap_ratio as usize - 1)) / self.asfh.overlap_ratio as usize };
-                self.olap_len = self.asfh.fsize as usize - samples;
+                self.olap_len = self.asfh.fsize as usize - samples_real;
 
                 // 1.1. Split out the frame data
                 let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
@@ -92,7 +90,6 @@ impl Repairer {
 
                 // 1.4. Write the frame data to the buffer
                 ret.extend(self.asfh.write(frad));
-                self.procinfo.update(&self.asfh.total_bytes, samples, &self.asfh.srate);
 
                 // 1.5. Clear the ASFH struct
                 self.asfh.clear();
@@ -125,7 +122,6 @@ impl Repairer {
                     Complete => {},
                     // 2.3.2. If header is complete and forced to flush, flush and return
                     ForceFlush => {
-                        self.procinfo.update(&0, self.olap_len, &self.asfh.srate);
                         ret.extend(self.asfh.force_flush());
                         self.olap_len = 0;
                         break;

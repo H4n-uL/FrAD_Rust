@@ -4,10 +4,10 @@
  * Description: Encoder implementation example
  */
 
-use frad::{Encoder, ProcessInfo, profiles::LOSSLESS, head};
+use frad::{Encoder, profiles::LOSSLESS, head};
 use crate::{
-    common::{check_overwrite, logging, read_exact, write_safe, PIPEIN, PIPEOUT},
-    tools::cli::CliParams
+    common::{check_overwrite, format_si, format_speed, format_time, read_exact, write_safe, PIPEIN, PIPEOUT},
+    tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
@@ -48,6 +48,18 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
     return (readfile, writefile);
 }
 
+/** logging_encode
+ * Logs a message to stderr
+ * Parameters: Log level, Processing info, line feed flag
+ */
+pub fn logging_encode(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
+    if loglevel == 0 { return; }
+    eprint!("size={}B time={} bitrate={}bits/s speed={}x    \r",
+        format_si(log.get_total_size() as f64), format_time(log.get_duration()), format_si(log.get_bitrate()), format_speed(log.get_speed())
+    );
+    if linefeed { eprintln!(); }
+}
+
 /** encode
  * Encodes PCM to FrAD
  * Parameters: Input file, CLI parameters, Log level
@@ -84,14 +96,19 @@ pub fn encode(input: String, params: CliParams) {
 
     write_safe(&mut writefile, &head::builder(&params.meta, image, None));
 
-    encoder.procinfo = ProcessInfo::new();
+    let mut procinfo = ProcessInfo::new();
     loop {
         let mut pcm_buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
-        write_safe(&mut writefile, &encoder.process(pcm_buf[..readlen].to_vec()));
-        logging(params.loglevel, &encoder.procinfo, false);
+
+        let encoded = encoder.process(pcm_buf[..readlen].to_vec());
+        procinfo.update(encoded.buf.len(), encoded.samples, encoder.get_srate());
+        write_safe(&mut writefile, &encoded.buf);
+        logging_encode(params.loglevel, &procinfo, false);
     }
-    write_safe(&mut writefile, &encoder.flush());
-    logging(params.loglevel, &encoder.procinfo, true);
+    let encoded = encoder.flush();
+    procinfo.update(encoded.buf.len(), encoded.samples, encoder.get_srate());
+    write_safe(&mut writefile, &encoded.buf);
+    logging_encode(params.loglevel, &procinfo, true);
 }

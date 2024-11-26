@@ -10,7 +10,7 @@ use std::{collections::HashMap, time::Instant};
  * Struct for process information
  */
 pub struct ProcessInfo {
-    start_time: Instant,
+    pub start_time: Instant,
     t_block: Option<Instant>,
     total_size: u128,
     duration: HashMap<u32, u128>,
@@ -32,10 +32,10 @@ impl ProcessInfo {
      * Accumulates total stream size, duration within sample rate, and bitrate
      * Parameters: Stream size, Sample count, Sample rate
      */
-    pub fn update(&mut self, size: &u128, samples: usize, srate: &u32) {
-        self.total_size += size;
-        self.duration.insert(*srate, if self.duration.contains_key(&srate) { self.duration[&srate] } else { 0 } + samples as u128);
-        self.bitrate.insert(*srate, if self.bitrate.contains_key(&srate) { self.bitrate[&srate] } else { 0 } + *size as u128);
+    pub fn update(&mut self, size: usize, samples: usize, srate: u32) {
+        self.total_size += size as u128;
+        self.duration.insert(srate, if self.duration.contains_key(&srate) { self.duration[&srate] } else { 0 } + samples as u128);
+        self.bitrate.insert(srate, if self.bitrate.contains_key(&srate) { self.bitrate[&srate] } else { 0 } + size as u128);
     }
 
     /** get_duration
