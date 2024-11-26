@@ -48,8 +48,8 @@ export PATH=/path/to/bin:$PATH
 
 #### 라이브러리용
 
-1. flate2
-2. half
+1. half
+2. miniz_oxide
 3. rustfft
 
 #### 어플리케이션용
@@ -57,7 +57,7 @@ export PATH=/path/to/bin:$PATH
 1. base64
 2. infer
 3. rodio
-4. same_file
+4. same-file
 5. serde_json
 6. tempfile
 
