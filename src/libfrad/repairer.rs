@@ -49,9 +49,13 @@ impl Repairer {
      * Check if the buffer is shorter than the frame sign(, which means it's virtually empty)
      * Returns: Empty flag
      */
-    pub fn is_empty(&self) -> bool {
-        return self.buffer.len() < FRM_SIGN.len();
-    }
+    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len(); }
+
+    /** get_asfh
+     * Get a reference to the ASFH struct
+     * Returns: Immutable reference to the ASFH struct
+     */
+    pub fn get_asfh(&self) -> &ASFH { return &self.asfh; }
 
     /** process
      * Process the input stream and repair the FrAD stream

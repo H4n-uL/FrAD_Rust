@@ -113,6 +113,11 @@ impl Encoder {
         self.asfh.overlap_ratio = overlap_ratio;
     }
 
+    /** get_asfh
+     * Get a reference to the ASFH struct
+     * Returns: Immutable reference to the ASFH struct
+     */
+    pub fn get_asfh(&self) -> &ASFH { return &self.asfh; }
 
     /** overlap
      * Overlaps the current frame with the overlap fragment
