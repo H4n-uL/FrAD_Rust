@@ -18,6 +18,6 @@ pub use tools::head;
 
 pub mod common;
 pub use tools::asfh::ASFH;
-pub use encoder::Encoder;
+pub use encoder::{Encoder, EncodeResult};
 pub use decoder::{Decoder, DecodeResult};
 pub use repairer::Repairer;
