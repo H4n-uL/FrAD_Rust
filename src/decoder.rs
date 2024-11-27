@@ -107,7 +107,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
 
         let decoded = decoder.process(buf[..readlen].to_vec());
-        procinfo.update(readlen, decoded.pcm.len(), decoder.get_asfh().srate);
+        procinfo.update(readlen, decoded.pcm.len(), decoded.srate);
         write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
         logging_decode(params.loglevel, &procinfo, false, decoder.get_asfh());
 
@@ -120,7 +120,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         }
     }
     let decoded = decoder.flush();
-    procinfo.update(0, decoded.pcm.len(), decoder.get_asfh().srate);
+    procinfo.update(0, decoded.pcm.len(), decoded.srate);
     write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
     logging_decode(params.loglevel, &procinfo, true, decoder.get_asfh());
 
