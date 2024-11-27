@@ -8,7 +8,7 @@ use core::f64::consts::PI;
 
 pub fn dct(x: Vec<f64>) -> Vec<f64> {
     return (0..x.len()).map(|i| {
-        let sum= (0..x.len()).map(|j| {
+        let sum = (0..x.len()).map(|j| {
             x[j] * ((PI / x.len() as f64) * (j as f64 + 0.5) * i as f64).cos()
         }).sum::<f64>();
         sum / x.len() as f64
