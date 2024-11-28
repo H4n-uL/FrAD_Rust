@@ -74,7 +74,6 @@ fn decode_css(css: Vec<u8>) -> (i16, u32, u32, bool) {
 #[derive(Clone, Debug)]
 pub struct ASFH {
     // Audio Stream Frame Header
-    pub total_bytes: u128,
     pub frmbytes: u64,
     pub buffer: Vec<u8>,
     pub all_set: bool,
@@ -102,7 +101,7 @@ pub struct ASFH {
 impl ASFH {
     pub fn new() -> ASFH {
         ASFH {
-            total_bytes: 0, frmbytes: 0, buffer: Vec::new(),
+            frmbytes: 0, buffer: Vec::new(),
             header_bytes: 0, all_set: false,
 
             endian: false, bit_depth_index: 0,
@@ -152,7 +151,6 @@ impl ASFH {
         }
 
         let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
-        self.total_bytes = frad.len() as u128;
 
         return frad;
     }
@@ -171,8 +169,6 @@ impl ASFH {
             fhead.push(0);
         }
         else { return Vec::new(); }
-
-        self.total_bytes = fhead.len() as u128;
 
         return fhead;
     }
@@ -230,8 +226,6 @@ impl ASFH {
             if !self.fill_buffer(buffer, self.header_bytes + 8) { return ParseResult::Incomplete }
             self.frmbytes = u64::from_be_bytes(self.buffer[self.buffer.len()-8..].try_into().unwrap());
         }
-
-        self.total_bytes = self.header_bytes as u128 + self.frmbytes as u128;
 
         self.all_set = true;
         return ParseResult::Complete;
