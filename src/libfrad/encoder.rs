@@ -37,7 +37,7 @@ impl Encoder {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
         let mut asfh = ASFH::new();
         asfh.profile = profile;
-        Encoder {
+        return Encoder {
             asfh, buffer: Vec::new(),
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,
@@ -45,7 +45,7 @@ impl Encoder {
 
             pcm_format,
             loss_level: 0.5,
-        }
+        };
     }
 
     // true dynamic info - set every frame

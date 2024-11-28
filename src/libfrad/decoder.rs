@@ -31,13 +31,13 @@ pub struct Decoder {
 
 impl Decoder {
     pub fn new(fix_error: bool) -> Decoder {
-        Decoder {
+        return Decoder {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
 
             fix_error,
-        }
+        };
     }
 
     /** overlap

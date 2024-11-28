@@ -36,13 +36,13 @@ impl Repairer {
             ecc_ratio = [96, 24];
         }
 
-        Repairer {
+        return Repairer {
             asfh: ASFH::new(),
             buffer: Vec::new(),
 
             olap_len: 0,
             ecc_ratio,
-        }
+        };
     }
 
     /** is_empty
