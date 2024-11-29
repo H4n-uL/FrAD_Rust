@@ -2,7 +2,7 @@
 /**
  * Copyright 2024 HaמuL
  * Description: FrAD Profile 1 encoding and decoding core
- * Dependencies: flate2, half
+ * Dependencies: miniz_oxide
  */
 
 use crate::backend::{SplitFront, Transpose};
