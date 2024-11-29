@@ -11,14 +11,14 @@ pub const TNS_COEF_RES: usize = 4;
 pub const TNS_MIN_PRED: f64 = 3.01029995663981195213738894724493027;
 
 /** calc_autocorr
- * Calculates the auto-correlation of a signal
- * Parameters: Signal
+ * Calculates the auto-correlation of a frequency-domain signal
+ * Parameters: Frequency-domain signal
  * Returns: Auto-correlation array of the signal
  */
-fn calc_autocorr(signal: &[f64]) -> Vec<f64> {
+fn calc_autocorr(freq: &[f64]) -> Vec<f64> {
     let window: Vec<f64> = (0..=TNS_MAX_ORDER).map(|i| (-0.5 * (i as f64 * 0.4).powi(2)).exp()).collect();
-    let corr = correlate_full(signal, signal);
-    return (0..=TNS_MAX_ORDER).map(|i| corr[signal.len() - 1 + i] * window[i]).collect();
+    let corr = correlate_full(freq, freq);
+    return (0..=TNS_MAX_ORDER).map(|i| corr[freq.len() - 1 + i] * window[i]).collect();
 }
 
 /** levinson_durbin
