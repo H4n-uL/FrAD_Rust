@@ -1,8 +1,8 @@
 /**                              FrAD Profile 2                               */
 /**
  * Copyright 2024 HaמuL
- * Description: TBD
- * Dependencies: TBD
+ * Description: FrAD Profile 2 encoding and decoding core
+ * Dependencies: miniz_oxide
  */
 
 use crate::backend::{SplitFront, Transpose};
@@ -29,17 +29,16 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32) -> (Vec<u8>,
 
     // 1. Pad and transform PCM with scaling
     let pcm = pad_pcm(pcm);
-    let pcm_trans: Vec<Vec<f64>> = pcm.trans().iter().map(|x| x.iter().map(|y| y * pcm_scale).collect()).collect();
 
     // 2. DCT
-    let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x.to_vec())).collect();
     let channels = freqs.len();
 
     // 3. TNS analysis
     let (tns_freqs, lpc) = p2tools::tns_analysis(&freqs);
 
     // 4. Flattening frequencies and thresholds
-    let freqs_flat: Vec<i64> = tns_freqs.trans().iter().flat_map(|x| x.iter().map(|y| *y as i64)).collect();
+    let freqs_flat: Vec<i64> = tns_freqs.trans().iter().flat_map(|x| x.iter().map(|y| (y * pcm_scale) as i64)).collect();
     let lpc_flat: Vec<i64> = lpc.trans().iter().flat_map(|x| x.iter().map(|y| *y)).collect();
 
     // 5. Exponential Golomb-Rice encoding
@@ -78,11 +77,11 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, _srate: u
 
     // 3. Exponential Golomb-Rice decoding
     let mut lpc_flat: Vec<i64> = p1tools::exp_golomb_decode(lpc_gol);
-    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64).collect();
+    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64 / pcm_scale).collect();
     lpc_flat.resize((p2tools::TNS_MAX_ORDER + 1) * channels, 0);
     freqs_flat.resize(fsize * channels, 0.0);
 
-    // 4. Unflattening frequencies and thresholds
+    // 4. Unflattening frequencies and LPC
     let lpc: Vec<Vec<i64>> = (0..channels).map(|i| lpc_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
     let tns_freqs: Vec<Vec<f64>> = (0..channels).map(|i| freqs_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
 
@@ -90,7 +89,5 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, _srate: u
     let freqs = p2tools::tns_synthesis(&tns_freqs, &lpc);
 
     // 6. Inverse DCT and scaling
-    return freqs.iter().map(|x|
-        idct(x.to_vec()).iter().map(|y| y / pcm_scale).collect()
-    ).collect::<Vec<Vec<f64>>>().trans();
+    return freqs.iter().map(|x| idct(x.to_vec())).collect::<Vec<Vec<f64>>>().trans();
 }
