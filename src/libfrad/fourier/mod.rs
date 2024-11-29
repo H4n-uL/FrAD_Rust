@@ -6,7 +6,7 @@
 
 pub mod profile0;
 pub mod profile1;
-// pub mod profile2;
+pub mod profile2;
 // pub mod profile3;
 pub mod profile4;
 // pub mod profile5;
@@ -25,7 +25,7 @@ pub const SEGMAX: [u32; 8] =
 [
     u32::MAX, // Profile 0
     compact::MAX_SMPL, // Profile 1
-    0, // Profile 2
+    compact::MAX_SMPL, // Profile 2
     0, // Profile 3
     u32::MAX, // Profile 4
     0, // Profile 5
@@ -36,7 +36,7 @@ pub const SEGMAX: [u32; 8] =
 pub const BIT_DEPTHS: [[i16; 8]; 8] = [
     profile0::DEPTHS,
     profile1::DEPTHS,
-    [0; 8],
+    profile2::DEPTHS,
     [0; 8],
     profile4::DEPTHS,
     [0; 8],

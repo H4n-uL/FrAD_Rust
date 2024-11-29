@@ -7,7 +7,7 @@
 // LOSSLESS profiles
 pub const LOSSLESS: [u8; 2] = [0, 4];
 // Compact profiles
-pub const COMPACT: [u8; 1] = [1];
+pub const COMPACT: [u8; 2] = [1, 2];
 
 // Compact profiles table
 pub mod compact {

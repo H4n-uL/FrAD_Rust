@@ -111,6 +111,7 @@ impl Decoder {
                 let mut pcm =
                 match self.asfh.profile {
                     1 => fourier::profile1::digital(frad, self.asfh.bit_depth_index, self.asfh.channels, self.asfh.srate, self.asfh.fsize),
+                    2 => fourier::profile2::digital(frad, self.asfh.bit_depth_index, self.asfh.channels, self.asfh.srate, self.asfh.fsize),
                     4 => fourier::profile4::digital(frad, self.asfh.bit_depth_index, self.asfh.channels, self.asfh.endian),
                     _ => fourier::profile0::digital(frad, self.asfh.bit_depth_index, self.asfh.channels, self.asfh.endian)
                 };

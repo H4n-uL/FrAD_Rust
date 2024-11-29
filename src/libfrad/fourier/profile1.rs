@@ -22,7 +22,7 @@ pub const DEPTHS: [i16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
  * Parameters: f64 PCM
  * Returns: Padded f64 PCM
  */
-fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+pub fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let len_smpl = pcm.len();
     let chnl = pcm[0].len();
     let pad_len = *SAMPLES_LI.iter().find(|&&x| x as usize >= len_smpl).unwrap_or(&(len_smpl as u32)) as usize - len_smpl;
@@ -37,7 +37,7 @@ fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
  * Returns: 2.0^(bit_depth - 1) as PCM scale factor,
  *          sqrt(3.0)^(16 - bit_depth) as threshold scale factor
  */
-fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
+pub fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
     let pcm_scale = 2.0_f64.powi(bit_depth as i32 - 1);
     let thres_scale = 3.0_f64.sqrt().powi(16 - bit_depth as i32);
     return (pcm_scale, thres_scale);
@@ -48,7 +48,7 @@ fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
  * Parameters: f64 value
  * Returns: Finite f64 value
  */
-fn finite(x: f64) -> f64 {
+pub fn finite(x: f64) -> f64 {
     return if x.is_finite() { x } else { 0.0 };
 }
 
