@@ -43,15 +43,6 @@ pub fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
     return (pcm_scale, thres_scale);
 }
 
-/** finite
- * Assigns 0.0 to infinite or NaN values
- * Parameters: f64 value
- * Returns: Finite f64 value
- */
-pub fn finite(x: f64) -> f64 {
-    return if x.is_finite() { x } else { 0.0 };
-}
-
 /** analogue
  * Encodes PCM to FrAD Profile 1
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
@@ -73,24 +64,22 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     let (freqs_masked, thresholds): (Vec<Vec<f64>>, Vec<Vec<f64>>) = (0..channels)
     .into_iter().map(|c| {
         // 3.1. Masking threshold calculation
-        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(
-            freqs[c].clone(), srate, bit_depth as u16, p1tools::SPREAD_ALPHA
-        ).iter().map(|x| x * loss_level).collect();
+        let (thres_channel, thres_divisor): (Vec<f64>, Vec<f64>) = p1tools::mask_thres_mos(
+            freqs[c].clone(), srate, bit_depth as u16, loss_level, p1tools::SPREAD_ALPHA
+        );
 
         // 3.2. Remapping thresholds to DCT bins
         // 3.3. Masking and quantisation with remapped thresholds
-        let div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
-        let chnl_masked: Vec<f64> = freqs[c].iter().zip(&div_factor).map(|(x, y)| finite(p1tools::quant(x / y))).collect();
+        let mut div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_divisor, freqs[0].len(), srate);
+        div_factor.iter_mut().for_each(|x| if x == &0.0 { *x = core::f64::INFINITY; });
+        let chnl_masked: Vec<f64> = freqs[c].iter().zip(&div_factor).map(|(x, y)| x / y).collect();
 
-        // 3.4. Multiplying thresholds by threshold scale factor
-        let thresholds_scaled: Vec<f64> = thres_channel.iter().map(|x| finite(x * thres_scale)).collect();
-
-        (chnl_masked, thresholds_scaled)
+        (chnl_masked, thres_channel)
     }).unzip();
 
-    // 4. Flattening frequencies and thresholds
-    let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
-    let thres_flat: Vec<i64> = thresholds.trans().iter().flat_map(|x| x.iter().map(|y| y.round() as i64)).collect();
+    // 4. Quantisation and flattening
+    let freqs_flat: Vec<i64> = freqs_masked.iter().flat_map(|x| x.iter().map(|y| p1tools::quant(*y).round() as i64)).collect();
+    let thres_flat: Vec<i64> = thresholds.iter().flat_map(|x| x.iter().map(|y| (p1tools::quant(*y) * thres_scale).round() as i64)).collect();
 
     // 5. Exponential Golomb-Rice encoding
     let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(freqs_flat);
@@ -126,10 +115,10 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u3
     let thres_gol = frad.split_front(thres_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let mut thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| x as f64 / thres_scale).collect();
-    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64).collect();
-    thres_flat.resize(p1tools::MOSLEN * channels, 0.0);
+    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| p1tools::dequant(x as f64)).collect();
+    let mut thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| p1tools::dequant(x as f64 / thres_scale)).collect();
     freqs_flat.resize(fsize * channels, 0.0);
+    thres_flat.resize(p1tools::MOSLEN * channels, 0.0);
 
     // 4. Unflattening frequencies and thresholds
     let thresholds: Vec<Vec<f64>> = (0..channels).map(|i| thres_flat.iter().skip(i).step_by(channels).copied().collect()).collect();
@@ -138,7 +127,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u3
     // 5. Dequantisation and inverse masking
     let freqs = (0..channels).into_iter().map(|c| {
         freqs_masked[c].iter().zip(p1tools::mapping_from_opus(&thresholds[c], fsize, srate))
-        .map(|(x, y)| p1tools::dequant(*x) * y).collect()
+        .map(|(x, y)| x * y).collect()
     }).collect::<Vec<Vec<f64>>>();
 
     // 6. Inverse DCT and scaling

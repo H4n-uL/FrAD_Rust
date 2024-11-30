@@ -19,7 +19,7 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
 
 /** get_bin_range
  * Gets the range of bins for a subband
- * Parameters: Length of the DCT Array, Signal sample rate, Subband index
+ * Parameters: Length of the DCT Array, Sample rate, Subband index
  * Returns: Range of bins
  */
 fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
@@ -30,12 +30,13 @@ fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
 
 /** mask_thres_mos
  * Calculates the masking threshold for each subband
- * Parameters: RMS of the subbands, Spread alpha(Constant for now)
+ * Parameters: DCT Array, Sample rate, Bit depth, Loss level, Alpha(Constant for now)
  * Returns: Masking threshold array
  */
-pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, alpha: f64) -> Vec<f64> {
+pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_level: f64, alpha: f64) -> (Vec<f64>, Vec<f64>) {
     freqs = freqs.iter().map(|x| x.abs()).collect();
     let mut thres = vec![0.0; MOSLEN];
+    let mut thres_divisor = vec![0.0; MOSLEN];
     let pcm_scale = (1 << (bit_depth - 1)) as f64;
 
     // for each subband
@@ -49,12 +50,13 @@ pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, alpha: f6
             (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)) / 20.0
         ) / pcm_scale;
         // Root mean square
-        let sfq = (subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64).sqrt();
+        let sfq = (subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64).sqrt().powf(alpha);
         // Larger value between mapped_freq[i]^alpha and ATH in absolute amplitude
-        thres[i] = sfq.powf(alpha).max(absolute_hearing_threshold.min(pcm_scale));
+        thres[i] = sfq.max(absolute_hearing_threshold.min(1.0)) * loss_level;
+        thres_divisor[i] = sfq.max(absolute_hearing_threshold) * loss_level;
     }
 
-    return thres;
+    return (thres, thres_divisor);
 }
 
 /** mapping_from_opus
