@@ -72,17 +72,17 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     // 3. Subband masking and quantisation
     let (freqs_masked, thresholds): (Vec<Vec<f64>>, Vec<Vec<f64>>) = (0..channels)
     .into_iter().map(|c| {
-        // 3.1. Mapping frequencies to Modified Opus Subbands
-        // 3.2. Masking threshold calculation
-        let freqs_map_opus: Vec<f64> = p1tools::mapping_to_opus(&freqs[c].iter().map(|x| x.abs()).collect::<Vec<f64>>(), srate);
-        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(&freqs_map_opus, p1tools::SPREAD_ALPHA).iter().map(|x| x * loss_level).collect();
+        // 3.1. Masking threshold calculation
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(
+            freqs[c].clone(), srate, bit_depth as u16, p1tools::SPREAD_ALPHA
+        ).iter().map(|x| x * loss_level).collect();
 
-        // 3.3. Remapping thresholds to DCT bins
-        // 3.4. Masking and quantisation with remapped thresholds
+        // 3.2. Remapping thresholds to DCT bins
+        // 3.3. Masking and quantisation with remapped thresholds
         let div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         let chnl_masked: Vec<f64> = freqs[c].iter().zip(&div_factor).map(|(x, y)| finite(p1tools::quant(x / y))).collect();
 
-        // 3.5. Multiplying thresholds by threshold scale factor
+        // 3.4. Multiplying thresholds by threshold scale factor
         let thresholds_scaled: Vec<f64> = thres_channel.iter().map(|x| finite(x * thres_scale)).collect();
 
         (chnl_masked, thresholds_scaled)

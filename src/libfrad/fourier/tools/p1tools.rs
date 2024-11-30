@@ -33,57 +33,45 @@ fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
  * Parameters: RMS of the subbands, Spread alpha(Constant for now)
  * Returns: Masking threshold array
  */
-pub fn mask_thres_mos(mapped_freqs: &[f64], alpha: f64) -> Vec<f64> {
+pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, alpha: f64) -> Vec<f64> {
+    freqs = freqs.iter().map(|x| x.abs()).collect();
     let mut thres = vec![0.0; MOSLEN];
+    let pcm_scale = (1 << (bit_depth - 1)) as f64;
 
     // for each subband
     for i in 0..MOSLEN {
+        let subfreqs = freqs[get_bin_range(freqs.len(), srate, i)].to_vec();
+        if subfreqs.is_empty() { continue; }
         // Centre frequency of the subband
         let f = (MODIFIED_OPUS_SUBBANDS[i] as f64 + MODIFIED_OPUS_SUBBANDS[i + 1] as f64) / 2.0;
         // Absolute Threshold of Hearing(in dB SPL)
-        let abs = (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)).min(96.0);
+        let absolute_hearing_threshold = 10.0f64.powf(
+            (3.64 * (f / 1000.0).powf(-0.8) - 6.5 * (-0.6 * (f / 1000.0 - 3.3).powi(2)).exp() + 1e-3 * (f / 1000.0).powi(4)) / 20.0
+        ) / pcm_scale;
+        // Root mean square
+        let sfq = (subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64).sqrt();
         // Larger value between mapped_freq[i]^alpha and ATH in absolute amplitude
-        thres[i] = mapped_freqs[i].powf(alpha).max(10.0_f64.powf((abs - 96.0) / 20.0));
+        thres[i] = sfq.powf(alpha).max(absolute_hearing_threshold.min(pcm_scale));
     }
 
     return thres;
 }
 
-/** mapping_to_opus
- * Maps the frequencies to the modified Opus subbands
- * Parameters: DCT Array, Sample rate
- * Returns: Root mean square of the subbands
- */
-pub fn mapping_to_opus(freqs: &[f64], srate: u32) -> Vec<f64> {
-    let mut mapped_freqs = [0.0; MOSLEN].to_vec();
-
-    for i in 0..MOSLEN {
-        let subfreqs = freqs[get_bin_range(freqs.len(), srate, i)].to_vec();
-        if !subfreqs.is_empty() {
-            // Root mean square
-            let sfq: f64 = subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64;
-            mapped_freqs[i] = sfq.sqrt();
-        }
-    }
-
-    return mapped_freqs;
-}
-
 /** mapping_from_opus
- * Maps the frequencies from the modified Opus subbands
- * Parameters: MOS-Mapped frequencies, Length of the DCT Array, Sample rate
- * Returns: Inverse-mapped frequencies
+ * Maps the thresholds from the modified Opus subbands
+ * Parameters: MOS-Mapped thresholds, Length of the DCT Array, Sample rate
+ * Returns: Inverse-mapped thresholds
  */
-pub fn mapping_from_opus(mapped_freqs: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
-    let mut freqs = vec![0.0; freqs_len];
+pub fn mapping_from_opus(mapped_thres: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
+    let mut thres = vec![0.0; freqs_len];
 
     for i in 0..MOSLEN-1 {
         let range = get_bin_range(freqs_len, srate, i);
-        // Linearly spaced values between the mapped frequencies
-        freqs[range.clone()].copy_from_slice(&linspace(mapped_freqs[i], mapped_freqs[i + 1], range.end - range.start));
+        // Linearly spaced values between the mapped thresholds
+        thres[range.clone()].copy_from_slice(&linspace(mapped_thres[i], mapped_thres[i + 1], range.end - range.start));
     }
 
-    return freqs;
+    return thres;
 }
 
 /** quant
