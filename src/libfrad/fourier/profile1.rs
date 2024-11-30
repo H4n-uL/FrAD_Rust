@@ -78,8 +78,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     }).unzip();
 
     // 4. Quantisation and flattening
-    let freqs_flat: Vec<i64> = freqs_masked.iter().flat_map(|x| x.iter().map(|y| p1tools::quant(*y).round() as i64)).collect();
-    let thres_flat: Vec<i64> = thresholds.iter().flat_map(|x| x.iter().map(|y| (p1tools::quant(*y) * thres_scale).round() as i64)).collect();
+    let freqs_flat: Vec<i64> = freqs_masked.trans().iter().flat_map(|x| x.iter().map(|y| p1tools::quant(*y).round() as i64)).collect();
+    let thres_flat: Vec<i64> = thresholds.trans().iter().flat_map(|x| x.iter().map(|y| (p1tools::quant(*y) * thres_scale).round() as i64)).collect();
 
     // 5. Exponential Golomb-Rice encoding
     let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(freqs_flat);
