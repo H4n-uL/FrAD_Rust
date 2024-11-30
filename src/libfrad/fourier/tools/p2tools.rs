@@ -97,7 +97,7 @@ fn predgain(orig: &[f64], prc: &[f64]) -> f64 {
 
 /** tns_analysis
  * Performs TNS analysis on Frequency-domain signals
- * Parameters: DCT frequencies
+ * Parameters: DCT Array
  * Returns: TNS frequencies and LPC coefficients
  */
 pub fn tns_analysis(freqs: &[Vec<f64>]) -> (Vec<Vec<f64>>, Vec<Vec<i64>>) {
@@ -135,7 +135,7 @@ pub fn tns_analysis(freqs: &[Vec<f64>]) -> (Vec<Vec<f64>>, Vec<Vec<i64>>) {
 /** tns_synthesis
  * Performs TNS synthesis on Frequency-domain signals
  * Parameters: TNS frequencies and LPC coefficients
- * Returns: Synthesised DCT frequencies
+ * Returns: Synthesised DCT Array
  */
 pub fn tns_synthesis(tns_freqs: &[Vec<f64>], lpcqs: &[Vec<i64>]) -> Vec<Vec<f64>> {
     return tns_freqs.iter().zip(lpcqs.iter()).map(|(tns_freq, lpcq)| {
