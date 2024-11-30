@@ -33,10 +33,9 @@ fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
  * Parameters: DCT Array, Sample rate, Bit depth, Loss level, Alpha(Constant for now)
  * Returns: Masking threshold array
  */
-pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_level: f64, alpha: f64) -> (Vec<f64>, Vec<f64>) {
+pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_level: f64, alpha: f64) -> Vec<f64> {
     freqs = freqs.iter().map(|x| x.abs()).collect();
     let mut thres = vec![0.0; MOSLEN];
-    let mut thres_divisor = vec![0.0; MOSLEN];
     let pcm_scale = (1 << (bit_depth - 1)) as f64;
 
     // for each subband
@@ -53,10 +52,9 @@ pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_leve
         let sfq = (subfreqs.iter().map(|x| x.powi(2)).sum::<f64>() / subfreqs.len() as f64).sqrt().powf(alpha);
         // Larger value between mapped_freq[i]^alpha and ATH in absolute amplitude
         thres[i] = sfq.max(absolute_hearing_threshold.min(1.0)) * loss_level;
-        thres_divisor[i] = sfq.max(absolute_hearing_threshold) * loss_level;
     }
 
-    return (thres, thres_divisor);
+    return thres;
 }
 
 /** mapping_from_opus

@@ -64,13 +64,13 @@ pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32, mut loss_lev
     let (freqs_masked, thresholds): (Vec<Vec<f64>>, Vec<Vec<f64>>) = (0..channels)
     .into_iter().map(|c| {
         // 3.1. Masking threshold calculation
-        let (thres_channel, thres_divisor): (Vec<f64>, Vec<f64>) = p1tools::mask_thres_mos(
+        let thres_channel: Vec<f64> = p1tools::mask_thres_mos(
             freqs[c].clone(), srate, bit_depth as u16, loss_level, p1tools::SPREAD_ALPHA
         );
 
         // 3.2. Remapping thresholds to DCT bins
         // 3.3. Masking and quantisation with remapped thresholds
-        let mut div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_divisor, freqs[0].len(), srate);
+        let mut div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_channel, freqs[0].len(), srate);
         div_factor.iter_mut().for_each(|x| if x == &0.0 { *x = core::f64::INFINITY; });
         let chnl_masked: Vec<f64> = freqs[c].iter().zip(&div_factor).map(|(x, y)| x / y).collect();
 
