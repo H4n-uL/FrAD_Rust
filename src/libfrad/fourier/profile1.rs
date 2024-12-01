@@ -116,7 +116,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u3
 
     // 3. Exponential Golomb-Rice decoding
     let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| p1tools::dequant(x as f64)).collect();
-    let mut thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| p1tools::dequant(x as f64 / thres_scale)).collect();
+    let mut thres_flat: Vec<f64> = p1tools::exp_golomb_decode(thres_gol).into_iter().map(|x| p1tools::dequant(x as f64) / thres_scale).collect();
     freqs_flat.resize(fsize * channels, 0.0);
     thres_flat.resize(p1tools::MOSLEN * channels, 0.0);
 
