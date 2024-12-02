@@ -12,7 +12,7 @@ use crate::{
 };
 
 use std::process::exit;
-// use rand::{seq::{IteratorRandom, SliceRandom}, Rng};
+// use rand::prelude::*;
 
 pub struct EncodeResult {
     pub buf: Vec<u8>,
@@ -135,7 +135,8 @@ impl Encoder {
         let mut next_overlap = Vec::new();
         if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio > 1 {
             // Copy the last olap samples to the next overlap fragment
-            let cutoff = (frame.len() * (self.asfh.overlap_ratio as usize - 1)) / self.asfh.overlap_ratio as usize;
+            let overlap_ratio = self.asfh.overlap_ratio as usize;
+            let cutoff = frame.len() * (overlap_ratio - 1) / overlap_ratio;
             next_overlap = frame[cutoff..].to_vec();
         }
         self.overlap_fragment = next_overlap;
@@ -170,9 +171,9 @@ impl Encoder {
             if COMPACT.contains(&self.asfh.profile) {
                 // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
                 let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= self.fsize as u32).min().unwrap() as usize;
-                if li_val < self.overlap_fragment.len() // if overlap fragment is bigger than frame size
+                if li_val <= self.overlap_fragment.len() // if overlap fragment is equal or bigger than frame size
                 { // find the smallest value in SMPLS_LI bigger than fragment and subtract fragment size
-                    rlen = *compact::SAMPLES_LI.iter().filter(|&x| *x >= self.overlap_fragment.len() as u32).min().unwrap() as usize - self.overlap_fragment.len();
+                    rlen = *compact::SAMPLES_LI.iter().filter(|&x| *x > self.overlap_fragment.len() as u32).min().unwrap() as usize - self.overlap_fragment.len();
                 }
                 else { // else, just subtract fragment size
                     rlen = li_val - self.overlap_fragment.len();
