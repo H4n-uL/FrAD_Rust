@@ -165,7 +165,9 @@ impl ASFH {
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth_index));
 
         if COMPACT.contains(&self.profile) {
-            fhead.extend(encode_css(1, 96000, 128, true));
+            let mut channels = 1;
+            if self.channels > 1 { channels = self.channels; }
+            fhead.extend(encode_css(channels, self.srate, self.fsize, true));
             fhead.push(0);
         }
         else { return Vec::new(); }
