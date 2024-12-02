@@ -40,18 +40,16 @@ pub mod compact {
     }
 
     // Sample count list
-    pub const SAMPLES_LI: [u32; 24] = samples_li();
-    const fn samples_li() -> [u32; 24] {
-        let mut result = [0; 24];
-        let (mut index, mut s) = (0, 0);
-        while s < 8 {
-            let mut i = 0;
-            while i < 3 {
-                result[index] = SAMPLES[i].1[s];
-                (index, i) = (index+1, i+1);
-            } s += 1;
-        } return result;
-    }
+    pub const SAMPLES_LI: [u32; 24] = [
+          128,   144,   192,
+          256,   288,   384,
+          512,   576,   768,
+         1024,  1152,  1536,
+         2048,  2304,  3072,
+         4096,  4608,  6144,
+         8192,  9216, 12288,
+        16384, 18432, 24576
+    ];
 
     pub const MAX_SMPL: u32 = max_smpl();
     const fn max_smpl() -> u32 {
