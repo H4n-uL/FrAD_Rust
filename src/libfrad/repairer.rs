@@ -20,6 +20,7 @@ pub struct Repairer {
 
     olap_len: usize,
     ecc_ratio: [u8; 2],
+    broken_frame: bool,
 }
 
 impl Repairer {
@@ -42,14 +43,15 @@ impl Repairer {
 
             olap_len: 0,
             ecc_ratio,
+            broken_frame: false,
         };
     }
 
     /** is_empty
-     * Check if the buffer is shorter than the frame sign(, which means it's virtually empty)
+     * Check if the buffer is shorter than the frame sign or no more data input while frame is broken
      * Returns: Empty flag
      */
-    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len(); }
+    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len() || self.broken_frame; }
 
     /** get_asfh
      * Get a reference to the ASFH struct
@@ -63,6 +65,7 @@ impl Repairer {
     * Returns: Repaired FrAD stream
     */
     pub fn process(&mut self, stream: Vec<u8>) -> Vec<u8> {
+        let stream_empty = stream.is_empty();
         self.buffer.extend(stream);
         let mut ret = Vec::new();
 
@@ -71,6 +74,9 @@ impl Repairer {
             /* 1. Repairing FrAD Frame */
             if self.asfh.all_set {
                 // 1.0. If the buffer is not enough to decode the frame, break
+                // 1.0.1. If the stream is empty while ASFH is set (which means broken frame), break
+                if stream_empty { self.broken_frame = true; break; }
+                self.broken_frame = false;
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
                 let samples_real = if self.asfh.overlap_ratio == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {

@@ -27,6 +27,7 @@ pub struct Decoder {
     overlap_fragment: Vec<Vec<f64>>,
 
     fix_error: bool,
+    broken_frame: bool,
 }
 
 impl Decoder {
@@ -37,6 +38,7 @@ impl Decoder {
             overlap_fragment: Vec::new(),
 
             fix_error,
+            broken_frame: false,
         };
     }
 
@@ -67,10 +69,10 @@ impl Decoder {
     }
 
     /** is_empty
-     * Check if the buffer is shorter than the frame sign(, which means it's virtually empty)
+     * Check if the buffer is shorter than the frame sign or no more data input while frame is broken
      * Returns: Empty flag
      */
-    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len(); }
+    pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len() || self.broken_frame; }
 
     /** get_asfh
      * Get a reference to the ASFH struct
@@ -84,6 +86,7 @@ impl Decoder {
      * Returns: Decoded PCM, Sample rate, Critical info modification flag
      */
     pub fn process(&mut self, stream: Vec<u8>) -> DecodeResult {
+        let stream_empty = stream.is_empty();
         self.buffer.extend(stream);
         let (mut ret_pcm, mut frames) = (Vec::new(), 0);
 
@@ -92,6 +95,9 @@ impl Decoder {
             /* 1. Decoding FrAD Frame */
             if self.asfh.all_set {
                 // 1.0. If the buffer is not enough to decode the frame, break
+                // 1.0.1. If the stream is empty while ASFH is set (which means broken frame), break
+                if stream_empty { self.broken_frame = true; break; }
+                self.broken_frame = false;
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
                 // 1.1. Split out the frame data
