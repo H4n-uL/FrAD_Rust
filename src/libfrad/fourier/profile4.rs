@@ -22,7 +22,8 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
  * Parameters: f64 PCM, Bit depth, Little endian toggle (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, srate: u32, little_endian: bool) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, srate: u32, little_endian: bool) -> (Vec<u8>, i16, i16, u32) {
+    if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let channels = pcm[0].len();
 
     let pcm_flat: Vec<f64> = pcm.iter().flat_map(|x| x.iter()).cloned().collect();

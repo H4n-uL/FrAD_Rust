@@ -48,6 +48,14 @@ impl Encoder {
         };
     }
 
+    // UNSAFE: 
+    pub unsafe fn _set_profile(&mut self, profile: u8) {
+        if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
+
+        self.asfh.profile = profile;
+        self.bit_depth = 0;
+    }
+
     // true dynamic info - set every frame
     pub fn get_channels(&self) -> i16 { self.channels }
     pub fn set_channels(&mut self, channels: i16) {
@@ -66,11 +74,10 @@ impl Encoder {
         if COMPACT.contains(&self.asfh.profile) {
             let x = compact::get_valid_srate(srate);
             if x != srate {
-                eprintln!("Invalid sample rate! Valid rates for profile {}: {:?}",
-                self.asfh.profile, compact::SRATES.iter().rev().filter(|&&x| x != 0).cloned().collect::<Vec<u32>>());
-                eprintln!("Auto-adjusting to: {}", x);
+                eprintln!("Invalid sample rate! Valid rates for profile {}: {:?}\nAuto-adjusting to: {}",
+                self.asfh.profile, compact::SRATES.iter().rev().filter(|&&x| x != 0).cloned().collect::<Vec<u32>>(), x);
+                srate = x;
             }
-            srate = x;
         }
         self.srate = srate;
     }
@@ -88,18 +95,14 @@ impl Encoder {
     }
 
     // static info - set once before encoding
-    pub fn set_ecc(&mut self, ecc: bool, ecc_ratio: [u8; 2]) {
+    pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) {
         self.asfh.ecc = ecc;
-        if ecc_ratio[0] == 0 {
-            eprintln!("ECC data size must not be zero");
+        let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255);
+        if dsize_zero || exceed_255 {
+            if dsize_zero { eprintln!("ECC data size must not be zero"); }
+            if exceed_255 { eprintln!("ECC data size and check size must not exceed 255, given: {} and {}", ecc_ratio[0], ecc_ratio[1]); }
             eprintln!("Setting ECC to default 96 24");
-            self.asfh.ecc_ratio = [96, 24];
-        }
-        if ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255 {
-            eprintln!("ECC data size and check size must not exceed 255, given: {} and {}",
-                ecc_ratio[0], ecc_ratio[1]);
-            eprintln!("Setting ECC to default 96 24");
-            self.asfh.ecc_ratio = [96, 24];
+            ecc_ratio = [96, 24];
         }
         self.asfh.ecc_ratio = ecc_ratio;
     }
@@ -152,10 +155,14 @@ impl Encoder {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
 
+        if self.srate == 0 || self.channels == 0 {
+            return EncodeResult { buf: ret, samples }
+        }
+
         loop {
             // let rng = &mut rand::thread_rng();
-            // self.asfh.profile = *AVAILABLE.choose(rng).unwrap();
-            // self.bit_depth = *BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap();
+            // unsafe { self._set_profile(*AVAILABLE.choose(rng).unwrap()); }
+            // self.set_bit_depth(*BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap());
             // self.set_frame_size(
             //     if COMPACT.contains(&self.asfh.profile)
             //     { *compact::SAMPLES_LI.choose(rng).unwrap() }

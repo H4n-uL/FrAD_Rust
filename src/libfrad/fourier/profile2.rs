@@ -23,7 +23,8 @@ pub const DEPTHS: [i16; 8] = [8, 9, 10, 11, 12, 14, 16, 0];
  * Parameters: f64 PCM, Bit depth, Sample rate (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, bit_depth: i16, mut srate: u32) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32) -> (Vec<u8>, i16, i16, u32) {
+    if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let (pcm_scale, _) = get_scale_factors(bit_depth);
     srate = get_valid_srate(srate);
 
