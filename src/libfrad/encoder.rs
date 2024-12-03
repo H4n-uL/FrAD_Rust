@@ -50,8 +50,6 @@ impl Encoder {
 
     /** _set_profile
      * Modify the profile while running
-     * UNSAFE :: This function does not check any constraints on the profile
-     *           Use with set_frame_size(), set_bit_depth() to avoid errors.
      * Parameters: Profile, Sample rate, Channels, Bit depth, Frame size
      */
     pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: i16, bit_depth: i16, frame_size: u32) {
