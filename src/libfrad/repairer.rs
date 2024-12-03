@@ -18,7 +18,6 @@ pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
 
-    olap_len: usize,
     ecc_ratio: [u8; 2],
     broken_frame: bool,
 }
@@ -41,7 +40,6 @@ impl Repairer {
             asfh: ASFH::new(),
             buffer: Vec::new(),
 
-            olap_len: 0,
             ecc_ratio,
             broken_frame: false,
         };
@@ -78,10 +76,6 @@ impl Repairer {
                 if stream_empty { self.broken_frame = true; break; }
                 self.broken_frame = false;
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
-
-                let samples_real = if self.asfh.overlap_ratio == 0 || LOSSLESS.contains(&self.asfh.profile) { self.asfh.fsize as usize } else {
-                    (self.asfh.fsize as usize * (self.asfh.overlap_ratio as usize - 1)) / self.asfh.overlap_ratio as usize };
-                self.olap_len = self.asfh.fsize as usize - samples_real;
 
                 // 1.1. Split out the frame data
                 let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
@@ -131,11 +125,7 @@ impl Repairer {
                     // 2.3.1. If header is complete and not forced to flush, continue
                     Complete => {},
                     // 2.3.2. If header is complete and forced to flush, flush and return
-                    ForceFlush => {
-                        ret.extend(self.asfh.force_flush());
-                        self.olap_len = 0;
-                        break;
-                    },
+                    ForceFlush => { ret.extend(self.asfh.force_flush()); break; },
                     // 2.3.3. If header is incomplete, return
                     Incomplete => break,
                 }
