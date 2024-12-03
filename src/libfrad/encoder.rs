@@ -52,14 +52,16 @@ impl Encoder {
      * Modify the profile while running
      * UNSAFE :: This function does not check any constraints on the profile
      *           Use with set_frame_size(), set_bit_depth() to avoid errors.
-     * Parameters: Profile
+     * Parameters: Profile, Sample rate, Channels, Bit depth, Frame size
      */
-    pub unsafe fn _set_profile(&mut self, profile: u8) {
+    pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: i16, bit_depth: i16, frame_size: u32) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
 
         self.asfh.profile = profile;
-        self.bit_depth = 0;
-        self.fsize = 0;
+        self.set_srate(srate);
+        self.set_channels(channels);
+        self.set_bit_depth(bit_depth);
+        self.set_frame_size(frame_size);
     }
 
     // Critical info - set after initialising, before processing (Global)
@@ -167,13 +169,13 @@ impl Encoder {
 
         loop {
             // let rng = &mut rand::thread_rng();
-            // unsafe { self._set_profile(*AVAILABLE.choose(rng).unwrap()); }
-            // self.set_bit_depth(*BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap());
-            // self.set_frame_size(
-            //     if COMPACT.contains(&self.asfh.profile)
-            //     { *compact::SAMPLES_LI.choose(rng).unwrap() }
-            //     else { rng.gen_range(128..32768) }
-            // );
+            // let prf = *AVAILABLE.choose(rng).unwrap();
+            // unsafe {
+            //     self._set_profile(prf, self.srate, self.channels, 
+            //         *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
+            //         if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.gen_range(128..32768) }
+            //     );
+            // }
             // self.set_loss_level(rng.gen_range(0.125..10.0));
             // let ecc_data = rng.gen_range(1..255);
             // self.set_ecc(rng.gen_bool(0.5), [ecc_data, rng.gen_range(0..(255 - ecc_data))]);
