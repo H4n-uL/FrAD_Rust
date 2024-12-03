@@ -48,25 +48,25 @@ impl Encoder {
         };
     }
 
-    // UNSAFE: 
+    /** _set_profile
+     * Modify the profile while running
+     * UNSAFE :: This function does not check any constraints on the profile
+     *           Use with set_frame_size(), set_bit_depth() to avoid errors.
+     * Parameters: Profile
+     */
     pub unsafe fn _set_profile(&mut self, profile: u8) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
 
         self.asfh.profile = profile;
         self.bit_depth = 0;
+        self.fsize = 0;
     }
 
-    // true dynamic info - set every frame
+    // Critical info - set after initialising, before processing (Global)
     pub fn get_channels(&self) -> i16 { self.channels }
     pub fn set_channels(&mut self, channels: i16) {
         if channels == 0 { eprintln!("Channel count cannot be zero"); exit(1); }
         self.channels = channels;
-    }
-    pub fn get_frame_size(&self) -> u32 { self.fsize }
-    pub fn set_frame_size(&mut self, frame_size: u32) {
-        if frame_size == 0 { eprintln!("Frame size cannot be zero"); exit(1); }
-        if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
-        self.fsize = frame_size;
     }
     pub fn get_srate(&self) -> u32 { self.srate }
     pub fn set_srate(&mut self, mut srate: u32) {
@@ -82,7 +82,13 @@ impl Encoder {
         self.srate = srate;
     }
 
-    // half-dynamic info - This will be conveted to bit depth index for ASFH on encoding each frame
+    // Semi-critical info - set after resetting profile
+    pub fn get_frame_size(&self) -> u32 { self.fsize }
+    pub fn set_frame_size(&mut self, frame_size: u32) {
+        if frame_size == 0 { eprintln!("Frame size cannot be zero"); exit(1); }
+        if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
+        self.fsize = frame_size;
+    }
     pub fn get_bit_depth(&self) -> i16 { self.bit_depth }
     pub fn set_bit_depth(&mut self, bit_depth: i16) {
         if bit_depth == 0 { eprintln!("Bit depth cannot be zero"); exit(1); }
@@ -94,7 +100,7 @@ impl Encoder {
         self.bit_depth = bit_depth;
     }
 
-    // static info - set once before encoding
+    // Non-critical info - can be set anytime
     pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) {
         self.asfh.ecc = ecc;
         let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255);
@@ -155,7 +161,7 @@ impl Encoder {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
 
-        if self.srate == 0 || self.channels == 0 {
+        if self.srate == 0 || self.channels == 0 || self.fsize == 0 {
             return EncodeResult { buf: ret, samples }
         }
 
