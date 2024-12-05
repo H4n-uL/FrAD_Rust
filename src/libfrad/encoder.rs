@@ -157,7 +157,7 @@ impl Encoder {
      * Parameters: PCM stream, Flush flag
      * Returns: Encoded audio data
      */
-    fn inner(&mut self, stream: Vec<u8>, flush: bool) -> EncodeResult {
+    fn inner(&mut self, stream: &[u8], flush: bool) -> EncodeResult {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
 
@@ -237,7 +237,7 @@ impl Encoder {
      * Parameters: Input stream
      * Returns: Encoded audio data
      */
-    pub fn process(&mut self, stream: Vec<u8>) -> EncodeResult {
+    pub fn process(&mut self, stream: &[u8]) -> EncodeResult {
         return self.inner(stream, false);
     }
 
@@ -246,6 +246,6 @@ impl Encoder {
      * Returns: Encoded audio data
      */
     pub fn flush(&mut self) -> EncodeResult {
-        return self.inner(Vec::new(), true);
+        return self.inner(b"", true);
     }
 }

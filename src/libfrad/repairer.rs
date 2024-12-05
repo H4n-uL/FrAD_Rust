@@ -62,8 +62,7 @@ impl Repairer {
     * Parameters: Input stream
     * Returns: Repaired FrAD stream
     */
-    pub fn process(&mut self, stream: Vec<u8>) -> Vec<u8> {
-        let stream_empty = stream.is_empty();
+    pub fn process(&mut self, stream: &[u8]) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret = Vec::new();
 
@@ -73,7 +72,7 @@ impl Repairer {
             if self.asfh.all_set {
                 // 1.0. If the buffer is not enough to decode the frame, break
                 // 1.0.1. If the stream is empty while ASFH is set (which means broken frame), break
-                if stream_empty { self.broken_frame = true; break; }
+                if stream.is_empty() { self.broken_frame = true; break; }
                 self.broken_frame = false;
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 

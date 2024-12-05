@@ -106,7 +106,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         let readlen = read_exact(&mut readfile, &mut buf);
         if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
 
-        let decoded = decoder.process(buf[..readlen].to_vec());
+        let decoded = decoder.process(&buf[..readlen]);
         procinfo.update(readlen, decoded.pcm.len(), decoded.srate);
         write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
         logging_decode(params.loglevel, &procinfo, false, decoder.get_asfh());

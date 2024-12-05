@@ -63,7 +63,7 @@ pub fn repair(rfile: String, params: CliParams) {
         let bytes_read = read_exact(&mut readfile, &mut buffer);
         if bytes_read == 0 && repairer.is_empty() { break; }
 
-        let repaired = repairer.process(buffer[..bytes_read].to_vec());
+        let repaired = repairer.process(&buffer[..bytes_read]);
         procinfo.update(repaired.len(), 0, 0);
         write_safe(&mut writefile, &repaired);
         logging_repair(params.loglevel, &procinfo, false);

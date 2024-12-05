@@ -102,7 +102,7 @@ pub fn encode(input: String, params: CliParams) {
         let readlen = read_exact(&mut readfile, &mut pcm_buf);
         if readlen == 0 { break; }
 
-        let encoded = encoder.process(pcm_buf[..readlen].to_vec());
+        let encoded = encoder.process(&pcm_buf[..readlen]);
         procinfo.update(encoded.buf.len(), encoded.samples, encoder.get_srate());
         write_safe(&mut writefile, &encoded.buf);
         logging_encode(params.loglevel, &procinfo, false);

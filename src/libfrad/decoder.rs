@@ -85,8 +85,7 @@ impl Decoder {
      * Parameters: Input stream
      * Returns: Decoded PCM, Sample rate, Critical info modification flag
      */
-    pub fn process(&mut self, stream: Vec<u8>) -> DecodeResult {
-        let stream_empty = stream.is_empty();
+    pub fn process(&mut self, stream: &[u8]) -> DecodeResult {
         self.buffer.extend(stream);
         let (mut ret_pcm, mut frames) = (Vec::new(), 0);
 
@@ -96,7 +95,7 @@ impl Decoder {
             if self.asfh.all_set {
                 // 1.0. If the buffer is not enough to decode the frame, break
                 // 1.0.1. If the stream is empty while ASFH is set (which means broken frame), break
-                if stream_empty { self.broken_frame = true; break; }
+                if stream.is_empty() { self.broken_frame = true; break; }
                 self.broken_frame = false;
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
