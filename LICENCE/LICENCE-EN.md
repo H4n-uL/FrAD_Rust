@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.5 - 2024. 7. 7., Original Repository
+V1.5.1 - 2024. 12. 6.
 
 ## Definition of Terms
 
@@ -67,7 +67,7 @@ However, for add-ons or plug-ins developed by third parties, independent intelle
 
 ## Licence Violations
 
-After confirming that one of the conditions below has been met, the original author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
+After confirming that one or more of the conditions below has been met, the original author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
 
 1. Standalone commercial use of this repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the official public repository, but it's prohibited anyway.
 2. You are not required to credit the original author of the project. However, it is prohibited for third parties who have not contributed to the project to claim that they are the copyright holder of the project. If you have contributed, you may list the original author and the names of the contributors.
