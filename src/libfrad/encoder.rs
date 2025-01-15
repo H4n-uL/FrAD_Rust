@@ -169,7 +169,7 @@ impl Encoder {
             // let rng = &mut rand::thread_rng();
             // let prf = *AVAILABLE.choose(rng).unwrap();
             // unsafe {
-            //     self._set_profile(prf, self.srate, self.channels, 
+            //     self._set_profile(prf, self.srate, self.channels,
             //         *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
             //         if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.gen_range(128..32768) }
             //     );
