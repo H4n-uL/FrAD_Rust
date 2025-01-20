@@ -11,9 +11,9 @@ pub use pcmformat::{PCMFormat, Endian};
 
 /** linspace
  * Generates a linear spaced vector
-* Parameters: Start value, Stop value, Number of values
-* Returns: Linear spaced vector
-*/
+ * Parameters: Start value, Stop value, Number of values
+ * Returns: Linear spaced vector
+ */
 pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num == 0 { return vec![]; }
     if num == 1 { return vec![(start + stop) / 2.0]; }

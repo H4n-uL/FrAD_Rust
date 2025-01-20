@@ -12,8 +12,8 @@ use crate::{
 };
 
 /** Repairer
-* Struct for FrAD repairer
-*/
+ * Struct for FrAD repairer
+ */
 pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
@@ -59,9 +59,9 @@ impl Repairer {
 
     /** process
      * Process the input stream and repair the FrAD stream
-    * Parameters: Input stream
-    * Returns: Repaired FrAD stream
-    */
+     * Parameters: Input stream
+     * Returns: Repaired FrAD stream
+     */
     pub fn process(&mut self, stream: &[u8]) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret = Vec::new();
@@ -135,9 +135,9 @@ impl Repairer {
 
     /** flush
      * Flush the remaining buffer
-    * Parameters: None
-    * Returns: Repairer buffer
-    */
+     * Parameters: None
+     * Returns: Repairer buffer
+     */
     pub fn flush(&mut self) -> Vec<u8> {
         let ret = self.buffer.clone();
         self.buffer.clear();

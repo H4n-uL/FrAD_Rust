@@ -3,7 +3,7 @@
  * Copyright 2024 HaמuL
  * Description: FCT-II, Forward normalised
  * Dependencies: rustfft
-*/
+ */
 
 use core::f64::consts::PI;
 use rustfft::{FftPlanner, num_complex::Complex};
