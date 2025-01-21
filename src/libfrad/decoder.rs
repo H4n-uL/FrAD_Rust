@@ -51,10 +51,9 @@ impl Decoder {
         // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
             let fade_in = hanning_in_overlap(self.overlap_fragment.len());
-            frame.iter_mut().zip(self.overlap_fragment.iter()).zip(fade_in.iter().zip(fade_in.iter().rev()))
-            .for_each(|((sample, overlap_sample), (&fade_in, &fade_out))| {
-                sample.iter_mut().zip(overlap_sample.iter()).for_each(|(s, &o)| { *s = *s * fade_in + o * fade_out; });
-            });
+            for i in 0..self.overlap_fragment.len() { for j in 0..frame[i].len() {
+                frame[i][j] = frame[i][j] * fade_in[i] + self.overlap_fragment[i][j] * fade_in[fade_in.len() - i - 1];
+            }}
         }
 
         // 2. if COMPACT profile and overlap is enabled, split this frame
