@@ -43,7 +43,7 @@ fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) 
 
     let mut out = Vec::new();
 
-    out.push(format!("size={}B time={} bitrate={}bits/s speed={}x    ",
+    out.push(format!("size={}B time={} bitrate={}bit/s speed={}x    ",
         common::format_si(log.get_total_size() as f64), common::format_time(log.get_duration()), common::format_si(log.get_bitrate()), common::format_speed(log.get_speed())
     ));
     if loglevel > 1 {

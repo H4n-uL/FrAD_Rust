@@ -54,7 +54,7 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
  */
 pub fn logging_encode(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if loglevel == 0 { return; }
-    eprint!("size={}B time={} bitrate={}bits/s speed={}x    \r",
+    eprint!("size={}B time={} bitrate={}bit/s speed={}x    \r",
         format_si(log.get_total_size() as f64), format_time(log.get_duration()), format_si(log.get_bitrate()), format_speed(log.get_speed())
     );
     if linefeed { eprintln!(); }
