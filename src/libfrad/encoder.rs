@@ -50,7 +50,7 @@ impl Encoder {
 
     /** _set_profile
      * Modify the profile while running
-     * Parameters: Profile, Sample rate, Channels, Bit depth, Frame size
+     * Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
      */
     pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
