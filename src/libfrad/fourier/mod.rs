@@ -33,7 +33,7 @@ pub const SEGMAX: [u32; 8] =
     0, // Profile 7
 ];
 
-pub const BIT_DEPTHS: [[i16; 8]; 8] = [
+pub const BIT_DEPTHS: [[u16; 8]; 8] = [
     profile0::DEPTHS,
     profile1::DEPTHS,
     profile2::DEPTHS,

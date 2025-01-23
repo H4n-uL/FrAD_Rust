@@ -15,7 +15,7 @@ use super::{
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
-pub const DEPTHS: [i16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
+pub const DEPTHS: [u16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
 
 /** pad_pcm
  * Pads the PCM to the nearest sample count greater than the original
@@ -37,7 +37,7 @@ pub fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
  * Returns: 2.0^(bit_depth - 1) as PCM scale factor,
  *          sqrt(3.0)^(16 - bit_depth) as threshold scale factor
  */
-pub fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
+pub fn get_scale_factors(bit_depth: u16) -> (f64, f64) {
     let pcm_scale = 2.0_f64.powi(bit_depth as i32 - 1);
     let thres_scale = 3.0_f64.sqrt().powi(16 - bit_depth as i32);
     return (pcm_scale, thres_scale);
@@ -48,7 +48,7 @@ pub fn get_scale_factors(bit_depth: i16) -> (f64, f64) {
  * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32, mut loss_level: f64) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32, mut loss_level: f64) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let (pcm_scale, thres_scale) = get_scale_factors(bit_depth);
     (srate, loss_level) = (get_valid_srate(srate), loss_level.abs().max(0.125));
@@ -93,7 +93,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32, mut loss
     // 7. Zlib compression
     let frad = deflate::compress_to_vec_zlib(&frad, 10);
 
-    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16, srate);
+    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as u16, channels as u16, srate);
 }
 
 /** digital
@@ -101,7 +101,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32, mut loss
  * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
  * Returns: f64 PCM
  */
-pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
+pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 

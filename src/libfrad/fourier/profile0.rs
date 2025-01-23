@@ -9,7 +9,7 @@ use super::backend::{u8pack, core::{dct, idct}};
 use half::f16;
 
 // Bit depth table
-pub const DEPTHS: [i16; 8] = [12, 16, 24, 32, 48, 64, 0, 0];
+pub const DEPTHS: [u16; 8] = [12, 16, 24, 32, 48, 64, 0, 0];
 // Dynamic ranges for preventing overflow
 const FLOAT_DR_LIMITS: [f64; 8] = [
     // 12, 16, 24, 32
@@ -23,7 +23,7 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
  * Parameters: f64 PCM, Bit depth, Little endian toggle (and possibly channel count, but it can be extracted from the PCM shape)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, srate: u32, little_endian: bool) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endian: bool) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let channels = pcm[0].len();
 
@@ -37,7 +37,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, srate: u32, little_endia
 
     let frad = u8pack::pack(freqs_flat, DEPTHS[bit_depth_index], !little_endian);
 
-    return (frad, bit_depth_index as i16, channels as i16, srate);
+    return (frad, bit_depth_index as u16, channels as u16, srate);
 }
 
 /** digital
@@ -45,7 +45,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, srate: u32, little_endia
  * Parameters: Encoded audio data, Bit depth index, Channel count, Little endian toggle
  * Returns: Decoded PCM
  */
-pub fn digital(frad: Vec<u8>, bit_depth_index: i16, channels: i16, little_endian: bool) -> Vec<Vec<f64>> {
+pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<Vec<f64>> {
     let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], !little_endian);
     let freqs: Vec<Vec<f64>> = freqs_flat.chunks(channels as usize).map(|chunk| chunk.to_vec()).collect();
     return freqs.trans().into_iter().map(idct).collect::<Vec<Vec<f64>>>().trans();

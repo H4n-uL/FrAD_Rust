@@ -24,7 +24,7 @@ pub struct EncodeResult {
  */
 pub struct Encoder {
     asfh: ASFH, buffer: Vec<u8>,
-    bit_depth: i16, channels: i16,
+    bit_depth: u16, channels: u16,
     fsize: u32, srate: u32,
     overlap_fragment: Vec<Vec<f64>>,
 
@@ -52,7 +52,7 @@ impl Encoder {
      * Modify the profile while running
      * Parameters: Profile, Sample rate, Channels, Bit depth, Frame size
      */
-    pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: i16, bit_depth: i16, frame_size: u32) {
+    pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
 
         self.asfh.profile = profile;
@@ -63,8 +63,8 @@ impl Encoder {
     }
 
     // Critical info - set after initialising, before processing (Global)
-    pub fn get_channels(&self) -> i16 { self.channels }
-    pub fn set_channels(&mut self, channels: i16) {
+    pub fn get_channels(&self) -> u16 { self.channels }
+    pub fn set_channels(&mut self, channels: u16) {
         if channels == 0 { eprintln!("Channel count cannot be zero"); exit(1); }
         self.channels = channels;
     }
@@ -89,12 +89,12 @@ impl Encoder {
         if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
         self.fsize = frame_size;
     }
-    pub fn get_bit_depth(&self) -> i16 { self.bit_depth }
-    pub fn set_bit_depth(&mut self, bit_depth: i16) {
+    pub fn get_bit_depth(&self) -> u16 { self.bit_depth }
+    pub fn set_bit_depth(&mut self, bit_depth: u16) {
         if bit_depth == 0 { eprintln!("Bit depth cannot be zero"); exit(1); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
             eprintln!("Invalid bit depth! Valid depths for profile {}: {:?}",
-            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<i16>>());
+            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<u16>>());
             exit(1);
         }
         self.bit_depth = bit_depth;
@@ -103,7 +103,7 @@ impl Encoder {
     // Non-critical info - can be set anytime
     pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) {
         self.asfh.ecc = ecc;
-        let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as i16 + ecc_ratio[1] as i16 > 255);
+        let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255);
         if dsize_zero || exceed_255 {
             if dsize_zero { eprintln!("ECC data size must not be zero"); }
             if exceed_255 { eprintln!("ECC data size and check size must not exceed 255, given: {} and {}", ecc_ratio[0], ecc_ratio[1]); }

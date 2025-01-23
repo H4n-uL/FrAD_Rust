@@ -99,7 +99,7 @@ pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
             PCMFormat::F64(en) => to_f64!(f64, bytes, en),
 
             PCMFormat::I8 => i8::from_ne_bytes(bytes.try_into().unwrap()) as f64,
-            PCMFormat::I16(en) => to_f64!(i16, bytes, en) as f64,
+            PCMFormat::I16(en) => to_f64!(u16, bytes, en) as f64,
             PCMFormat::I24(en) => to_f64!(i32, int24_to_32!(bytes, en, true), en) as f64,
             PCMFormat::I32(en) => to_f64!(i32, bytes, en) as f64,
             PCMFormat::I64(en) => to_f64!(i64, bytes, en) as f64,
@@ -127,7 +127,7 @@ pub fn f64_to_any(mut x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
         PCMFormat::F64(en) => from_f64!(f64, x, en).to_vec(),
 
         PCMFormat::I8 => (x as i8).to_ne_bytes().to_vec(),
-        PCMFormat::I16(en) => from_f64!(i16, x as i16, en).to_vec(),
+        PCMFormat::I16(en) => from_f64!(u16, x as u16, en).to_vec(),
         PCMFormat::I24(en) => int32_to_24!(x as i32, en, true).to_vec(),
         PCMFormat::I32(en) => from_f64!(i32, x as i32, en).to_vec(),
         PCMFormat::I64(en) => from_f64!(i64, x as i64, en).to_vec(),

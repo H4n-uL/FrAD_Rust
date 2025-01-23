@@ -72,7 +72,7 @@ pub fn encode(input: String, params: CliParams) {
     if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
 
     encoder.set_srate(params.srate);
-    encoder.set_channels(params.channels as i16);
+    encoder.set_channels(params.channels as u16);
 
     encoder.set_frame_size(params.frame_size);
 

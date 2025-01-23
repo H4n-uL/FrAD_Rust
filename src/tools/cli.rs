@@ -31,9 +31,9 @@ pub const META_PARSE: &str = "parse";
 pub struct CliParams {
     pub output: String,
     pub pcm: PCMFormat,
-    pub bits: i16,
+    pub bits: u16,
     pub srate: u32,
-    pub channels: i16,
+    pub channels: u16,
     pub frame_size: u32,
     pub little_endian: bool,
     pub profile: u8,

@@ -27,7 +27,7 @@ fn cut_float3s(bytes: Vec<u8>, bits: usize, be: bool) -> Vec<u8> {
  * Parameters: Flat f64 array, Bit depth, Big endian toggle
  * Returns: Byte array
  */
-pub fn pack(input: Vec<f64>, bits: i16, mut be: bool) -> Vec<u8> {
+pub fn pack(input: Vec<f64>, bits: u16, mut be: bool) -> Vec<u8> {
     let bits = bits as usize;
     if bits % 8 != 0 { be = true }
 
@@ -88,7 +88,7 @@ fn pad_float3s(bstr: Vec<u8>, bits: usize, be: bool) -> Vec<u8> {
  * Parameters: Byte array, Bit depth, Big endian toggle
  * Returns: Flat f64 array
  */
-pub fn unpack(mut input: Vec<u8>, bits: i16, mut be: bool) -> Vec<f64> {
+pub fn unpack(mut input: Vec<u8>, bits: u16, mut be: bool) -> Vec<f64> {
     let bits = bits as usize;
 
     if bits % 8 != 0 { be = true }

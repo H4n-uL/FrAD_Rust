@@ -15,7 +15,7 @@ use crate::{
  * Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
  * Returns: Encoded byte
  */
-fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_index: i16) -> u8 {
+fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_index: u16) -> u8 {
     let prf = profile << 5;
     let ecc = (enable_ecc as u8) << 4;
     let endian = (little_endian as u8) << 3;
@@ -27,7 +27,7 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_inde
  * Parameters: Channel count, Sample rate, Sample count
  * Returns: Encoded CSS
  */
-fn encode_css(channels: i16, srate: u32, fsize: u32, force_flush: bool) -> Vec<u8> {
+fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> Vec<u8> {
     let chnl = (channels as u16 - 1) << 10;
     let srate = get_srate_index(srate) << 6;
     let fsize = *compact::SAMPLES_LI.iter().find(|&&x| x >= fsize).unwrap();
@@ -42,12 +42,12 @@ fn encode_css(channels: i16, srate: u32, fsize: u32, force_flush: bool) -> Vec<u
  * Parameters: Encoded byte
  * Returns: Profile, ECC toggle, Little-endian toggle, Bit depth index
  */
-fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
+fn decode_pfb(pfb: u8) -> (u8, bool, bool, u16) {
     let prf = pfb >> 5;
     let ecc = (pfb >> 4) & 1 == 1;
     let endian = (pfb >> 3) & 1 == 1;
     let bit_depth_index = pfb & 0b111;
-    return (prf, ecc, endian, bit_depth_index as i16);
+    return (prf, ecc, endian, bit_depth_index as u16);
 }
 
 /** decode_css
@@ -55,9 +55,9 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, i16) {
  * Parameters: Encoded CSS
  * Returns: Channel count, Sample rate, Sample count
  */
-fn decode_css(css: Vec<u8>) -> (i16, u32, u32, bool) {
+fn decode_css(css: Vec<u8>) -> (u16, u32, u32, bool) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
-    let chnl = (css_int >> 10) as i16 + 1;
+    let chnl = (css_int >> 10) as u16 + 1;
     let srate = compact::SRATES[(css_int >> 6) as usize & 0b1111];
 
     let fsize_prefix = compact::SAMPLES[(css_int >> 4) as usize & 0b11].0;
@@ -81,7 +81,7 @@ pub struct ASFH {
 
     // Audio structure data
     pub endian: bool,
-    pub bit_depth_index: i16, pub channels: i16,
+    pub bit_depth_index: u16, pub channels: u16,
     pub srate: u32, pub fsize: u32,
 
     // Error correction
@@ -216,7 +216,7 @@ impl ASFH {
         else {
             if !self.fill_buffer(buffer, 32) { return ParseResult::Incomplete }
 
-            self.channels = self.buffer[0x9] as i16 + 1;
+            self.channels = self.buffer[0x9] as u16 + 1;
             self.ecc_ratio = [self.buffer[0xa], self.buffer[0xb]];
             self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
 

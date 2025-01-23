@@ -16,14 +16,14 @@ use super::{
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
-pub const DEPTHS: [i16; 8] = [8, 9, 10, 11, 12, 14, 16, 0];
+pub const DEPTHS: [u16; 8] = [8, 9, 10, 11, 12, 14, 16, 0];
 
 /** analogue
  * Encodes PCM to FrAD Profile 2
  * Parameters: f64 PCM, Bit depth, Sample rate (and channel count, same note as profile 0)
  * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
  */
-pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32) -> (Vec<u8>, i16, i16, u32) {
+pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let (pcm_scale, _) = get_scale_factors(bit_depth);
     srate = get_valid_srate(srate);
@@ -53,7 +53,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32) -> (Vec<
     // 7. Zlib compression
     let frad = deflate::compress_to_vec_zlib(&frad, 10);
 
-    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as i16, channels as i16, srate);
+    return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as u16, channels as u16, srate);
 }
 
 /** digital
@@ -61,7 +61,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: i16, mut srate: u32) -> (Vec<
  * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
  * Returns: f64 PCM
  */
-pub fn digital(mut frad: Vec<u8>, bit_depth_index: i16, channels: i16, _srate: u32, fsize: u32) -> Vec<Vec<f64>> {
+pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let ((pcm_scale, _), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 
