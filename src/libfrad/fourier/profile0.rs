@@ -35,7 +35,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
     .enumerate().find(|(_, (&value, &limit))| value >= bit_depth && value > 0 && max_abs < limit)
     .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
 
-    let frad = u8pack::pack(freqs_flat, DEPTHS[bit_depth_index], !little_endian);
+    let frad = u8pack::pack(freqs_flat, DEPTHS[bit_depth_index], little_endian);
 
     return (frad, bit_depth_index as u16, channels as u16, srate);
 }
@@ -46,7 +46,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
  * Returns: Decoded PCM
  */
 pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<Vec<f64>> {
-    let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], !little_endian);
+    let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
     let freqs: Vec<Vec<f64>> = freqs_flat.chunks(channels as usize).map(|chunk| chunk.to_vec()).collect();
     return freqs.trans().into_iter().map(idct).collect::<Vec<Vec<f64>>>().trans();
 }
