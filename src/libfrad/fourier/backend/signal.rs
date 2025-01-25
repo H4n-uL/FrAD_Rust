@@ -18,25 +18,14 @@ pub fn impulse_filt(b: &[f64], a: &[f64], input: &[f64]) -> Vec<f64> {
     let mut y_hist = vec![0.0; a.len()-1];
 
     for (i, &x) in input.iter().enumerate() {
-        for j in (1..x_hist.len()).rev() {
-            x_hist[j] = x_hist[j-1];
-        }
+        for j in (1..x_hist.len()).rev() { x_hist[j] = x_hist[j-1]; }
         x_hist[0] = x;
 
         let mut y = b[0] * x_hist[0];
-        for j in 1..b.len() {
-            y += b[j] * x_hist[j];
-        }
-        for j in 0..a.len()-1 {
-            y -= a[j+1] * y_hist[j];
-        }
-
-        for j in (1..y_hist.len()).rev() {
-            y_hist[j] = y_hist[j-1];
-        }
-        if !y_hist.is_empty() {
-            y_hist[0] = y;
-        }
+        for j in 1..b.len() { y += b[j] * x_hist[j]; }
+        for j in 0..a.len()-1 { y -= a[j+1] * y_hist[j]; }
+        for j in (1..y_hist.len()).rev() { y_hist[j] = y_hist[j-1]; }
+        if !y_hist.is_empty() { y_hist[0] = y; }
 
         output[i] = y;
     }
