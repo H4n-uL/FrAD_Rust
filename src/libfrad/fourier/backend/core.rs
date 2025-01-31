@@ -11,8 +11,8 @@ use rustfft::{FftPlanner, num_complex::Complex};
 pub fn dct(x: Vec<f64>) -> Vec<f64> {
     let n = x.len();
 
-    let mut beta: Vec<Complex<f64>> = (0..n).map(|i| Complex::new(x[i] / (2.0 * n as f64), 0.0))
-    .chain((0..n).map(|i| Complex::new(x[i] / (2.0 * n as f64), 0.0)).rev()).collect();
+    let alpha = (0..n).map(|i| Complex::new(x[i] / (2.0 * n as f64), 0.0));
+    let mut beta: Vec<Complex<f64>> = alpha.clone().chain(alpha.rev()).collect();
     FftPlanner::new().plan_fft_forward(2 * n).process(&mut beta);
 
     let y = (0..n).map(|k| {
