@@ -6,7 +6,7 @@
 
 use frad::{common::{SIGNATURE, FRM_SIGN}, head};
 use crate::{
-    common::move_all,
+    common::{get_file_stem, move_all},
     tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
 };
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
@@ -57,10 +57,7 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
         }
         let mut wfile = params.output;
 
-        if wfile.is_empty() {
-            let wfrf = Path::new(&file_name).file_name().unwrap().to_str().unwrap().to_string();
-            wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-        }
+        if wfile.is_empty() { wfile = get_file_stem(&file_name); }
         File::create(format!("{}.json", wfile)).unwrap().write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
         if !img_old.is_empty() {
             let img_suffix = if let Some(imgtype) = infer::get(&img_old) { imgtype.extension() } else { "img" };

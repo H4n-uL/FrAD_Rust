@@ -6,7 +6,7 @@
 
 use frad::{Decoder, ASFH, PCMFormat, f64cvt::f64_to_any};
 use crate::{
-    common::{self, check_overwrite, read_exact, write_safe, PIPEIN, PIPEOUT},
+    common::{self, check_overwrite, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -77,10 +77,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         eprintln!("Input and output files cannot be the same"); exit(1);
     }
 
-    if wfile_prim.is_empty() {
-        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-        wfile_prim = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-    }
+    if wfile_prim.is_empty() { wfile_prim = get_file_stem(&rfile); }
     else if wfile_prim.ends_with(".pcm") { wfile_prim = wfile_prim[..wfile_prim.len() - 4].to_string(); }
 
     let mut wfile = format!("{}.pcm", wfile_prim);

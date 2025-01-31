@@ -6,7 +6,7 @@
 
 use frad::{Encoder, profiles::LOSSLESS, head};
 use crate::{
-    common::{check_overwrite, format_si, format_speed, format_time, read_exact, write_safe, PIPEIN, PIPEOUT},
+    common::{check_overwrite, format_si, format_speed, format_time, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -26,10 +26,7 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
         eprintln!("Input and output files cannot be the same"); exit(1);
     }
 
-    if wfile.is_empty() {
-        let wfrf = Path::new(&rfile).file_name().unwrap().to_str().unwrap().to_string();
-        wfile = wfrf.split(".").collect::<Vec<&str>>()[..wfrf.split(".").count() - 1].join(".");
-    }
+    if wfile.is_empty() { wfile = get_file_stem(&rfile); }
     if !(wfile.ends_with(".frad") || wfile.ends_with(".dsin")
         || wfile.ends_with(".fra") || wfile.ends_with(".dsn")) {
         if LOSSLESS.contains(&profile) {
