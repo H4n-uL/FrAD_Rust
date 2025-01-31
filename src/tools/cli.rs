@@ -42,6 +42,7 @@ pub struct CliParams {
     pub enable_ecc: bool,
     pub ecc_ratio: [u8; 2],
     pub overwrite: bool,
+    pub overwrite_repair: bool,
     pub meta: Vec<(String, Vec<u8>)>,
     pub image_path: String,
     pub loglevel: u8,
@@ -64,6 +65,7 @@ impl CliParams {
             enable_ecc: false,
             ecc_ratio: [96, 24],
             overwrite: false,
+            overwrite_repair: false,
             meta: Vec::new(),
             image_path: String::new(),
             loglevel: 0,
@@ -189,6 +191,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                     }
                 }
                 "y" | "force" => params.overwrite = true,
+                "overwrite" | "ow" => params.overwrite_repair = true,
 
                 // encode settings
                 "bits" | "bit" | "b" => params.bits = args.pop_front().unwrap().parse().unwrap(),

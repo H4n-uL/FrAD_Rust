@@ -6,7 +6,7 @@
 
 use frad::Repairer;
 use crate::{
-    common::{check_overwrite, format_si, read_exact, write_safe, PIPEIN, PIPEOUT},
+    common::{check_overwrite, format_si, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
@@ -47,14 +47,14 @@ pub fn repair(rfile: String, params: CliParams) {
     }
 
     if wfile.is_empty() {
-        let wfrf = Path::new(&rfile).file_name().unwrap().to_string_lossy().split(".").map(|s| s.to_string()).collect::<Vec<String>>();
-        wfile = [wfrf[..wfrf.len() - 1].join("."), "recov".to_string(), wfrf[wfrf.len() - 1].clone()].join(".");
+        let ext = Path::new(&rfile).extension().unwrap();
+        wfile = if !rpipe { format!("{}.repaired.{}", get_file_stem(&rfile), ext.to_str().unwrap()) } else { "repaired.frad".to_string() };
     }
 
     check_overwrite(&wfile, params.overwrite);
 
-    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
-    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
+    let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(&rfile).unwrap()) } else { Box::new(std::io::stdin()) };
+    let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(&wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
     let mut repairer = Repairer::new(params.ecc_ratio);
     let mut procinfo = ProcessInfo::new();
@@ -72,4 +72,8 @@ pub fn repair(rfile: String, params: CliParams) {
     procinfo.update(repaired.len(), 0, 0);
     write_safe(&mut writefile, &repaired);
     logging_repair(params.loglevel, &procinfo, true);
+
+    if params.overwrite_repair && !(rpipe || wpipe) {
+        std::fs::rename(wfile, rfile).unwrap();
+    }
 }
