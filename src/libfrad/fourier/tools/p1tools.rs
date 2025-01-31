@@ -116,19 +116,19 @@ pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
  */
 pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
     let k = data[0] as usize;
-    let (data, kx, mut cache, mut idx) =
+    let (data, kx, mut decoded, mut idx) =
         (bitcvt::to_bits(data[1..].to_vec()), 1 << k, Vec::new(), 0);
 
     while idx < data.len() {
         let m = data[idx..].iter().position(|&x| x).unwrap_or(data.len());
         if m == data.len() { break; }
         let cwlen = (m * 2) + k + 1;
-        cache.push(&data[idx+m..(idx+cwlen).min(data.len())]);
+
+        let cache = &data[(idx + m)..(idx + cwlen).min(data.len())];
+        let n = cache.iter().fold(0, |acc, &bit| { (acc << 1) | (bit as i64) }) - kx;
+        decoded.push(if n & 1 == 1 { (n + 1) >> 1 } else { -(n >> 1) });
         idx += cwlen;
     }
 
-    return cache.into_iter().map(|codeword| {
-        let n = codeword.iter().fold(0_i64, |acc, &bit| { (acc << 1) | (bit as i64) }) - kx;
-        if n & 1 == 1 { (n + 1) >> 1 } else { -(n >> 1) }
-    }).collect();
+    return decoded;
 }
