@@ -39,6 +39,16 @@ pub fn write_safe(wfile: &mut Box<dyn Write>, buf: &[u8]) {
     });
 }
 
+/** get_file_stem
+ * Gets the file stem from a file path
+ * Parameters: File path
+ * Returns: File stem
+ */
+pub fn get_file_stem(file_path: &str) -> String {
+    if PIPEIN.contains(&file_path) || PIPEOUT.contains(&file_path) { return "pipe".to_string(); }
+    return Path::new(file_path).file_stem().unwrap_or(std::ffi::OsStr::new("pipe")).to_str().unwrap().to_string();
+}
+
 /** format_time
  * Formats time in seconds to human-readable format
  * Parameters: Time in seconds
