@@ -38,8 +38,8 @@ pub fn impulse_filt(b: &[f64], a: &[f64], input: &[f64]) -> Vec<f64> {
  * Returns: Full Cross-correlated signal
  */
 pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
-    let n = x.len() + y.len();
-    let size = (n - 1).next_power_of_two();
+    let n = x.len() + y.len() - 1;
+    let size = n.next_power_of_two();
 
     let mut x: Vec<Complex<f64>> = x.iter().map(|&x| Complex::new(x, 0.0))
         .chain(core::iter::repeat(Complex::new(0.0, 0.0))).take(size).collect();
@@ -55,5 +55,5 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
 
     let mut z: Vec<Complex<f64>> = x.iter().zip(y.iter()).map(|(a, b)| a * b).collect();
     planner.plan_fft_inverse(size).process(&mut z);
-    return z.iter().take(n - 1).map(|c| c.re / z.len() as f64).collect();
+    return z.iter().take(n).map(|c| c.re / z.len() as f64).collect();
 }
