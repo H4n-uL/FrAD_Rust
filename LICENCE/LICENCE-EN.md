@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.5.1 - 2024. 12. 6.
+V1.6 - 2025. 2. 2.
 
 ## Definition of Terms
 
@@ -37,7 +37,6 @@ When redistributing or reimplementing FrAD, the following must be observed.
 ### Common provisions
 
 - There is no obligation to release source code, but it is recommended unless it is utilised as part of commercial software or contains patent-protected technology.
-- If you reimplement it as open source, you must use this licence as is, but you can add attribution to the author.
 
 ### Distribution
 
@@ -46,6 +45,7 @@ When redistributing or reimplementing FrAD, the following must be observed.
 ### Reimplementation
 
 - Contributors or third-party developers are welcome to create software compatible with FrAD and use it for any purpose, non-commercial or commercial. The original author does not require any royalties for this.
+- For open source, only the implementation of FrAD must be covered by this licence, which allows you to add the names of contributors to the list of authors.
 - The original author reserves the right to certify compliance with the FrAD format and may, in some cases, request the source code.
 - After the source code has been reviewed, and at the request of the developer, the original author must destroy any source code stored on the original author's device without delay.
 
