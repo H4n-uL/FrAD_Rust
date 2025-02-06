@@ -11,7 +11,7 @@ Cargo.lock
 ## macOS ##
 .DS_Store
 
-#---------- GENERATED FILES -----------#
+#----------- GENERATED FILES ----------#
 
 ## FrAD files ##
 *.frad
@@ -25,4 +25,7 @@ Cargo.lock
 
 ## Metadata ##
 *.json
-*.image
+
+# Artworks #
+*.png
+*.jpg
