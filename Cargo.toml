@@ -17,9 +17,9 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22.1"
-infer = "0.16.0"
+infer = "0.19.0"
 libfrad = { path = "src/libfrad" }
 rodio = "0.20.1"
 same-file = "1.0.6"
 serde_json = "1.0"
-tempfile = "3.15.0"
+tempfile = "3.16.0"
