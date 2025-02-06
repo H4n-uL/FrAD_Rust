@@ -5,7 +5,7 @@
  * Dependencies: rustfft
  */
 
-use rustfft::{FftPlanner, num_complex::Complex};
+use palmfft::{CfftPlan, Complex};
 
 /** impulse_filt
  * Finite/Infinite Impulse Response Filter
@@ -41,19 +41,20 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
     let n = x.len() + y.len() - 1;
     let size = n.next_power_of_two();
 
-    let mut x: Vec<Complex<f64>> = x.iter().map(|&x| Complex::new(x, 0.0))
+    let mut x: Vec<Complex> = x.iter().map(|&x| Complex::new(x, 0.0))
         .chain(core::iter::repeat(Complex::new(0.0, 0.0))).take(size).collect();
 
-    let mut y: Vec<Complex<f64>> = y.iter().rev().map(|&y| Complex::new(y, 0.0))
+    let mut y: Vec<Complex> = y.iter().rev().map(|&y| Complex::new(y, 0.0))
         .chain(core::iter::repeat(Complex::new(0.0, 0.0))).take(size).collect();
 
-    let mut planner = FftPlanner::new();
-    let fft = planner.plan_fft_forward(size);
+    // let mut planner = FftPlanner::new();
+    // let fft = planner.plan_fft_forward(size);
+    let plan = CfftPlan::new(size).unwrap();
 
-    fft.process(&mut x);
-    fft.process(&mut y);
+    plan.forward(&mut x, 1.0);
+    plan.forward(&mut y, 1.0);
 
-    let mut z: Vec<Complex<f64>> = x.iter().zip(y.iter()).map(|(a, b)| a * b).collect();
-    planner.plan_fft_inverse(size).process(&mut z);
-    return z.iter().take(n).map(|c| c.re / z.len() as f64).collect();
+    let mut z: Vec<Complex> = x.iter().zip(y.iter()).map(|(a, b)| *a * *b).collect();
+    plan.backward(&mut z, 1.0);
+    return z.iter().take(n).map(|c| c.r / z.len() as f64).collect();
 }
