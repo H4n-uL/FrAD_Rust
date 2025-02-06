@@ -113,7 +113,6 @@ impl Encoder {
         self.asfh.ecc_ratio = ecc_ratio;
     }
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
-    // pub fn set_profile(&mut self, profile: u8) { self.asfh.profile = profile; }
     pub fn set_loss_level(&mut self, loss_level: f64) {
         self.loss_level = loss_level.abs().max(0.125);
     }
