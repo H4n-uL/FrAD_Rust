@@ -50,7 +50,7 @@ export PATH=/path/to/bin:$PATH
 
 1. half
 2. miniz_oxide
-3. rustfft
+3. palmfft
 
 #### アプリ用
 
