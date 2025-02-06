@@ -49,7 +49,7 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
 
     // let mut planner = FftPlanner::new();
     // let fft = planner.plan_fft_forward(size);
-    let plan = CfftPlan::new(size).unwrap();
+    let plan = CfftPlan::new(size);
 
     plan.forward(&mut x, 1.0);
     plan.forward(&mut y, 1.0);
