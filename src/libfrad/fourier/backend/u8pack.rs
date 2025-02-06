@@ -2,7 +2,7 @@
 /**
  * Copyright 2024 HaמuL
  * Description: Packer and unpacker for floats <-> byte arrays
- * Dependencies: byteorder, half
+ * Dependencies: half
  */
 
 use crate::backend::bitcvt;

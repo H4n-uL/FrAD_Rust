@@ -2,6 +2,7 @@
 /**
  * Copyright 2024 HaמuL
  * Description: float64 <-> PCM format converter
+ * Dependencies: half
  */
 
 use crate::{PCMFormat, Endian};

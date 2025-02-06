@@ -2,6 +2,7 @@
 /**
  * Copyright 2024 HaמuL
  * Description: FrAD Profile 4 encoding and decoding core
+ * Dependencies: half
  */
 
 use super::backend::u8pack;
