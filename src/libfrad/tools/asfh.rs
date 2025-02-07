@@ -27,14 +27,14 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_inde
  * Parameters: Channel count, Sample rate, Sample count
  * Returns: Encoded CSS
  */
-fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> Vec<u8> {
+fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> [u8; 2] {
     let chnl = (channels as u16 - 1) << 10;
     let srate = get_srate_index(srate) << 6;
     let fsize = *compact::SAMPLES_LI.iter().find(|&&x| x >= fsize).unwrap();
     let mult = compact::get_samples_from_value(&fsize);
     let px = (compact::SAMPLES.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
     let fsize = ((fsize as f64 / mult as f64).log2() as u16) << 1;
-    return (chnl | srate | px | fsize | force_flush as u16).to_be_bytes().to_vec();
+    return (chnl | srate | px | fsize | force_flush as u16).to_be_bytes();
 }
 
 /** decode_pfb
@@ -55,7 +55,7 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, u16) {
  * Parameters: Encoded CSS
  * Returns: Channel count, Sample rate, Sample count
  */
-fn decode_css(css: Vec<u8>) -> (u16, u32, u32, bool) {
+fn decode_css(css: &[u8]) -> (u16, u32, u32, bool) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
     let chnl = (css_int >> 10) as u16 + 1;
     let srate = compact::SRATES[(css_int >> 6) as usize & 0b1111];
@@ -145,7 +145,7 @@ impl ASFH {
             fhead.push((self.channels - 1) as u8);
             fhead.extend(self.ecc_ratio.to_vec());
             fhead.extend(self.srate.to_be_bytes().to_vec());
-            fhead.extend([0u8; 8].to_vec());
+            fhead.extend(vec![0u8; 8]);
             fhead.extend(self.fsize.to_be_bytes().to_vec());
             fhead.extend(crc32(&frad).to_vec());
         }
@@ -161,7 +161,7 @@ impl ASFH {
      */
     pub fn force_flush(&mut self) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
-        fhead.extend([0u8; 4].to_vec());
+        fhead.extend(vec![0u8; 4]);
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth_index));
 
         if COMPACT.contains(&self.profile) {
@@ -202,7 +202,7 @@ impl ASFH {
         if COMPACT.contains(&self.profile) {
             if !self.fill_buffer(buffer, 12) { return ParseResult::Incomplete }
 
-            let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(self.buffer[0x9..0xb].to_vec());
+            let force_flush; (self.channels, self.srate, self.fsize, force_flush) = decode_css(&self.buffer[0x9..0xb]);
             if force_flush { self.all_set = true; return ParseResult::ForceFlush; }
             self.overlap_ratio = self.buffer[0xb] as u16; if self.overlap_ratio != 0 { self.overlap_ratio += 1; }
 
