@@ -7,7 +7,7 @@
 pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
 use core::f64::consts::PI;
 
-pub use pcmformat::{PCMFormat, Endian};
+pub use pcmformat::PCMFormat;
 
 /** linspace
  * Generates a linear spaced vector

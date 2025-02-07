@@ -12,7 +12,7 @@ mod encoder;
 mod decoder;
 mod repairer;
 
-pub use backend::{PCMFormat, Endian, f64cvt};
+pub use backend::{PCMFormat, f64cvt};
 pub use fourier::{AVAILABLE, BIT_DEPTHS, SEGMAX, profiles};
 pub use tools::head;
 

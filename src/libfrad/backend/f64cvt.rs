@@ -5,7 +5,7 @@
  * Dependencies: half
  */
 
-use crate::{PCMFormat, Endian};
+use crate::PCMFormat;
 use half::f16;
 
 /** norm_into
@@ -34,56 +34,29 @@ fn norm_from(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
     };
 }
 
-/** macro! to_f64
- * Convert byte array to f64 with built-in Rust types
- * Parameters: Type, Byte array, Endian
- * Returns: f64
- */
-macro_rules! to_f64 {
-    ($type:ty, $bytes:expr, $endian:expr) => {
-        if $endian.eq(&Endian::Big) { <$type>::from_be_bytes($bytes.try_into().unwrap()) }
-        else {  <$type>::from_le_bytes($bytes.try_into().unwrap()) }
-    };
-}
-
-/** macro! from_f64
- * Convert f64 to byte array with specified PCM format
- * Parameters: Type, f64, Endian
- * Returns: Byte array
- */
-macro_rules! from_f64 {
-    ($type:ty, $x:expr, $endian:expr) => {
-        if $endian.eq(&Endian::Big) { <$type>::to_be_bytes($x) }
-        else { <$type>::to_le_bytes($x) }
-    };
-}
-
-/** macro! int24_to_32
+/** i24_to_f64
  * Convert 24-bit integer to 32-bit integer
  * Parameters: Byte array, Endian, Signed flag
  * Returns: 32-bit integer
  */
-macro_rules! int24_to_32 {
-    ($bytes:expr, $endian:expr, $signed:expr) => {{
-        let sign_bit = if $endian.eq(&Endian::Big) { $bytes[0] } else { $bytes[2] } & 0x80;
-        let extra_byte = if !$signed || sign_bit == 0 { 0 } else { 0xFF };
-        if $endian.eq(&Endian::Big) { [extra_byte, $bytes[0], $bytes[1], $bytes[2]] }
-        else { [$bytes[0], $bytes[1], $bytes[2], extra_byte] }
-    }};
+fn i24_to_f64(bytes: &[u8], little_endian: bool, signed: bool) -> f64 {
+    let sign_bit = if little_endian { bytes[2] } else { bytes[0] } & 0x80;
+    let mut buf = [if !signed || sign_bit == 0 { 0 } else { 0xFF }, 0, 0, 0];
+    buf[1..4].copy_from_slice(&bytes[..]);
+    if little_endian { buf[1..].reverse() }
+    return i32::from_be_bytes(buf) as f64;
 }
 
-/** macro! int32_to_24
+/** f64_to_i24
  * Convert 32-bit integer to 24-bit integer
  * Parameters: 32-bit integer, Endian, Signed flag
  * Returns: Byte array
  */
-macro_rules! int32_to_24 {
-    ($x:expr, $endian:expr, $signed:expr) => {{
-        let (lo, hi) = if $signed { (-0x800000, 0x7fffff) } else { (0, 0xffffff) };
-        let y = $x.max(lo).min(hi);
-        if $endian.eq(&Endian::Big) { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
-        else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] }
-    }};
+fn f64_to_i24(x: f64, little_endian: bool, signed: bool) -> [u8; 3] {
+    let (lo, hi) = if signed { (-0x800000, 0x7fffff) } else { (0, 0xffffff) };
+    let y = x.max(lo as f64).min(hi as f64) as i32;
+    if !little_endian { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
+    else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] }
 }
 
 /** any_to_f64
@@ -95,21 +68,32 @@ pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
     if bytes.len() != pcm_fmt.bit_depth() / 8 { return 0.0 }
     return norm_into(
         match pcm_fmt {
-            PCMFormat::F16(en) => to_f64!(f16, bytes, en).to_f64(),
-            PCMFormat::F32(en) => to_f64!(f32, bytes, en) as f64,
-            PCMFormat::F64(en) => to_f64!(f64, bytes, en),
+            PCMFormat::F16BE => f16::from_be_bytes(bytes.try_into().unwrap()).to_f64(),
+            PCMFormat::F16LE => f16::from_le_bytes(bytes.try_into().unwrap()).to_f64(),
+            PCMFormat::F32BE => f32::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::F32LE => f32::from_le_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::F64BE => f64::from_be_bytes(bytes.try_into().unwrap()),
+            PCMFormat::F64LE => f64::from_le_bytes(bytes.try_into().unwrap()),
 
             PCMFormat::I8 => i8::from_ne_bytes(bytes.try_into().unwrap()) as f64,
-            PCMFormat::I16(en) => to_f64!(i16, bytes, en) as f64,
-            PCMFormat::I24(en) => to_f64!(i32, int24_to_32!(bytes, en, true), en) as f64,
-            PCMFormat::I32(en) => to_f64!(i32, bytes, en) as f64,
-            PCMFormat::I64(en) => to_f64!(i64, bytes, en) as f64,
+            PCMFormat::I16BE => i16::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I16LE => i16::from_le_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I24BE => i24_to_f64(bytes, false, true),
+            PCMFormat::I24LE => i24_to_f64(bytes, true, true),
+            PCMFormat::I32BE => i32::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I32LE => i32::from_le_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I64BE => i64::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::I64LE => i64::from_le_bytes(bytes.try_into().unwrap()) as f64,
 
             PCMFormat::U8 => u8::from_ne_bytes(bytes.try_into().unwrap()) as f64,
-            PCMFormat::U16(en) => to_f64!(u16, bytes, en) as f64,
-            PCMFormat::U24(en) => to_f64!(u32, int24_to_32!(bytes, en, false), en) as f64,
-            PCMFormat::U32(en) => to_f64!(u32, bytes, en) as f64,
-            PCMFormat::U64(en) => to_f64!(u64, bytes, en) as f64,
+            PCMFormat::U16BE => u16::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U16LE => u16::from_le_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U24BE => i24_to_f64(bytes, false, false),
+            PCMFormat::U24LE => i24_to_f64(bytes, true, false),
+            PCMFormat::U32BE => u32::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U32LE => u32::from_le_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U64BE => u64::from_be_bytes(bytes.try_into().unwrap()) as f64,
+            PCMFormat::U64LE => u64::from_le_bytes(bytes.try_into().unwrap()) as f64,
         }, pcm_fmt
     );
 }
@@ -123,20 +107,31 @@ pub fn f64_to_any(mut x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
     x = norm_from(x, pcm_fmt);
 
     return match pcm_fmt {
-        PCMFormat::F16(en) => from_f64!(f16, f16::from_f64(x), en).to_vec(),
-        PCMFormat::F32(en) => from_f64!(f32, x as f32, en).to_vec(),
-        PCMFormat::F64(en) => from_f64!(f64, x, en).to_vec(),
+        PCMFormat::F16BE => f16::from_f64(x).to_be_bytes().to_vec(),
+        PCMFormat::F16LE => f16::from_f64(x).to_le_bytes().to_vec(),
+        PCMFormat::F32BE => (x as f32).to_be_bytes().to_vec(),
+        PCMFormat::F32LE => (x as f32).to_le_bytes().to_vec(),
+        PCMFormat::F64BE => x.to_be_bytes().to_vec(),
+        PCMFormat::F64LE => x.to_le_bytes().to_vec(),
 
         PCMFormat::I8 => (x as i8).to_ne_bytes().to_vec(),
-        PCMFormat::I16(en) => from_f64!(i16, x as i16, en).to_vec(),
-        PCMFormat::I24(en) => int32_to_24!(x as i32, en, true).to_vec(),
-        PCMFormat::I32(en) => from_f64!(i32, x as i32, en).to_vec(),
-        PCMFormat::I64(en) => from_f64!(i64, x as i64, en).to_vec(),
+        PCMFormat::I16BE => (x as i16).to_be_bytes().to_vec(),
+        PCMFormat::I16LE => (x as i16).to_le_bytes().to_vec(),
+        PCMFormat::I24BE => f64_to_i24(x, false, true).to_vec(),
+        PCMFormat::I24LE => f64_to_i24(x, true, true).to_vec(),
+        PCMFormat::I32BE => (x as i32).to_be_bytes().to_vec(),
+        PCMFormat::I32LE => (x as i32).to_le_bytes().to_vec(),
+        PCMFormat::I64BE => (x as i64).to_be_bytes().to_vec(),
+        PCMFormat::I64LE => (x as i64).to_le_bytes().to_vec(),
 
         PCMFormat::U8 => (x as u8).to_ne_bytes().to_vec(),
-        PCMFormat::U16(en) => from_f64!(u16, x as u16, en).to_vec(),
-        PCMFormat::U24(en) => int32_to_24!(x as i32, en, false).to_vec(),
-        PCMFormat::U32(en) => from_f64!(u32, x as u32, en).to_vec(),
-        PCMFormat::U64(en) => from_f64!(u64, x as u64, en).to_vec(),
+        PCMFormat::U16BE => (x as u16).to_be_bytes().to_vec(),
+        PCMFormat::U16LE => (x as u16).to_le_bytes().to_vec(),
+        PCMFormat::U24BE => f64_to_i24(x, false, false).to_vec(),
+        PCMFormat::U24LE => f64_to_i24(x, true, false).to_vec(),
+        PCMFormat::U32BE => (x as u32).to_be_bytes().to_vec(),
+        PCMFormat::U32LE => (x as u32).to_le_bytes().to_vec(),
+        PCMFormat::U64BE => (x as u64).to_be_bytes().to_vec(),
+        PCMFormat::U64LE => (x as u64).to_le_bytes().to_vec()
     };
 }

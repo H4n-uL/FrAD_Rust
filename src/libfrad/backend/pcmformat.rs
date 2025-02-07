@@ -6,38 +6,35 @@
 
 #[derive(Clone, Copy)]
 pub enum PCMFormat {
-    F16(Endian), F32(Endian), F64(Endian),
-    I8, I16(Endian), I24(Endian), I32(Endian), I64(Endian),
-    U8, U16(Endian), U24(Endian), U32(Endian), U64(Endian),
+    F16BE, F16LE, F32BE, F32LE, F64BE, F64LE,
+    I8, I16BE, I16LE, I24BE, I24LE, I32BE, I32LE, I64BE, I64LE,
+    U8, U16BE, U16LE, U24BE, U24LE, U32BE, U32LE, U64BE, U64LE
 }
 
 impl PCMFormat {
     pub fn bit_depth(&self) -> usize {
         match self {
-            PCMFormat::I8 | PCMFormat::U8 => 8,
-            PCMFormat::F16(_) | PCMFormat::I16(_) | PCMFormat::U16(_) => 16,
-                                PCMFormat::I24(_) | PCMFormat::U24(_) => 24,
-            PCMFormat::F32(_) | PCMFormat::I32(_) | PCMFormat::U32(_) => 32,
-            PCMFormat::F64(_) | PCMFormat::I64(_) | PCMFormat::U64(_) => 64
+            Self::I8 | Self::U8 => 8,
+            Self::F16BE | Self::F16LE | Self::I16BE | Self::I16LE | Self::U16BE | Self::U16LE => 16,
+                                        Self::I24BE | Self::I24LE | Self::U24BE | Self::U24LE => 24,
+            Self::F32BE | Self::F32LE | Self::I32BE | Self::I32LE | Self::U32BE | Self::U32LE => 32,
+            Self::F64BE | Self::F64LE | Self::I64BE | Self::I64LE | Self::U64BE | Self::U64LE => 64
         }
     }
     pub fn float(&self) -> bool {
-        match self { PCMFormat::F16(_) | PCMFormat::F32(_) | PCMFormat::F64(_) => true, _ => false }
+        match self { Self::F16BE | Self::F16LE | Self::F32BE | Self::F32LE | Self::F64BE | Self::F64LE => true, _ => false }
     }
     pub fn signed(&self) -> bool {
-        match self { PCMFormat::U8 | PCMFormat::U16(_) | PCMFormat::U24(_) | PCMFormat::U32(_) | PCMFormat::U64(_) => false, _ => true }
+        match self { Self::U8 | Self::U16BE | Self::U16LE | Self::U24BE | Self::U24LE | Self::U32BE | Self::U32LE | Self::U64BE | Self::U64LE => false, _ => true }
     }
     pub fn scale(&self) -> f64 {
         match self {
-            PCMFormat::I8 | PCMFormat::U8 => 128.0,
-            PCMFormat::I16(_) | PCMFormat::U16(_) => 32768.0,
-            PCMFormat::I24(_) | PCMFormat::U24(_) => 8388608.0,
-            PCMFormat::I32(_) | PCMFormat::U32(_) => 2147483648.0,
-            PCMFormat::I64(_) | PCMFormat::U64(_) => 9223372036854775808.0,
+            Self::I8 | Self::U8 => 128.0,
+            Self::I16BE | Self::I16LE | Self::U16BE | Self::U16LE => 32768.0,
+            Self::I24BE | Self::I24LE | Self::U24BE | Self::U24LE => 8388608.0,
+            Self::I32BE | Self::I32LE | Self::U32BE | Self::U32LE => 2147483648.0,
+            Self::I64BE | Self::I64LE | Self::U64BE | Self::U64LE => 9223372036854775808.0,
             _ => 1.0
         }
     }
 }
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Endian { Big, Little }

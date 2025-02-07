@@ -4,7 +4,7 @@
  * Description: Simple CLI parser for FrAD Executable
  */
 
-use frad::{Endian::{Big, Little}, PCMFormat};
+use frad::PCMFormat;
 use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -53,7 +53,7 @@ impl CliParams {
     pub fn new() -> CliParams {
         CliParams {
             output: String::new(),
-            pcm: PCMFormat::F64(Big),
+            pcm: PCMFormat::F64BE,
             bits: 0,
             srate: 0,
             channels: 0,
@@ -115,37 +115,32 @@ impl CliParams {
     }
     pub fn set_pcm_format(&mut self, fmt: &str) {
         self.pcm = match fmt.to_lowercase().as_str() {
+            "f16be" => PCMFormat::F16BE,
+            "f16le" => PCMFormat::F16LE,
+            "f32be" => PCMFormat::F32BE,
+            "f32le" => PCMFormat::F32LE,
+            "f64be" => PCMFormat::F64BE,
+            "f64le" => PCMFormat::F64LE,
+
             "s8" => PCMFormat::I8,
+            "s16be" => PCMFormat::I16BE,
+            "s16le" => PCMFormat::I16LE,
+            "s24be" => PCMFormat::I24BE,
+            "s24le" => PCMFormat::I24LE,
+            "s32be" => PCMFormat::I32BE,
+            "s32le" => PCMFormat::I32LE,
+            "s64be" => PCMFormat::I64BE,
+            "s64le" => PCMFormat::I64LE,
+
             "u8" => PCMFormat::U8,
-
-            "s16be" => PCMFormat::I16(Big),
-            "s16le" => PCMFormat::I16(Little),
-            "u16be" => PCMFormat::U16(Big),
-            "u16le" => PCMFormat::U16(Little),
-
-            "s24be" => PCMFormat::I24(Big),
-            "s24le" => PCMFormat::I24(Little),
-            "u24be" => PCMFormat::U24(Big),
-            "u24le" => PCMFormat::U24(Little),
-
-            "s32be" => PCMFormat::I32(Big),
-            "s32le" => PCMFormat::I32(Little),
-            "u32be" => PCMFormat::U32(Big),
-            "u32le" => PCMFormat::U32(Little),
-
-            "s64be" => PCMFormat::I64(Big),
-            "s64le" => PCMFormat::I64(Little),
-            "u64be" => PCMFormat::U64(Big),
-            "u64le" => PCMFormat::U64(Little),
-
-            "f16be" => PCMFormat::F16(Big),
-            "f16le" => PCMFormat::F16(Little),
-
-            "f32be" => PCMFormat::F32(Big),
-            "f32le" => PCMFormat::F32(Little),
-
-            "f64be" => PCMFormat::F64(Big),
-            "f64le" => PCMFormat::F64(Little),
+            "u16be" => PCMFormat::U16BE,
+            "u16le" => PCMFormat::U16LE,
+            "u24be" => PCMFormat::U24BE,
+            "u24le" => PCMFormat::U24LE,
+            "u32be" => PCMFormat::U32BE,
+            "u32le" => PCMFormat::U32LE,
+            "u64be" => PCMFormat::U64BE,
+            "u64le" => PCMFormat::U64LE,
 
             _ => { eprintln!("Invalid format: {fmt}"); exit(1); }
         };
