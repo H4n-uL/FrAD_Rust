@@ -12,7 +12,6 @@ use crate::{
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
-use infer;
 use serde_json::{json, Value};
 use tempfile::NamedTempFile;
 
