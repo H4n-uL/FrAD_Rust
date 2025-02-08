@@ -105,8 +105,8 @@ impl Decoder {
                 if self.asfh.ecc {
                     let repair =  self.fix_error && ( // and if the user requested
                         // and if CRC mismatch
-                        LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
-                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16
+                        LOSSLESS.contains(&self.asfh.profile) && crc32(0, &frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(0, &frad) != self.asfh.crc16
                     );
                     frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
                 }

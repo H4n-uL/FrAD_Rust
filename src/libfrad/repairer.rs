@@ -82,8 +82,8 @@ impl Repairer {
                 // 1.2. Correct the error if ECC is enabled
                 if self.asfh.ecc {
                     let repair = // and if CRC mismatch
-                        LOSSLESS.contains(&self.asfh.profile) && crc32(&frad) != self.asfh.crc32 ||
-                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(&frad) != self.asfh.crc16;
+                        LOSSLESS.contains(&self.asfh.profile) && crc32(0, &frad) != self.asfh.crc32 ||
+                        COMPACT.contains(&self.asfh.profile) && crc16_ansi(0, &frad) != self.asfh.crc16;
                     frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
                 }
 

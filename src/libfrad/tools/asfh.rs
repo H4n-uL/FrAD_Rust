@@ -91,11 +91,11 @@ pub struct ASFH {
     pub profile: u8,
 
     // LOSSLESS
-    pub crc32: [u8; 4],
+    pub crc32: u32,
 
     // COMPACT
     pub overlap_ratio: u16,
-    pub crc16: [u8; 2],
+    pub crc16: u16,
 }
 
 impl ASFH {
@@ -109,7 +109,7 @@ impl ASFH {
 
             ecc: false, ecc_ratio: [0; 2],
             profile: 0,
-            overlap_ratio: 0, crc16: [0; 2], crc32: [0; 4],
+            overlap_ratio: 0, crc16: 0, crc32: 0,
         }
     }
 
@@ -138,7 +138,7 @@ impl ASFH {
             fhead.push((self.overlap_ratio.max(1) - 1) as u8);
             if self.ecc {
                 fhead.extend(self.ecc_ratio.to_vec());
-                fhead.extend(crc16_ansi(&frad).to_vec());
+                fhead.extend(crc16_ansi(0, &frad).to_be_bytes());
             }
         }
         else {
@@ -147,7 +147,7 @@ impl ASFH {
             fhead.extend(self.srate.to_be_bytes().to_vec());
             fhead.extend(vec![0u8; 8]);
             fhead.extend(self.fsize.to_be_bytes().to_vec());
-            fhead.extend(crc32(&frad).to_vec());
+            fhead.extend(crc32(0, &frad).to_be_bytes());
         }
 
         let frad = fhead.iter().chain(frad.iter()).cloned().collect::<Vec<u8>>();
@@ -210,7 +210,7 @@ impl ASFH {
                 if !self.fill_buffer(buffer, 16) { return ParseResult::Incomplete }
 
                 self.ecc_ratio = [self.buffer[0xc], self.buffer[0xd]];
-                self.crc16 = self.buffer[0xe..0x10].try_into().unwrap();
+                self.crc16 = u16::from_be_bytes(self.buffer[0xe..0x10].try_into().unwrap());
             }
         }
         else {
@@ -221,7 +221,7 @@ impl ASFH {
             self.srate = u32::from_be_bytes(self.buffer[0xc..0x10].try_into().unwrap());
 
             self.fsize = u32::from_be_bytes(self.buffer[0x18..0x1c].try_into().unwrap());
-            self.crc32 = self.buffer[0x1c..0x20].try_into().unwrap();
+            self.crc32 = u32::from_be_bytes(self.buffer[0x1c..0x20].try_into().unwrap());
         }
 
         if self.frmbytes == u32::MAX as u64 {
