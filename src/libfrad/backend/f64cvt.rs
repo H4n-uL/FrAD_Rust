@@ -35,9 +35,9 @@ fn norm_from(mut x: f64, pcm_fmt: &PCMFormat) -> f64 {
 }
 
 /** i24_to_f64
- * Convert 24-bit integer to 32-bit integer
+ * Convert 24-bit integer to 64-bit float
  * Parameters: Byte array, Endian, Signed flag
- * Returns: 32-bit integer
+ * Returns: 64-bit float
  */
 fn i24_to_f64(bytes: &[u8], little_endian: bool, signed: bool) -> f64 {
     let sign_bit = if little_endian { bytes[2] } else { bytes[0] } & 0x80;
@@ -48,15 +48,15 @@ fn i24_to_f64(bytes: &[u8], little_endian: bool, signed: bool) -> f64 {
 }
 
 /** f64_to_i24
- * Convert 32-bit integer to 24-bit integer
- * Parameters: 32-bit integer, Endian, Signed flag
- * Returns: Byte array
+ * Convert 64-bit float to 24-bit integer
+ * Parameters: 64-bit float, Endian, Signed flag
+ * Returns: 24-bit integer Byte array
  */
 fn f64_to_i24(x: f64, little_endian: bool, signed: bool) -> [u8; 3] {
     let (lo, hi) = if signed { (-0x800000, 0x7fffff) } else { (0, 0xffffff) };
     let y = x.max(lo as f64).min(hi as f64) as i32;
-    if !little_endian { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
-    else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] }
+    return if !little_endian { [(y >> 16) as u8, (y >> 8) as u8, y as u8] }
+    else { [y as u8, (y >> 8) as u8, (y >> 16) as u8] };
 }
 
 /** any_to_f64
@@ -105,7 +105,6 @@ pub fn any_to_f64(bytes: &[u8], pcm_fmt: &PCMFormat) -> f64 {
  */
 pub fn f64_to_any(mut x: f64, pcm_fmt: &PCMFormat) -> Vec<u8> {
     x = norm_from(x, pcm_fmt);
-
     return match pcm_fmt {
         PCMFormat::F16BE => f16::from_f64(x).to_be_bytes().to_vec(),
         PCMFormat::F16LE => f16::from_f64(x).to_le_bytes().to_vec(),
