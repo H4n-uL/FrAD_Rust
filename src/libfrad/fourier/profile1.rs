@@ -1,9 +1,8 @@
-/**                              FrAD Profile 1                               */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD Profile 1 encoding and decoding core
- * Dependencies: miniz_oxide
- */
+///                              FrAD Profile 1                              ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD Profile 1 encoding and decoding core
+/// Dependencies: miniz_oxide
 
 use crate::backend::{SplitFront, Transpose};
 use super::{
@@ -17,11 +16,10 @@ use miniz_oxide::{deflate, inflate};
 // Bit depth table
 pub const DEPTHS: [u16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
 
-/** pad_pcm
- * Pads the PCM to the nearest sample count greater than the original
- * Parameters: f64 PCM
- * Returns: Padded f64 PCM
- */
+/// pad_pcm
+/// Pads the PCM to the nearest sample count greater than the original
+/// Parameters: f64 PCM
+/// Returns: Padded f64 PCM
 pub fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let len_smpl = pcm.len();
     let chnl = pcm[0].len();
@@ -31,23 +29,21 @@ pub fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     return pcm;
 }
 
-/** get_scale_factors
- * Gets the scale factors for PCM and thresholds
- * Parameters: Bit depth
- * Returns: 2.0^(bit_depth - 1) as PCM scale factor,
- *          sqrt(3.0)^(16 - bit_depth) as threshold scale factor
- */
+/// get_scale_factors
+/// Gets the scale factors for PCM and thresholds
+/// Parameters: Bit depth
+/// Returns: 2.0^(bit_depth - 1) as PCM scale factor,
+///          sqrt(3.0)^(16 - bit_depth) as threshold scale factor
 pub fn get_scale_factors(bit_depth: u16) -> (f64, f64) {
     let pcm_scale = 2.0_f64.powi(bit_depth as i32 - 1);
     let thres_scale = 3.0_f64.sqrt().powi(16 - bit_depth as i32);
     return (pcm_scale, thres_scale);
 }
 
-/** analogue
- * Encodes PCM to FrAD Profile 1
- * Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
- * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
- */
+/// analogue
+/// Encodes PCM to FrAD Profile 1
+/// Parameters: f64 PCM, Bit depth, Sample rate, Loss level (and channel count, same note as profile 0)
+/// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32, mut loss_level: f64) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let (pcm_scale, thres_scale) = get_scale_factors(bit_depth);
@@ -96,11 +92,10 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32, mut loss
     return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as u16, channels as u16, srate);
 }
 
-/** digital
- * Decodes FrAD Profile 1 to PCM
- * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
- * Returns: f64 PCM
- */
+/// digital
+/// Decodes FrAD Profile 1 to PCM
+/// Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
+/// Returns: f64 PCM
 pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);

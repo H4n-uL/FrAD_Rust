@@ -1,8 +1,7 @@
-/**                                ASFH Tools                                 */
-/**
- * Copyright 2024 HaמuL
- * Description: Audio Stream Frame Header tools
- */
+///                                ASFH Tools                                ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Audio Stream Frame Header tools
 
 use crate::{
     backend::SplitFront,
@@ -10,11 +9,10 @@ use crate::{
     fourier::profiles::{compact::{self, get_srate_index}, COMPACT}
 };
 
-/** encode_pfb
- * Encodes PFloat byte (containing necessary info for the frame)
- * Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
- * Returns: Encoded byte
- */
+/// encode_pfb
+/// Encodes PFloat byte (containing necessary info for the frame)
+/// Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
+/// Returns: Encoded byte
 fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_index: u16) -> u8 {
     let prf = profile << 5;
     let ecc = (enable_ecc as u8) << 4;
@@ -22,11 +20,10 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_inde
     return prf | ecc | endian | bit_depth_index as u8;
 }
 
-/** encode_css
- * Encodes channel-srate-samples byte for Compact Profiles
- * Parameters: Channel count, Sample rate, Sample count
- * Returns: Encoded CSS
- */
+/// encode_css
+/// Encodes channel-srate-samples byte for Compact Profiles
+/// Parameters: Channel count, Sample rate, Sample count
+/// Returns: Encoded CSS
 fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> [u8; 2] {
     let chnl = (channels as u16 - 1) << 10;
     let srate = get_srate_index(srate) << 6;
@@ -37,11 +34,10 @@ fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> [u8; 
     return (chnl | srate | px | fsize | force_flush as u16).to_be_bytes();
 }
 
-/** decode_pfb
- * Decodes PFloat byte
- * Parameters: Encoded byte
- * Returns: Profile, ECC toggle, Little-endian toggle, Bit depth index
- */
+/// decode_pfb
+/// Decodes PFloat byte
+/// Parameters: Encoded byte
+/// Returns: Profile, ECC toggle, Little-endian toggle, Bit depth index
 fn decode_pfb(pfb: u8) -> (u8, bool, bool, u16) {
     let prf = pfb >> 5;
     let ecc = (pfb >> 4) & 1 == 1;
@@ -50,11 +46,10 @@ fn decode_pfb(pfb: u8) -> (u8, bool, bool, u16) {
     return (prf, ecc, endian, bit_depth_index as u16);
 }
 
-/** decode_css
- * Decodes Cchannel-srate-samples byte for Compact Profiles
- * Parameters: Encoded CSS
- * Returns: Channel count, Sample rate, Sample count
- */
+/// decode_css
+/// Decodes Cchannel-srate-samples byte for Compact Profiles
+/// Parameters: Encoded CSS
+/// Returns: Channel count, Sample rate, Sample count
 fn decode_css(css: &[u8]) -> (u16, u32, u32, bool) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
     let chnl = (css_int >> 10) as u16 + 1;
@@ -68,9 +63,8 @@ fn decode_css(css: &[u8]) -> (u16, u32, u32, bool) {
     return (chnl, srate, fsize, force_flush);
 }
 
-/** ASFH
- * Audio Stream Frame Header
- */
+/// ASFH
+/// Audio Stream Frame Header
 #[derive(Clone, Debug)]
 pub struct ASFH {
     // Audio Stream Frame Header
@@ -113,20 +107,18 @@ impl ASFH {
         }
     }
 
-    /** criteq
-     * Compares two ASFH headers' channels and sample rates
-     * Parameters: Another ASFH header
-     * Returns: Equality flag
-     */
+    /// criteq
+    /// Compares two ASFH headers' channels and sample rates
+    /// Parameters: Another ASFH header
+    /// Returns: Equality flag
     pub fn criteq(&self, other: &ASFH) -> bool {
         return self.channels == other.channels && self.srate == other.srate;
     }
 
-    /** write
-     * Makes a frame from audio frame and metadata and return as buffer
-     * Parameters: Audio frame
-     * Returns: Frame buffer
-     */
+    /// write
+    /// Makes a frame from audio frame and metadata and return as buffer
+    /// Parameters: Audio frame
+    /// Returns: Frame buffer
     pub fn write(&mut self, frad: Vec<u8>) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
 
@@ -155,10 +147,9 @@ impl ASFH {
         return frad;
     }
 
-    /** force_flush
-     * Makes a force-flush frame and return as buffer
-     * Returns: Frame buffer
-     */
+    /// force_flush
+    /// Makes a force-flush frame and return as buffer
+    /// Returns: Frame buffer
     pub fn force_flush(&mut self) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
         fhead.extend(vec![0u8; 4]);
@@ -175,11 +166,10 @@ impl ASFH {
         return fhead;
     }
 
-    /** fill_buffer
-     * Fills the buffer with the required bytes
-     * Parameters: Input buffer, Target size
-     * Returns: Buffer filled flag
-     */
+    /// fill_buffer
+    /// Fills the buffer with the required bytes
+    /// Parameters: Input buffer, Target size
+    /// Returns: Buffer filled flag
     fn fill_buffer(&mut self, buffer: &mut Vec<u8>, target_size: usize) -> bool {
         if self.buffer.len() < target_size {
             self.buffer.extend(buffer.split_front(target_size - self.buffer.len()));
@@ -189,11 +179,10 @@ impl ASFH {
         return true;
     }
 
-    /** read
-     * Reads a frame from a buffer
-     * Parameters: Input buffer
-     * Returns: Frame complete flag as Result, Force flush flag as boolean
-     */
+    /// read
+    /// Reads a frame from a buffer
+    /// Parameters: Input buffer
+    /// Returns: Frame complete flag as Result, Force flush flag as boolean
     pub fn read(&mut self, buffer: &mut Vec<u8>) -> ParseResult {
         if !self.fill_buffer(buffer, 9) { return ParseResult::Incomplete } // If buffer not filled, return error
         self.frmbytes = u32::from_be_bytes(self.buffer[0x4..0x8].try_into().unwrap()) as u64;
@@ -233,9 +222,8 @@ impl ASFH {
         return ParseResult::Complete;
     }
 
-    /** clear
-     * Clears the buffer and resets the header
-     */
+    /// clear
+    /// Clears the buffer and resets the header
     pub fn clear(&mut self) {
         self.all_set = false;
         self.buffer.clear();

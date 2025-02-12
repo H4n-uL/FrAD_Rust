@@ -1,8 +1,7 @@
-/**                            Encode application                             */
-/**
- * Copyright 2024 HaמuL
- * Description: Encoder implementation example
- */
+///                            Encode application                            ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Encoder implementation example
 
 use frad::{Encoder, profiles::LOSSLESS, head};
 use crate::{
@@ -12,11 +11,10 @@ use crate::{
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
 
-/** set_files
- * Sets input and output files
- * Parameters: Input file, Output file, Profile, Overwrite flag
- * Returns: Input file reader, Output file writer
- */
+/// set_files
+/// Sets input and output files
+/// Parameters: Input file, Output file, Profile, Overwrite flag
+/// Returns: Input file reader, Output file writer
 pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool) -> (Box<dyn Read>, Box<dyn Write>) {
     let (mut rpipe, mut wpipe) = (false, false);
     if PIPEIN.contains(&rfile.as_str()) { rpipe = true; }
@@ -45,10 +43,9 @@ pub fn set_files(rfile: String, mut wfile: String, profile: u8, overwrite: bool)
     return (readfile, writefile);
 }
 
-/** logging_encode
- * Logs a message to stderr
- * Parameters: Log level, Processing info, line feed flag
- */
+/// logging_encode
+/// Logs a message to stderr
+/// Parameters: Log level, Processing info, line feed flag
 pub fn logging_encode(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if loglevel == 0 { return; }
     eprint!("size={}B time={} bitrate={}bit/s speed={}x    \r",
@@ -57,10 +54,9 @@ pub fn logging_encode(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if linefeed { eprintln!(); }
 }
 
-/** encode
- * Encodes PCM to FrAD
- * Parameters: Input file, CLI parameters, Log level
- */
+/// encode
+/// Encodes PCM to FrAD
+/// Parameters: Input file, CLI parameters, Log level
 pub fn encode(input: String, params: CliParams) {
     if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
 

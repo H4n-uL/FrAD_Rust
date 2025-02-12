@@ -1,8 +1,7 @@
-/**                        FrAD Profiles configuration                        */
-/**
- * Copyright 2024 HaמuL
- * Description: Configuration for each FrAD profiles and profiles group
- */
+///                        FrAD Profiles configuration                       ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Configuration for each FrAD profiles and profiles group
 
 // LOSSLESS profiles
 pub const LOSSLESS: [u8; 2] = [0, 4];

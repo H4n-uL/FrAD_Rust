@@ -1,8 +1,7 @@
-/**                                 Repairer                                  */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD repairer
- */
+///                                 Repairer                                 ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD repairer
 
 use crate::{
     backend::{SplitFront, VecPatternFind},
@@ -11,9 +10,8 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc},
 };
 
-/** Repairer
- * Struct for FrAD repairer
- */
+/// Repairer
+/// Struct for FrAD repairer
 pub struct Repairer {
     asfh: ASFH,
     buffer: Vec<u8>,
@@ -45,23 +43,20 @@ impl Repairer {
         };
     }
 
-    /** is_empty
-     * Check if the buffer is shorter than the frame sign or no more data input while frame is broken
-     * Returns: Empty flag
-     */
+    /// is_empty
+    /// Check if the buffer is shorter than the frame sign or no more data input while frame is broken
+    /// Returns: Empty flag
     pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len() || self.broken_frame; }
 
-    /** get_asfh
-     * Get a reference to the ASFH struct
-     * Returns: Immutable reference to the ASFH struct
-     */
+    /// get_asfh
+    /// Get a reference to the ASFH struct
+    /// Returns: Immutable reference to the ASFH struct
     pub fn get_asfh(&self) -> &ASFH { return &self.asfh; }
 
-    /** process
-     * Process the input stream and repair the FrAD stream
-     * Parameters: Input stream
-     * Returns: Repaired FrAD stream
-     */
+    /// process
+    /// Process the input stream and repair the FrAD stream
+    /// Parameters: Input stream
+    /// Returns: Repaired FrAD stream
     pub fn process(&mut self, stream: &[u8]) -> Vec<u8> {
         self.buffer.extend(stream);
         let mut ret = Vec::new();
@@ -133,11 +128,10 @@ impl Repairer {
         return ret;
     }
 
-    /** flush
-     * Flush the remaining buffer
-     * Parameters: None
-     * Returns: Repairer buffer
-     */
+    /// flush
+    /// Flush the remaining buffer
+    /// Parameters: None
+    /// Returns: Repairer buffer
     pub fn flush(&mut self) -> Vec<u8> {
         let ret = self.buffer.clone();
         self.buffer.clear();

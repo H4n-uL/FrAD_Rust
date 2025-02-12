@@ -1,19 +1,17 @@
-/**                              Library Backend                              */
-/**
- * Copyright 2024 HaמuL
- * Description: Backend for FrAD Library
- */
+///                              Library Backend                             ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Backend for FrAD Library
 
 pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
 use core::f64::consts::PI;
 
 pub use pcmformat::PCMFormat;
 
-/** linspace
- * Generates a linear spaced vector
- * Parameters: Start value, Stop value, Number of values
- * Returns: Linear spaced vector
- */
+/// linspace
+/// Generates a linear spaced vector
+/// Parameters: Start value, Stop value, Number of values
+/// Returns: Linear spaced vector
 pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num == 0 { return vec![]; }
     if num == 1 { return vec![(start + stop) / 2.0]; }
@@ -28,22 +26,20 @@ pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     return result;
 }
 
-/** hanning_math
- * Generates a Hanning window (Mathematically precise)
- * Parameters: Length of the window
- * Returns: Hanning window
- */
+/// hanning_math
+/// Generates a Hanning window (Mathematically precise)
+/// Parameters: Length of the window
+/// Returns: Hanning window
 pub fn _hanning_math(size: usize) -> Vec<f64> {
     return (0..size).map(|n| {
         0.5 * (1.0 - (2.0 * PI * n as f64 / (size - 1) as f64).cos())
     }).collect();
 }
 
-/** hanning_in_overlap
- * Generates a fade-in Hanning window (Optimised for overlap-add)
- * Parameters: Length of the window
- * Returns: Fade-in Hanning window
- */
+/// hanning_in_overlap
+/// Generates a fade-in Hanning window (Optimised for overlap-add)
+/// Parameters: Length of the window
+/// Returns: Fade-in Hanning window
 pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
     let res = ((olap_len+1)/2+1..=olap_len).map(|i| {
         0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 + 1.0)).cos())

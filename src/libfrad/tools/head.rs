@@ -1,8 +1,7 @@
-/**                            Header Configurator                            */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD Header Builder and Parser
- */
+///                            Header Configurator                           ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD Header Builder and Parser
 
 use crate::{backend::SplitFront, common::SIGNATURE};
 
@@ -12,11 +11,10 @@ const IMAGE: [u8; 1] = [0xf5];
 const COMMENT_HEAD_LENGTH: usize = 12;
 const IMAGE_HEAD_LENGTH: usize = 10;
 
-/** comment
- * Generates a comment block
- * Parameters: Title, Data
- * Returns: Comment block
- */
+/// comment
+/// Generates a comment block
+/// Parameters: Title, Data
+/// Returns: Comment block
 fn comment(title: &str, data: &[u8]) -> Vec<u8> {
     let mut data_comb = title.as_bytes().to_vec();
     let title_length = (data_comb.len() as u32).to_be_bytes();
@@ -32,11 +30,10 @@ fn comment(title: &str, data: &[u8]) -> Vec<u8> {
     return block;
 }
 
-/** image
- * Generates an image block
- * Parameters: Data, Picture type
- * Returns: Image block
- */
+/// image
+/// Generates an image block
+/// Parameters: Data, Picture type
+/// Returns: Image block
 fn image(data: Vec<u8>, itype: Option<u8>) -> Vec<u8> {
     let mut itype = itype.unwrap_or(3);
     itype = if itype > 20 { 3 } else { itype };
@@ -52,11 +49,10 @@ fn image(data: Vec<u8>, itype: Option<u8>) -> Vec<u8> {
     return block;
 }
 
-/** builder
- * Builds a header from metadata and image
- * Parameters: Metadata, Image
- * Returns: FrAD Header
- */
+/// builder
+/// Builds a header from metadata and image
+/// Parameters: Metadata, Image
+/// Returns: FrAD Header
 pub fn builder(meta: &Vec<(String, Vec<u8>)>, img: Vec<u8>, itype: Option<u8>) -> Vec<u8> {
     let mut blocks = Vec::new();
 
@@ -81,11 +77,10 @@ pub fn builder(meta: &Vec<(String, Vec<u8>)>, img: Vec<u8>, itype: Option<u8>) -
     return header;
 }
 
-/** parser
- * Parses a header into metadata and image
- * Parameters: Header
- * Returns: Metadata in bytes, Image in bytes
- */
+/// parser
+/// Parses a header into metadata and image
+/// Parameters: Header
+/// Returns: Metadata in bytes, Image in bytes
 pub fn parser(mut header: Vec<u8>) -> (Vec<(String, Vec<u8>)>, Vec<u8>, u8) {
     let mut meta = Vec::new();
     let (mut img, mut itype) = (Vec::new(), 0);
@@ -109,11 +104,10 @@ pub fn parser(mut header: Vec<u8>) -> (Vec<(String, Vec<u8>)>, Vec<u8>, u8) {
     return (meta, img, itype);
 }
 
-/** u48be_to_u64
- * Converts a 48-bit big-endian number to a 64-bit number
- * Parameters: 48-bit / 6-byte number
- * Returns: u64 number
- */
+/// u48be_to_u64
+/// Converts a 48-bit big-endian number to a 64-bit number
+/// Parameters: 48-bit / 6-byte number
+/// Returns: u64 number
 fn u48be_to_u64(data: &[u8]) -> u64 {
     if data.len() != 6 { return 0; }
     return u64::from_be_bytes([vec![0; 2], data.to_vec()].concat().try_into().unwrap());

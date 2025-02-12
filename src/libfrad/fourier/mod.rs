@@ -1,8 +1,7 @@
-/**                                  Fourier                                  */
-/**
- * Copyright 2024 HaמuL
- * Description: Main Fourier tools
- */
+///                                  Fourier                                 ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Main Fourier tools
 
 pub mod profile0;
 pub mod profile1;

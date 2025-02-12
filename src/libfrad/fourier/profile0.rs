@@ -1,9 +1,8 @@
-/**                              FrAD Profile 0                               */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD Profile 0 encoding and decoding core
- * Dependencies: half
- */
+///                              FrAD Profile 0                              ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD Profile 0 encoding and decoding core
+/// Dependencies: half
 
 use crate::backend::Transpose;
 use super::backend::{u8pack, core::{dct, idct}};
@@ -19,11 +18,10 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
     f64::MAX, f64::MAX, f64::INFINITY, f64::INFINITY
 ];
 
-/** analogue
- * Encodes PCM to FrAD
- * Parameters: f64 PCM, Bit depth, Little endian toggle (and possibly channel count, but it can be extracted from the PCM shape)
- * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
- */
+/// analogue
+/// Encodes PCM to FrAD
+/// Parameters: f64 PCM, Bit depth, Little endian toggle (and possibly channel count, but it can be extracted from the PCM shape)
+/// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endian: bool) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let channels = pcm[0].len();
@@ -41,11 +39,10 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
     return (frad, bit_depth_index as u16, channels as u16, srate);
 }
 
-/** digital
- * Decodes FrAD to PCM
- * Parameters: Encoded audio data, Bit depth index, Channel count, Little endian toggle
- * Returns: Decoded PCM
- */
+/// digital
+/// Decodes FrAD to PCM
+/// Parameters: Encoded audio data, Bit depth index, Channel count, Little endian toggle
+/// Returns: Decoded PCM
 pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<Vec<f64>> {
     let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
     let freqs: Vec<Vec<f64>> = freqs_flat.chunks(channels as usize).map(|chunk| chunk.to_vec()).collect();

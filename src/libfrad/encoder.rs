@@ -1,8 +1,7 @@
-/**                                  Encoder                                  */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD encoder
- */
+///                                  Encoder                                 ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD encoder
 
 use crate::{
     PCMFormat, f64cvt::any_to_f64,
@@ -19,9 +18,8 @@ pub struct EncodeResult {
     pub samples: usize
 }
 
-/** Encoder
- * Struct for FrAD encoder
- */
+/// Encoder
+/// Struct for FrAD encoder
 pub struct Encoder {
     asfh: ASFH, buffer: Vec<u8>,
     bit_depth: u16, channels: u16,
@@ -48,10 +46,9 @@ impl Encoder {
         };
     }
 
-    /** _set_profile
-     * Modify the profile while running
-     * Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
-     */
+    /// _set_profile
+    /// Modify the profile while running
+    /// Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
     pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
 
@@ -121,17 +118,15 @@ impl Encoder {
         self.asfh.overlap_ratio = overlap_ratio;
     }
 
-    /** get_asfh
-     * Get a reference to the ASFH struct
-     * Returns: Immutable reference to the ASFH struct
-     */
+    /// get_asfh
+    /// Get a reference to the ASFH struct
+    /// Returns: Immutable reference to the ASFH struct
     pub fn get_asfh(&self) -> &ASFH { return &self.asfh; }
 
-    /** overlap
-     * Overlaps the current frame with the overlap fragment
-     * Parameters: Current frame, Overlap fragment, Overlap rate, Profile
-     * Returns: Overlapped frame, Next overlap fragment
-     */
+    /// overlap
+    /// Overlaps the current frame with the overlap fragment
+    /// Parameters: Current frame, Overlap fragment, Overlap rate, Profile
+    /// Returns: Overlapped frame, Next overlap fragment
     fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
         // 1. If overlap fragment is not empty,
         if !self.overlap_fragment.is_empty() {
@@ -151,11 +146,10 @@ impl Encoder {
         return frame;
     }
 
-    /** inner
-     * Inner encoder loop
-     * Parameters: PCM stream, Flush flag
-     * Returns: Encoded audio data
-     */
+    /// inner
+    /// Inner encoder loop
+    /// Parameters: PCM stream, Flush flag
+    /// Returns: Encoded audio data
     fn inner(&mut self, stream: &[u8], flush: bool) -> EncodeResult {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
@@ -231,19 +225,17 @@ impl Encoder {
         return EncodeResult { buf: ret, samples };
     }
 
-    /** process
-     * Processes the input stream
-     * Parameters: Input stream
-     * Returns: Encoded audio data
-     */
+    /// process
+    /// Processes the input stream
+    /// Parameters: Input stream
+    /// Returns: Encoded audio data
     pub fn process(&mut self, stream: &[u8]) -> EncodeResult {
         return self.inner(stream, false);
     }
 
-    /** flush
-     * Encodes the remaining data in the buffer and flush
-     * Returns: Encoded audio data
-     */
+    /// flush
+    /// Encodes the remaining data in the buffer and flush
+    /// Returns: Encoded audio data
     pub fn flush(&mut self) -> EncodeResult {
         return self.inner(b"", true);
     }

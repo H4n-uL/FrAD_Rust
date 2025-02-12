@@ -1,8 +1,7 @@
-/**                        AAPM@Audio-8151 Executable                         */
-/**
- * Copyright 2024 HaמuL
- * Description: Fourier Analogue-in-Digital Rust Master
- */
+///                        AAPM@Audio-8151 Executable                        ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Fourier Analogue-in-Digital Rust Master
 
 mod tools; mod common;
 mod encoder; mod decoder; mod repairer; mod header;
@@ -24,7 +23,7 @@ const JSONMETA_HELP:   &str = include_str!("help/jsonmeta.txt");
 const VORBISMETA_HELP: &str = include_str!("help/vorbismeta.txt");
 const PROFILES_HELP:   &str = include_str!("help/profiles.txt");
 
-/** Main function  */
+/// Main function ///
 fn main() {
     let exepath = env::args().next().unwrap();
     let executable = Path::new(&exepath).file_name().unwrap().to_str().unwrap();

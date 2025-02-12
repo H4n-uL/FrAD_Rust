@@ -1,17 +1,15 @@
-/**                             Signal Processor                              */
-/**
- * Copyright 2024 HaמuL
- * Description: Library for signal processing
- * Dependencies: rustfft
- */
+///                             Signal Processor                             ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Library for signal processing
+/// Dependencies: rustfft
 
 use palmfft::{CfftPlan, Complex};
 
-/** impulse_filt
- * Finite/Infinite Impulse Response Filter
- * Parameters: Numerator coefficients, Denominator coefficients, Input signal
- * Returns: Filtered signal
- */
+/// impulse_filt
+/// Finite/Infinite Impulse Response Filter
+/// Parameters: Numerator coefficients, Denominator coefficients, Input signal
+/// Returns: Filtered signal
 pub fn impulse_filt(b: &[f64], a: &[f64], input: &[f64]) -> Vec<f64> {
     let mut output = vec![0.0; input.len()];
     let mut x_hist = vec![0.0; b.len()];
@@ -32,11 +30,10 @@ pub fn impulse_filt(b: &[f64], a: &[f64], input: &[f64]) -> Vec<f64> {
     return output;
 }
 
-/** correlate_full
- * Full Cross-correlation of two signals
- * Parameters: Two signals
- * Returns: Full Cross-correlated signal
- */
+/// correlate_full
+/// Full Cross-correlation of two signals
+/// Parameters: Two signals
+/// Returns: Full Cross-correlated signal
 pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
     let n = x.len() + y.len() - 1;
     let size = n.next_power_of_two();

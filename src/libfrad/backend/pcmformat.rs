@@ -1,8 +1,7 @@
-/**                                PCM Format                                 */
-/**
- * Copyright 2024 HaמuL
- * Description: Enum for PCM format
- */
+///                                PCM Format                                ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Enum for PCM format
 
 #[derive(Clone, Copy)]
 pub enum PCMFormat {

@@ -1,8 +1,7 @@
-/**                                  Header                                   */
-/**
- * Copyright 2024 HaמuL
- * Description: Metadata modificator for FrAD
- */
+///                                  Header                                  ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Metadata modificator for FrAD
 
 use frad::{common::{SIGNATURE, FRM_SIGN}, head};
 use crate::{
@@ -15,11 +14,10 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{json, Value};
 use tempfile::NamedTempFile;
 
-/** modify
- * Modify the metadata of a FrAD file
- * Parameters: File path, Modification type, Metadata, Image path
- * Returns: FrAD file with modified metadata
- */
+/// modify
+/// Modify the metadata of a FrAD file
+/// Parameters: File path, Modification type, Metadata, Image path
+/// Returns: FrAD file with modified metadata
 pub fn modify(file_name: String, modtype: String, params: CliParams) {
     if file_name.is_empty() { eprintln!("Input file must be given"); exit(1); }
     else if !Path::new(&file_name).exists() { eprintln!("Input file does not exist"); exit(1); }

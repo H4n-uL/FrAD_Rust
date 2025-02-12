@@ -1,8 +1,7 @@
-/**                              Profile 1 Tools                              */
-/**
- * Copyright 2024 HaמuL
- * Description: Quantisation and Dequantisation tools for Profile 1
- */
+///                              Profile 1 Tools                             ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Quantisation and Dequantisation tools for Profile 1
 
 use crate::backend::{bitcvt, linspace};
 use core::iter::repeat;
@@ -17,22 +16,20 @@ const MODIFIED_OPUS_SUBBANDS: [u32; 28] = [
     34400, 40800, 48000, u32::MAX
 ];
 
-/** get_bin_range
- * Gets the range of bins for a subband
- * Parameters: Length of the DCT Array, Sample rate, Subband index
- * Returns: Range of bins
- */
+/// get_bin_range
+/// Gets the range of bins for a subband
+/// Parameters: Length of the DCT Array, Sample rate, Subband index
+/// Returns: Range of bins
 fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
     let start = (MODIFIED_OPUS_SUBBANDS[i] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     let end = (MODIFIED_OPUS_SUBBANDS[i + 1] as f64 / (srate as f64 / 2.0) * len as f64).round() as usize;
     return start.min(len)..end.min(len);
 }
 
-/** mask_thres_mos
- * Calculates the masking threshold for each subband
- * Parameters: DCT Array, Sample rate, Bit depth, Loss level, Alpha(Constant for now)
- * Returns: Masking threshold array
- */
+/// mask_thres_mos
+/// Calculates the masking threshold for each subband
+/// Parameters: DCT Array, Sample rate, Bit depth, Loss level, Alpha(Constant for now)
+/// Returns: Masking threshold array
 pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_level: f64, alpha: f64) -> Vec<f64> {
     freqs = freqs.iter().map(|x| x.abs()).collect();
     let mut thres = vec![0.0; MOSLEN];
@@ -57,42 +54,39 @@ pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, bit_depth: u16, loss_leve
     return thres;
 }
 
-/** mapping_from_opus
- * Maps the thresholds from the modified Opus subbands
- * Parameters: MOS-Mapped thresholds, Length of the DCT Array, Sample rate
- * Returns: Inverse-mapped thresholds
- */
+/// mapping_from_opus
+/// Maps the thresholds from the modified Opus subbands
+/// Parameters: MOS-Mapped thresholds, Length of the DCT Array, Sample rate
+/// Returns: Inverse-mapped thresholds
 pub fn mapping_from_opus(mapped_thres: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
     let mut thres = vec![0.0; freqs_len];
 
     for i in 0..MOSLEN-1 {
         let range = get_bin_range(freqs_len, srate, i);
+        let num = range.end - range.start;
         // Linearly spaced values between the mapped thresholds
-        thres[range.clone()].copy_from_slice(&linspace(mapped_thres[i], mapped_thres[i + 1], range.end - range.start));
+        thres[range].copy_from_slice(&linspace(mapped_thres[i], mapped_thres[i + 1], num + 1)[..num]);
     }
 
     return thres;
 }
 
-/** quant
- * Non-linear quantisation function
- * Parameters: f64 value to quantise
- * Returns: Quantised value
- */
+/// quant
+/// Non-linear quantisation function
+/// Parameters: f64 value to quantise
+/// Returns: Quantised value
 pub fn quant(x: f64) -> f64 { return x.signum() * x.abs().powf(QUANT_ALPHA); }
 
-/** dequant
- * Non-linear dequantisation function
- * Parameters: f64 value to dequantise
- * Returns: Dequantised value
- */
+/// dequant
+/// Non-linear dequantisation function
+/// Parameters: f64 value to dequantise
+/// Returns: Dequantised value
 pub fn dequant(y: f64) -> f64 { return y.signum() * y.abs().powf(1.0 / QUANT_ALPHA); }
 
-/** exp_golomb_encode
- * Encodes any integer array with Exponential Golomb Encoding
- * Parameters: Integer array
- * Returns: Encoded binary data
- */
+/// exp_golomb_encode
+/// Encodes any integer array with Exponential Golomb Encoding
+/// Parameters: Integer array
+/// Returns: Encoded binary data
 pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
     if data.is_empty() { return vec![0]; }
     let dmax = data.iter().map(|x| x.abs()).max().unwrap();
@@ -109,11 +103,10 @@ pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
     return bitcvt::to_bytes(encoded_binary);
 }
 
-/** exp_golomb_decode
- * Decodes any integer array with Exponential Golomb Encoding
- * Parameters: Binary data
- * Returns: Decoded integer array
- */
+/// exp_golomb_decode
+/// Decodes any integer array with Exponential Golomb Encoding
+/// Parameters: Binary data
+/// Returns: Decoded integer array
 pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
     let k = data[0] as usize;
     let (data, kx, mut decoded, mut idx) =

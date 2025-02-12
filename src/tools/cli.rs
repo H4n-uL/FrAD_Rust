@@ -1,8 +1,7 @@
-/**                                CLI Parser                                 */
-/**
- * Copyright 2024 HaמuL
- * Description: Simple CLI parser for FrAD Executable
- */
+///                                CLI Parser                                ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Simple CLI parser for FrAD Executable
 
 use frad::PCMFormat;
 use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
@@ -148,11 +147,10 @@ impl CliParams {
     pub fn set_loglevel(&mut self, loglevel: String) { self.loglevel = loglevel.parse().unwrap(); }
 }
 
-/** parse
- * Parse CLI arguments and return the action, input file, and parameters
- * Parameters: arguments
- * Returns: Action, Input file name / Pipe, any other parameters
- */
+/// parse
+/// Parse CLI arguments and return the action, input file, and parameters
+/// Parameters: arguments
+/// Returns: Action, Input file name / Pipe, any other parameters
 pub fn parse(args: Args) -> (String, String, String, CliParams) {
     let mut args: VecDeque<String> = args.collect();
     let mut params: CliParams = CliParams::new();

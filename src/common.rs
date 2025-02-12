@@ -1,8 +1,7 @@
-/**                         Common application tools                          */
-/**
- * Copyright 2024 HaמuL
- * Description: Common tools for FrAD Executable
- */
+///                         Common application tools                         ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Common tools for FrAD Executable
 
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
@@ -10,11 +9,10 @@ use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, proces
 pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
 pub const PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
 
-/** read_exact
- * Reads a file or stdin to a buffer with exact size
- * Parameters: File(&mut), Buffer(&mut)
- * Returns: Total bytes read
- */
+/// read_exact
+/// Reads a file or stdin to a buffer with exact size
+/// Parameters: File(&mut), Buffer(&mut)
+/// Returns: Total bytes read
 pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
     let mut total_read = 0;
 
@@ -26,10 +24,9 @@ pub fn read_exact(file: &mut Box<dyn Read>, buf: &mut [u8]) -> usize {
     return total_read;
 }
 
-/** write_safe
- * Writes data to stdout with broken pipe handling
- * Parameters: Output file writer, Data buffer
- */
+/// write_safe
+/// Writes data to stdout with broken pipe handling
+/// Parameters: Output file writer, Data buffer
 pub fn write_safe(wfile: &mut Box<dyn Write>, buf: &[u8]) {
     wfile.write_all(buf).unwrap_or_else(|err| {
         match err.kind() {
@@ -39,21 +36,19 @@ pub fn write_safe(wfile: &mut Box<dyn Write>, buf: &[u8]) {
     });
 }
 
-/** get_file_stem
- * Gets the file stem from a file path
- * Parameters: File path
- * Returns: File stem
- */
+/// get_file_stem
+/// Gets the file stem from a file path
+/// Parameters: File path
+/// Returns: File stem
 pub fn get_file_stem(file_path: &str) -> String {
     if PIPEIN.contains(&file_path) || PIPEOUT.contains(&file_path) { return "pipe".to_string(); }
     return Path::new(file_path).file_stem().unwrap_or(std::ffi::OsStr::new("pipe")).to_str().unwrap().to_string();
 }
 
-/** format_time
- * Formats time in seconds to human-readable format
- * Parameters: Time in seconds
- * Returns: Formatted time string
- */
+/// format_time
+/// Formats time in seconds to human-readable format
+/// Parameters: Time in seconds
+/// Returns: Formatted time string
 pub fn format_time(mut n: f64) -> String {
     if n < 0.0 { return format!("-{}", format_time(-n)); }
 
@@ -77,22 +72,20 @@ pub fn format_time(mut n: f64) -> String {
 
 const UNITS: [&str; 11] = ["", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"];
 
-/** format_si
- * Formats a number to SI prefixed format
- * Parameters: Number
- * Returns: Formatted number string
- */
+/// format_si
+/// Formats a number to SI prefixed format
+/// Parameters: Number
+/// Returns: Formatted number string
 pub fn format_si(n: f64) -> String {
     if n < 1000.0 { return format!("{}", n); }
     let exp = ((n as f64).log10().floor() as usize / 3).min(UNITS.len() - 1);
     format!("{:.3} {}", n as f64 / 1000.0f64.powi(exp as i32), UNITS[exp])
 }
 
-/** format_speed
- * Formats speed in x to short and easy-to-read format
- * Parameters: Speed in x
- * Returns: Formatted speed string
- */
+/// format_speed
+/// Formats speed in x to short and easy-to-read format
+/// Parameters: Speed in x
+/// Returns: Formatted speed string
 pub fn format_speed(n: f64) -> String {
     if n >= 100.0 { format!("{:.0}", n) }
     else if n >= 10.0 { format!("{:.1}", n) }
@@ -100,10 +93,9 @@ pub fn format_speed(n: f64) -> String {
     else { format!("{:.3}", n) }
 }
 
-/** move_all
- * Moves all data from readfile to writefile with given buffer size
- * Parameters: Input file reader, Output file writer, Buffer size
- */
+/// move_all
+/// Moves all data from readfile to writefile with given buffer size
+/// Parameters: Input file reader, Output file writer, Buffer size
 pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
     loop {
         let mut buf: Vec<u8> = vec![0; bufsize];
@@ -119,10 +111,9 @@ pub fn move_all(readfile: &mut File, writefile: &mut File, bufsize: usize) {
     }
 }
 
-/** check_overwrite
- * Checks if the output file exists and asks for overwrite
- * Parameters: Output file, Overwrite flag
- */
+/// check_overwrite
+/// Checks if the output file exists and asks for overwrite
+/// Parameters: Output file, Overwrite flag
 pub fn check_overwrite(writefile: &str, overwrite: bool) {
     if Path::new(writefile).exists() && !overwrite {
         if std::io::stdin().is_terminal() {

@@ -1,8 +1,7 @@
-/**                                  Decoder                                  */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD decoder
- */
+///                                  Decoder                                 ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD decoder
 
 use crate::{
     backend::{hanning_in_overlap, SplitFront, VecPatternFind},
@@ -18,9 +17,8 @@ pub struct DecodeResult {
     pub crit: bool,
 }
 
-/** Decoder
- * Struct for FrAD decoder
- */
+/// Decoder
+/// Struct for FrAD decoder
 pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
@@ -42,11 +40,10 @@ impl Decoder {
         };
     }
 
-    /** overlap
-     * Apply overlap to the decoded PCM
-     * Parameters: Decoded PCM
-     * Returns: PCM with overlap applied
-     */
+    /// overlap
+    /// Apply overlap to the decoded PCM
+    /// Parameters: Decoded PCM
+    /// Returns: PCM with overlap applied
     fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
         // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
@@ -67,23 +64,20 @@ impl Decoder {
         return frame;
     }
 
-    /** is_empty
-     * Check if the buffer is shorter than the frame sign or no more data input while frame is broken
-     * Returns: Empty flag
-     */
+    /// is_empty
+    /// Check if the buffer is shorter than the frame sign or no more data input while frame is broken
+    /// Returns: Empty flag
     pub fn is_empty(&self) -> bool { return self.buffer.len() < FRM_SIGN.len() || self.broken_frame; }
 
-    /** get_asfh
-     * Get a reference to the ASFH struct
-     * Returns: Immutable reference to the ASFH struct
-     */
+    /// get_asfh
+    /// Get a reference to the ASFH struct
+    /// Returns: Immutable reference to the ASFH struct
     pub fn get_asfh(&self) -> &ASFH { return &self.asfh; }
 
-    /** process
-     * Process the input stream and decode the FrAD frames
-     * Parameters: Input stream
-     * Returns: Decoded PCM, Sample rate, Critical info modification flag
-     */
+    /// process
+    /// Process the input stream and decode the FrAD frames
+    /// Parameters: Input stream
+    /// Returns: Decoded PCM, Sample rate, Critical info modification flag
     pub fn process(&mut self, stream: &[u8]) -> DecodeResult {
         self.buffer.extend(stream);
         let (mut ret_pcm, mut frames) = (Vec::new(), 0);
@@ -174,10 +168,9 @@ impl Decoder {
         return DecodeResult { pcm: ret_pcm, srate: self.asfh.srate, frames, crit: false };
     }
 
-    /** flush
-     * Flush the overlap buffer
-     * Returns: Overlap buffer, Sample rate, true(flushed by user)
-     */
+    /// flush
+    /// Flush the overlap buffer
+    /// Returns: Overlap buffer, Sample rate, true(flushed by user)
     pub fn flush(&mut self) -> DecodeResult {
         // 1. Extract the overlap buffer
         // 2. Update stream info

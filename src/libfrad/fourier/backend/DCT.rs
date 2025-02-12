@@ -1,8 +1,7 @@
-/**                      Discrete Cosine Transform - II                       */
-/**
- * Copyright 2024 HaמuL
- * Description: DCT-II, Forward normalised
- */
+///                      Discrete Cosine Transform - II                      ///
+///
+/// Copyright 2024 HaמuL
+/// Description: DCT-II, Forward normalised
 
 use core::f64::consts::PI;
 

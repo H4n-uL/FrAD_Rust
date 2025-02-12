@@ -1,8 +1,7 @@
-/**                            Repair application                             */
-/**
- * Copyright 2024 HaמuL
- * Description: Repairer implementation example
- */
+///                            Repair application                            ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Repairer implementation example
 
 use frad::Repairer;
 use crate::{
@@ -13,10 +12,9 @@ use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
 use same_file::is_same_file;
 
-/** logging_repair
- * Logs a message to stderr
- * Parameters: Log level, Processing info, line feed flag
- */
+/// logging_repair
+/// Logs a message to stderr
+/// Parameters: Log level, Processing info, line feed flag
 pub fn logging_repair(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if loglevel == 0 { return; }
     let total_size = log.get_total_size() as f64;
@@ -27,11 +25,10 @@ pub fn logging_repair(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
     if linefeed { eprintln!(); }
 }
 
-/** repair
- * Repair or Apply ECC to FrAD stream
- * Parameters: Input file, CLI parameters
- * Returns: Repaired FrAD stream on File
- */
+/// repair
+/// Repair or Apply ECC to FrAD stream
+/// Parameters: Input file, CLI parameters
+/// Returns: Repaired FrAD stream on File
 pub fn repair(rfile: String, params: CliParams) {
     let mut wfile = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }

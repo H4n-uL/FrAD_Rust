@@ -1,8 +1,7 @@
-/**                            Decode application                             */
-/**
- * Copyright 2024 HaמuL
- * Description: Decoder implementation example
- */
+///                            Decode application                            ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Decoder implementation example
 
 use frad::{Decoder, ASFH, PCMFormat, f64cvt::f64_to_any};
 use crate::{
@@ -14,12 +13,11 @@ use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 use same_file::is_same_file;
 
-/** write
- * Writes PCM data to file or sink
- * Parameters: Output file/sink, PCM data, PCM format, Sample rate
- * Parameters: Output file, PCM data
- * Returns: None
- */
+/// write
+/// Writes PCM data to file or sink
+/// Parameters: Output file/sink, PCM data, PCM format, Sample rate
+/// Parameters: Output file, PCM data
+/// Returns: None
 fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: u32) {
     if pcm.is_empty() { return; }
     match sink {
@@ -34,10 +32,9 @@ fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, pcm: Vec<Vec<f64>>,
     }
 }
 
-/** logging_decode
- * Logs a message to stderr
- * Parameters: Log level, Process info, Linefeed flag, ASFH
- */
+/// logging_decode
+/// Logs a message to stderr
+/// Parameters: Log level, Process info, Linefeed flag, ASFH
 fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) {
     if loglevel == 0 { return; }
 
@@ -60,11 +57,10 @@ fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) 
     else { for _ in 0..line_count { eprint!("\x1b[1A"); } eprint!("\r"); }
 }
 
-/** decode
- * Decodes any found FrAD frames in the input file to f64be PCM
- * Parameters: Input file, CLI parameters
- * Returns: Decoded PCM on File or stdout
- */
+/// decode
+/// Decodes any found FrAD frames in the input file to f64be PCM
+/// Parameters: Input file, CLI parameters
+/// Returns: Decoded PCM on File or stdout
 pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut wfile_prim = params.output;
     if rfile.is_empty() { eprintln!("Input file must be given"); exit(1); }

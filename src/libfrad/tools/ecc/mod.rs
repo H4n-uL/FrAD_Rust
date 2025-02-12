@@ -1,17 +1,15 @@
-/**                             Error Correction                              */
-/**
- * Copyright 2024 HaמuL
- * Description: Error correction tools
- */
+///                             Error Correction                             ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Error correction tools
 
 mod reedsolo;
 pub use reedsolo::RSCodec;
 
-/** encode_rs
- * Encodes data w. Reed-Solomon ECC
- * Parameters: Data, ECC ratio
- * Returns: Encoded data
- */
+/// encode_rs
+/// Encodes data w. Reed-Solomon ECC
+/// Parameters: Data, ECC ratio
+/// Returns: Encoded data
 pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let rs: RSCodec = RSCodec::new_default(data_size, parity_size);
@@ -21,11 +19,10 @@ pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
     }).flatten().collect();
 }
 
-/** decode_rs
- * Decodes data and corrects errors w. Reed-Solomon ECC
- * Parameters: Data, ECC ratio
- * Returns: Decoded data
- */
+/// decode_rs
+/// Decodes data and corrects errors w. Reed-Solomon ECC
+/// Parameters: Data, ECC ratio
+/// Returns: Decoded data
 pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let block_size = data_size + parity_size;

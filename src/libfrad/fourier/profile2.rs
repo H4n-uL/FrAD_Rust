@@ -1,9 +1,8 @@
-/**                              FrAD Profile 2                               */
-/**
- * Copyright 2024 HaמuL
- * Description: FrAD Profile 2 encoding and decoding core
- * Dependencies: miniz_oxide
- */
+///                              FrAD Profile 2                              ///
+///
+/// Copyright 2024 HaמuL
+/// Description: FrAD Profile 2 encoding and decoding core
+/// Dependencies: miniz_oxide
 
 use crate::backend::{SplitFront, Transpose};
 use super::{
@@ -18,11 +17,10 @@ use miniz_oxide::{deflate, inflate};
 // Bit depth table
 pub const DEPTHS: [u16; 8] = [8, 9, 10, 11, 12, 14, 16, 0];
 
-/** analogue
- * Encodes PCM to FrAD Profile 2
- * Parameters: f64 PCM, Bit depth, Sample rate (and channel count, same note as profile 0)
- * Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
- */
+/// analogue
+/// Encodes PCM to FrAD Profile 2
+/// Parameters: f64 PCM, Bit depth, Sample rate (and channel count, same note as profile 0)
+/// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let (pcm_scale, _) = get_scale_factors(bit_depth);
@@ -56,11 +54,10 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<
     return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as u16, channels as u16, srate);
 }
 
-/** digital
- * Decodes FrAD Profile 2 to PCM
- * Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
- * Returns: f64 PCM
- */
+/// digital
+/// Decodes FrAD Profile 2 to PCM
+/// Parameters: Encoded audio data, Bit depth index, Channel count, Sample rate, Frame size
+/// Returns: f64 PCM
 pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u32, fsize: u32) -> Vec<Vec<f64>> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
     let ((pcm_scale, _), fsize) = (get_scale_factors(bit_depth), fsize as usize);

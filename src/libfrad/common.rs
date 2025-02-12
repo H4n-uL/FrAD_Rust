@@ -1,8 +1,7 @@
-/**                               Common tools                                */
-/**
- * Copyright 2024 HaמuL
- * Description: Common tools for FrAD
- */
+///                               Common tools                               ///
+///
+/// Copyright 2024 HaמuL
+/// Description: Common tools for FrAD
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
@@ -58,32 +57,29 @@ const fn gcrc16t_ansi() -> [[u16; 256]; TABLE_SIZE_CRC16_ANSI] {
 const CRC32_TABLE: [[u32; 256]; TABLE_SIZE_CRC32] = gcrc32t();
 const CRC16T_ANSI: [[u16; 256]; TABLE_SIZE_CRC16_ANSI] = gcrc16t_ansi();
 
-/** crc32_slow
- * Calculates CRC-32 checksum of a byte array
- * Parameters: Byte array
- * Returns: CRC-32 checksum
- */
+/// crc32_slow
+/// Calculates CRC-32 checksum of a byte array
+/// Parameters: Byte array
+/// Returns: CRC-32 checksum
 fn crc32_slow(mut crc: u32, buf: &[u8]) -> u32 {
     crc = !crc;
     buf.iter().for_each(|&byte| { crc = (crc >> 8) ^ CRC32_TABLE[0][((crc as u8) ^ byte) as usize]; });
     return !crc;
 }
 
-/** crc16_ansi_slow
- * Calculates CRC-16 ANSI checksum of a byte array
- * Parameters: Byte array
- * Returns: CRC-16 ANSI checksum
- */
+/// crc16_ansi_slow
+/// Calculates CRC-16 ANSI checksum of a byte array
+/// Parameters: Byte array
+/// Returns: CRC-16 ANSI checksum
 fn crc16_ansi_slow(mut crc: u16, buf: &[u8]) -> u16 {
     buf.iter().for_each(|&byte| { crc = (crc >> 8) ^ CRC16T_ANSI[0][((crc as u8) ^ byte) as usize]; });
     return crc;
 }
 
-/** crc32
- * Accelerated CRC-32 checksum calculation
- * Parameters: Byte array
- * Returns: CRC-32 checksum
- */
+/// crc32
+/// Accelerated CRC-32 checksum calculation
+/// Parameters: Byte array
+/// Returns: CRC-32 checksum
 pub fn crc32(mut crc: u32, buf: &[u8]) -> u32 {
     if TABLE_SIZE_CRC32 < 4 { return crc32_slow(crc, buf); }
     crc = !crc;
@@ -101,11 +97,10 @@ pub fn crc32(mut crc: u32, buf: &[u8]) -> u32 {
     return !crc;
 }
 
-/** crc16_ansi
- * Accelerated CRC-16 ANSI checksum calculation
- * Parameters: Byte array
- * Returns: CRC-16 ANSI checksum
- */
+/// crc16_ansi
+/// Accelerated CRC-16 ANSI checksum calculation
+/// Parameters: Byte array
+/// Returns: CRC-16 ANSI checksum
 pub fn crc16_ansi(mut crc: u16, buf: &[u8]) -> u16 {
     if TABLE_SIZE_CRC16_ANSI < 2 { return crc16_ansi_slow(crc, buf); }
 
