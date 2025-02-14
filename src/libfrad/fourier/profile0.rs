@@ -26,7 +26,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
     let channels = pcm[0].len();
 
-    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x)).collect();
     let freqs_flat: Vec<f64> = freqs.trans().iter().flat_map(|x| x.iter()).cloned().collect();
     let max_abs = freqs_flat.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
 
@@ -46,5 +46,5 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
 pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<Vec<f64>> {
     let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
     let freqs: Vec<Vec<f64>> = freqs_flat.chunks(channels as usize).map(|chunk| chunk.to_vec()).collect();
-    return freqs.trans().into_iter().map(idct).collect::<Vec<Vec<f64>>>().trans();
+    return freqs.trans().iter().map(|x| idct(x)).collect::<Vec<Vec<f64>>>().trans();
 }

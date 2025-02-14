@@ -54,7 +54,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32, mut loss
     let pcm_trans: Vec<Vec<f64>> = pcm.trans().iter().map(|x| x.iter().map(|y| y * pcm_scale).collect()).collect();
 
     // 2. DCT
-    let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm_trans.iter().map(|x| dct(x)).collect();
     let channels = freqs.len();
 
     // 3. Subband masking and quantisation
@@ -128,6 +128,6 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
 
     // 6. Inverse DCT and scaling
     return freqs.iter().map(|x|
-        idct(x.to_vec()).iter().map(|y| y / pcm_scale).collect()
+        idct(x).iter().map(|y| y / pcm_scale).collect()
     ).collect::<Vec<Vec<f64>>>().trans();
 }

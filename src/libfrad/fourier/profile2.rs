@@ -30,7 +30,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<
     let pcm = pad_pcm(pcm);
 
     // 2. DCT
-    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x.to_vec())).collect();
+    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x)).collect();
     let channels = freqs.len();
 
     // 3. TNS analysis
@@ -87,5 +87,5 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     let freqs = p2tools::tns_synthesis(&tns_freqs, &lpc);
 
     // 6. Inverse DCT and scaling
-    return freqs.iter().map(|x| idct(x.to_vec())).collect::<Vec<Vec<f64>>>().trans();
+    return freqs.iter().map(|x| idct(x)).collect::<Vec<Vec<f64>>>().trans();
 }
