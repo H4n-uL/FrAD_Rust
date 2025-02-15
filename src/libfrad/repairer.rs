@@ -21,7 +21,7 @@ pub struct Repairer {
 }
 
 impl Repairer {
-    pub fn new(mut ecc_ratio: [u8; 2]) -> Repairer {
+    pub fn new(mut ecc_ratio: [u8; 2]) -> Self {
         if ecc_ratio[0] == 0 {
             eprintln!("ECC data size must not be zero");
             eprintln!("Setting ECC to default 96 24");
@@ -34,7 +34,7 @@ impl Repairer {
             ecc_ratio = [96, 24];
         }
 
-        return Repairer {
+        return Self {
             asfh: ASFH::new(),
             buffer: Vec::new(),
 

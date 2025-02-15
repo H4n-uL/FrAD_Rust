@@ -29,8 +29,8 @@ pub struct Decoder {
 }
 
 impl Decoder {
-    pub fn new(fix_error: bool) -> Decoder {
-        return Decoder {
+    pub fn new(fix_error: bool) -> Self {
+        return Self {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),

@@ -414,8 +414,8 @@ pub struct RSCodec {
 }
 
 impl RSCodec {
-    pub fn new(data_size: usize, parity_size: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> RSCodec {
-        let mut rs = RSCodec {
+    pub fn new(data_size: usize, parity_size: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> Self {
+        let mut rs = Self {
             data_size, parity_size,
             fcr, prim,
             generator, c_exp,
