@@ -32,11 +32,11 @@ pub fn pad_pcm(mut pcm: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 /// get_scale_factors
 /// Gets the scale factors for PCM and thresholds
 /// Parameters: Bit depth
-/// Returns: 2.0^(bit_depth - 1) as PCM scale factor,
-///          sqrt(3.0)^(16 - bit_depth) as threshold scale factor
+/// Returns: 2.0 ^ (bit_depth - 1) as PCM scale factor,
+///          4.0 * ((1.0 / bit_depth) ^ 0.5 * 4.0) ^ 16.0 as threshold scale factor
 pub fn get_scale_factors(bit_depth: u16) -> (f64, f64) {
     let pcm_scale = 2.0_f64.powi(bit_depth as i32 - 1);
-    let thres_scale = 3.0_f64.sqrt().powi(16 - bit_depth as i32);
+    let thres_scale = 4.0 * ((1.0 / bit_depth as f64).sqrt() * 4.0).powf(16.0);
     return (pcm_scale, thres_scale);
 }
 
@@ -62,7 +62,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32, mut loss
     .into_iter().map(|c| {
         // 3.1. Masking threshold calculation
         let thres_channel: Vec<f64> = p1tools::mask_thres_mos(
-            freqs[c].clone(), srate, bit_depth, loss_level, p1tools::SPREAD_ALPHA
+            freqs[c].clone(), srate, loss_level, p1tools::SPREAD_ALPHA
         );
 
         // 3.2. Remapping thresholds to DCT bins
