@@ -15,8 +15,10 @@ fn cut_float3s(bytes: Vec<u8>, bits: usize, little_endian: bool) -> Vec<u8> {
     let size = if bits % 8 == 0 { bits / 8 } else { bits };
     let skip = if !little_endian { 0 } else { size / 3 };
 
-    return if bits % 8 != 0 { let bstr = bitcvt::to_bits(bytes);
-        bitcvt::to_bytes(bstr.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect()) }
+    return if bits % 8 != 0 {
+        bitcvt::to_bytes(&bitcvt::to_bits(&bytes)
+        .chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect::<Vec<bool>>()
+    )}
     else { bytes.chunks(size * 4 / 3).flat_map(|x| x.iter().skip(skip).take(size).cloned()).collect() }
 }
 
@@ -67,10 +69,10 @@ fn pack_f64(input: Vec<f64>, little_endian: bool) -> Vec<u8> {
 fn pad_float3s(bstr: Vec<u8>, bits: usize, little_endian: bool) -> Vec<u8> {
     let (pad_bits, pad_bytes) = (vec![false; bits / 3], vec![0; bits / 24]);
     return if bits % 8 != 0 {
-        bitcvt::to_bytes(bitcvt::to_bits(bstr)
+        bitcvt::to_bytes(&bitcvt::to_bits(&bstr)
         .chunks(bits).filter(|x| x.len() == bits).flat_map(|x| {
         if !little_endian { x.iter().chain(pad_bits.iter()) } else { pad_bits.iter().chain(x.iter()) }
-        }).cloned().collect())
+        }).cloned().collect::<Vec<bool>>())
     }
     else {
         bstr.chunks(bits / 8).filter(|x| x.len() == bits / 8).flat_map(|x| {
