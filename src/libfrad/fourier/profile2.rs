@@ -41,8 +41,8 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<
     let lpc_flat: Vec<i64> = lpc.trans().iter().flat_map(|x| x.iter().map(|y| *y)).collect();
 
     // 5. Exponential Golomb-Rice encoding
-    let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(freqs_flat);
-    let lpc_gol: Vec<u8> = p1tools::exp_golomb_encode(lpc_flat);
+    let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(&freqs_flat);
+    let lpc_gol: Vec<u8> = p1tools::exp_golomb_encode(&lpc_flat);
 
     // 6. Connecting data
     //    [ LPC length in u32be | Thresholds | Frequencies ]
@@ -74,8 +74,8 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     let lpc_gol = frad.split_front(lpc_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let mut lpc_flat: Vec<i64> = p1tools::exp_golomb_decode(lpc_gol);
-    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(frad).into_iter().map(|x| x as f64 / pcm_scale).collect();
+    let mut lpc_flat: Vec<i64> = p1tools::exp_golomb_decode(&lpc_gol);
+    let mut freqs_flat: Vec<f64> = p1tools::exp_golomb_decode(&frad).into_iter().map(|x| x as f64 / pcm_scale).collect();
     lpc_flat.resize((p2tools::TNS_MAX_ORDER + 1) * channels, 0);
     freqs_flat.resize(fsize * channels, 0.0);
 

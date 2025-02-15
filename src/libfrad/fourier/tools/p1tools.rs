@@ -4,7 +4,6 @@
 /// Description: Quantisation and Dequantisation tools for Profile 1
 
 use crate::backend::{bitcvt, linspace};
-use core::iter::repeat;
 
 pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
@@ -86,27 +85,39 @@ pub fn dequant(y: f64) -> f64 { return y.signum() * y.abs().powf(1.0 / QUANT_ALP
 /// Encodes any integer array with Exponential Golomb Encoding
 /// Parameters: Integer array
 /// Returns: Encoded binary data
-pub fn exp_golomb_encode(data: Vec<i64>) -> Vec<u8> {
+pub fn exp_golomb_encode(data: &[i64]) -> Vec<u8> {
     if data.is_empty() { return vec![0]; }
     let dmax = data.iter().map(|x| x.abs()).max().unwrap();
     let k = if dmax > 0 { (dmax as f64).log2().ceil() as u8 } else { 0 };
+    let (mut params, mut pos) = (Vec::with_capacity(data.len()), 8);
 
-    let mut encoded_binary = bitcvt::to_bits(&[k]);
-
-    for n in data {
+    for &n in data.iter() {
         let x = if n > 0 { (n << 1) - 1 } else { -n << 1 } + (1 << k);
-        let code: Vec<bool> = bitcvt::to_bits(&x.to_be_bytes()).iter().skip_while(|&x| !x).cloned().collect();
-        encoded_binary.extend(repeat(false).take(code.len() - (k + 1) as usize));
-        encoded_binary.extend(code);
+        let bits = ((x.ilog2() as usize + 1) << 1) - (k + 1) as usize;
+        params.push((pos, x, bits));
+        pos += bits;
     }
-    return bitcvt::to_bytes(&encoded_binary);
+
+    let mut encoded = vec![0u8; (pos + 7) / 8];
+    encoded[0] = k;
+
+    for (pos, x, bits) in params {
+        let (byte, bit) = (pos / 8, pos % 8);
+        for i in 0..bits {
+            if (x & (1 << (bits - 1 - i))) != 0 {
+                encoded[byte + (bit + i) / 8] |= 1 << 7 - ((bit + i) % 8);
+            }
+        }
+    }
+
+    return encoded;
 }
 
 /// exp_golomb_decode
 /// Decodes any integer array with Exponential Golomb Encoding
 /// Parameters: Binary data
 /// Returns: Decoded integer array
-pub fn exp_golomb_decode(data: Vec<u8>) -> Vec<i64> {
+pub fn exp_golomb_decode(data: &[u8]) -> Vec<i64> {
     let k = data[0] as usize;
     let (data, kx, mut decoded, mut idx) =
         (bitcvt::to_bits(&data[1..]), 1 << k, Vec::new(), 0);
