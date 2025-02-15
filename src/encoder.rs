@@ -60,18 +60,16 @@ pub fn logging_encode(loglevel: u8, log: &ProcessInfo, linefeed: bool) {
 pub fn encode(input: String, params: CliParams) {
     if input.is_empty() { eprintln!("Input file must be given"); exit(1); }
 
-    let mut encoder = Encoder::new(params.profile, params.pcm);
     if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
     if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
-
-    encoder.set_srate(params.srate);
-    encoder.set_channels(params.channels as u16);
-
-    encoder.set_frame_size(params.frame_size);
+    let mut encoder = Encoder::new(
+        params.profile, params.srate,
+        params.channels, params.bits,
+        params.frame_size, params.pcm
+    );
 
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
     encoder.set_little_endian(params.little_endian);
-    encoder.set_bit_depth(params.bits);
     encoder.set_overlap_ratio(params.overlap_ratio);
 
     let loss_level = 1.25_f64.powi(params.losslevel as i32) / 19.0 + 0.5;

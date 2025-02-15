@@ -31,12 +31,11 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    pub fn new(profile: u8, pcm_format: PCMFormat) -> Encoder {
+    pub fn new(profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32, pcm_format: PCMFormat) -> Self {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
-        let mut asfh = ASFH::new();
-        asfh.profile = profile;
-        return Encoder {
-            asfh, buffer: Vec::new(),
+
+        let mut encoder = Self {
+            asfh: ASFH::new(), buffer: Vec::new(),
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,
             overlap_fragment: Vec::new(),
@@ -44,12 +43,15 @@ impl Encoder {
             pcm_format,
             loss_level: 0.5,
         };
+        encoder.set_profile(profile, srate, channels, bit_depth, frame_size);
+
+        return encoder;
     }
 
-    /// _set_profile
+    /// set_profile
     /// Modify the profile while running
     /// Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
-    pub unsafe fn _set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
+    pub fn set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
         if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
 
         self.asfh.profile = profile;
@@ -110,9 +112,8 @@ impl Encoder {
         self.asfh.ecc_ratio = ecc_ratio;
     }
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
-    pub fn set_loss_level(&mut self, loss_level: f64) {
-        self.loss_level = loss_level.abs().max(0.125);
-    }
+    pub fn set_loss_level(&mut self, loss_level: f64) { self.loss_level = loss_level.abs().max(0.125); }
+    pub fn set_pcm_format(&mut self, pcm_format: PCMFormat) { self.pcm_format = pcm_format; }
     pub fn set_overlap_ratio(&mut self, mut overlap_ratio: u16) {
         if overlap_ratio != 0 { overlap_ratio = overlap_ratio.max(2).min(256); }
         self.asfh.overlap_ratio = overlap_ratio;
@@ -161,12 +162,10 @@ impl Encoder {
         loop {
             // let rng = &mut rand::thread_rng();
             // let prf = *AVAILABLE.choose(rng).unwrap();
-            // unsafe {
-            //     self._set_profile(prf, self.srate, self.channels,
-            //         *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //         if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.gen_range(128..32768) }
-            //     );
-            // }
+            // self._set_profile(prf, self.srate, self.channels,
+            //     *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
+            //     if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.gen_range(128..32768) }
+            // );
             // self.set_loss_level(rng.gen_range(0.125..10.0));
             // let ecc_data = rng.gen_range(1..255);
             // self.set_ecc(rng.gen_bool(0.5), [ecc_data, rng.gen_range(0..(255 - ecc_data))]);
