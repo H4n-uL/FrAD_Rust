@@ -49,7 +49,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, mut srate: u32) -> (Vec<
     let frad: Vec<u8> = (lpc_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(lpc_gol).chain(freqs_gol).collect();
 
     // 7. Zlib compression
-    let frad = deflate::compress_to_vec_zlib(&frad, 10);
+    let frad = deflate::compress_to_vec(&frad, 10);
 
     return (frad, DEPTHS.iter().position(|&x| x == bit_depth).unwrap() as u16, channels as u16, srate);
 }
@@ -63,11 +63,10 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     let ((pcm_scale, _), fsize) = (get_scale_factors(bit_depth), fsize as usize);
 
     // 1. Zlib decompression
-    // frad = match inflate::decompress_to_vec_zlib(&frad) {
-    //     Ok(x) => x,
-    //     Err(_) => { return vec![vec![0.0; channels]; fsize]; }
-    // };
-    frad = inflate::decompress_to_vec_zlib(&frad).unwrap();
+    frad = match inflate::decompress_to_vec(&frad) {
+        Ok(x) => x,
+        Err(_) => { return vec![vec![0.0; channels]; fsize]; }
+    };
 
     // 2. Splitting LPC and frequencies
     let lpc_len = u32::from_be_bytes(frad.split_front(4).try_into().unwrap()) as usize;
