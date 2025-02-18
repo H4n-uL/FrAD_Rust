@@ -41,7 +41,7 @@ pub fn _hanning_math(size: usize) -> Vec<f64> {
 /// Parameters: Length of the window
 /// Returns: Fade-in Hanning window
 pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
-    let res = ((olap_len+1)/2+1..=olap_len).map(|i| {
+    let res = (((olap_len + 1) >> 1) + 1..=olap_len).map(|i| {
         0.5 * (1.0 - (PI * i as f64 / (olap_len as f64 + 1.0)).cos())
     });
     return res.clone().rev().map(|x| 1.0 - x)
