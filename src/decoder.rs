@@ -3,7 +3,7 @@
 /// Copyright 2024 HaמuL
 /// Description: Decoder implementation example
 
-use frad::{Decoder, ASFH, PCMFormat, f64cvt::f64_to_any};
+use libfrad::{f64cvt::f64_to_any, Decoder, PCMFormat, ASFH, BIT_DEPTHS};
 use crate::{
     common::{self, check_overwrite, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
@@ -45,7 +45,7 @@ fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) 
     ));
     if loglevel > 1 {
         out.push(format!("Profile {}, {}bits {}ch@{}Hz, ECC={}    ", asfh.profile,
-            frad::BIT_DEPTHS[asfh.profile as usize][asfh.bit_depth_index as usize], asfh.channels, asfh.srate,
+            BIT_DEPTHS[asfh.profile as usize][asfh.bit_depth_index as usize], asfh.channels, asfh.srate,
             if asfh.ecc { format!("{}/{}", asfh.ecc_ratio[0], asfh.ecc_ratio[1]) } else { "disabled".to_string() }
         ));
     }

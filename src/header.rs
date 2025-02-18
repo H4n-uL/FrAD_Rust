@@ -3,7 +3,7 @@
 /// Copyright 2024 HaמuL
 /// Description: Metadata modificator for FrAD
 
-use frad::{common::{SIGNATURE, FRM_SIGN}, head};
+use libfrad::{common::{SIGNATURE, FRM_SIGN}, head};
 use crate::{
     common::{get_file_stem, move_all},
     tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}

@@ -6,7 +6,7 @@ license = "Archivist Licence"
 edition = "2021"
 
 [lib]
-name = "frad"
+name = "libfrad"
 path = "lib.rs"
 crate-type = ["rlib"]
 

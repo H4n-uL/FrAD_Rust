@@ -3,7 +3,7 @@
 /// Copyright 2024 HaמuL
 /// Description: Encoder implementation example
 
-use frad::{Encoder, profiles::LOSSLESS, head};
+use libfrad::{Encoder, profiles::LOSSLESS, head};
 use crate::{
     common::{check_overwrite, format_si, format_speed, format_time, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}

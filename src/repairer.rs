@@ -3,7 +3,7 @@
 /// Copyright 2024 HaמuL
 /// Description: Repairer implementation example
 
-use frad::Repairer;
+use libfrad::Repairer;
 use crate::{
     common::{check_overwrite, format_si, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
