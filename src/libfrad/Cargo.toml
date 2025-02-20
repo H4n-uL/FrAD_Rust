@@ -13,4 +13,4 @@ crate-type = ["rlib"]
 [dependencies]
 half = "2.4.1"
 miniz_oxide = "0.8.4"
-palmfft = "1.0.0"
+palmfft = "1.1.0"
