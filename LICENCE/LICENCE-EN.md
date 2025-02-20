@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.7 - 2025. 2. 12.
+V1.8 - 2025. 2. 20.
 
 ## Definition of Terms
 
@@ -69,7 +69,7 @@ However, add-ons or plug-ins developed by contributors or third parties may have
 
 After confirming that one or more of the conditions below has been met, the original author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
 
-1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the official public repository, but it's prohibited anyway.
+1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the public repository, but it's prohibited anyway.
 2. You are not required to credit the original author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the original author and the names of the contributors.
 3. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
 4. Obfuscation of end-consumer products is strictly prohibited unless security is more important than preservation, such as for internet/voice communications or disk encryption. It is unacceptable to apply technologies that interfere with the legitimate rights of consumers to FrAD, a format that is open to all.
@@ -78,7 +78,12 @@ If the violation is not resolved and the grace period has elapsed, the user will
 
 Once blacklisted, you will lose all access to the Work. This includes, but is not limited to accessing, distributing, selling, etc. to encoders and decoders, end-consumer products in violation of the licence, etc.
 
-Continued use of the Work without resolving the violation will be considered a massive infringement of moral rights and may result in immediate legal action.
+Continued use of the Work without resolving the violation may result in corresponding legal action under applicable law.
+
+1. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (m)
+2. Criminal Act Articles 231 and 232, Copyright Act Article 137 Paragraph 1, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (a)
+3. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1
+4. Criminal Act Article 355 Paragraph 2, Framework Act on Consumers Article 19 Paragraph 2, Act on the Consumer Protection in Electronic Commerce Article 21
 
 ### Unblacklisting
 
