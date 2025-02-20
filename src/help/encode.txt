@@ -21,7 +21,7 @@ Required settings:
 
 Common options:
     --format <pcm format>
-        Input format, default: f64be (alias: fmt, f, pcm)
+        Input format (default: f64be, alias: fmt, f, pcm)
 
     --ecc <data> <code>
         Enable ECC and set size ratio in --ecc <data> <code>
@@ -30,8 +30,8 @@ Common options:
     --output <path/to/audio.frad>
         Output file path (default: <input>.frad, alias: o, out)
 
-    --profile <0-7>
-        FrAD Profile from 0 to 7 (alias: prf)
+    --profile <profile number>
+        FrAD Profile (default: 4, alias: prf)
         Type `{frad} help profiles` for more about FrAD profiles
 
     --loss-level <level>
@@ -40,13 +40,13 @@ Common options:
 
 Advanced options:
     --overlap-ratio <ratio>
-        Overlap ratio in 1/<ratio> (alias: overlap, olap)
+        Overlap ratio in 1/<ratio> (default: 16, alias: overlap, olap)
 
     --fsize <frame size>
         Samples per frame (default: 2048, alias: fr, frame-size)
 
     --little-endian
-        Little Endian Toggle (alias: le)
+        Little Endian Toggle (default: false, alias: le)
 
 Metadata settings:
     --meta <key> <value>
