@@ -1,8 +1,8 @@
-///                      Fast Discrete Cosine Transform                      ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Fast Discrete Cosine Transform core
-/// Dependencies: palmfft
+//!                      Fast Discrete Cosine Transform                      !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Fast Discrete Cosine Transform core
+//! Dependencies: palmfft
 
 use core::f64::consts::PI;
 use palmfft::{CfftPlan, Complex};

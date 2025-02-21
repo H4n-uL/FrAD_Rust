@@ -1,7 +1,7 @@
-///                              FrAD Profile 0                              ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD Profile 0 encoding and decoding core
+//!                              FrAD Profile 0                              !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: FrAD Profile 0 encoding and decoding core
 /// Dependencies: half
 
 use crate::backend::Transpose;

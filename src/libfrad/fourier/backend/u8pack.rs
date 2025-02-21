@@ -1,8 +1,8 @@
-///                             Bytearray packer                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Packer and unpacker for floats <-> byte arrays
-/// Dependencies: half
+//!                             Bytearray packer                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Packer and unpacker for floats <-> byte arrays
+//! Dependencies: half
 
 use crate::backend::bitcvt;
 use half::f16;

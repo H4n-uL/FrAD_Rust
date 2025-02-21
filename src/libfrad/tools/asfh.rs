@@ -1,7 +1,7 @@
-///                                ASFH Tools                                ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Audio Stream Frame Header tools
+//!                                ASFH Tools                                !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Audio Stream Frame Header tools
 
 use crate::{
     backend::SplitFront,

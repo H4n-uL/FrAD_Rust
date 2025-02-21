@@ -1,7 +1,7 @@
-///                              Profile 2 Tools                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: TNS analysis and synthesis tools for Profile 2
+//!                              Profile 2 Tools                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: TNS analysis and synthesis tools for Profile 2
 
 use crate::fourier::backend::signal::{correlate_full, impulse_filt};
 

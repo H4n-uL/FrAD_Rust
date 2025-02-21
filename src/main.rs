@@ -1,7 +1,7 @@
-///                        AAPM@Audio-8151 Executable                        ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Fourier Analogue-in-Digital Rust Master
+//!                        AAPM@Audio-8151 Executable                        !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Fourier Analogue-in-Digital Rust Master
 
 mod tools; mod common;
 mod encoder; mod decoder; mod repairer; mod header;

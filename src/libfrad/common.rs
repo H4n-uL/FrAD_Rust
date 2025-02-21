@@ -1,7 +1,7 @@
-///                               Common tools                               ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Common tools for FrAD
+//!                               Common tools                               !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Common tools for FrAD
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];

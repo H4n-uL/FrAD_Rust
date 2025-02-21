@@ -1,7 +1,7 @@
-///                                 Repairer                                 ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD repairer
+//!                                 Repairer                                 !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: FrAD repairer
 
 use crate::{
     backend::{SplitFront, VecPatternFind},

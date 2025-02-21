@@ -1,8 +1,8 @@
-///                             Signal Processor                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Library for signal processing
-/// Dependencies: rustfft
+//!                             Signal Processor                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Library for signal processing
+//! Dependencies: palmfft
 
 use palmfft::{CfftPlan, Complex};
 

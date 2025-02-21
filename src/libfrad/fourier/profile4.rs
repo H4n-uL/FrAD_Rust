@@ -1,8 +1,8 @@
-///                              FrAD Profile 4                              ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD Profile 4 encoding and decoding core
-/// Dependencies: half
+//!                              FrAD Profile 4                              !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: FrAD Profile 4 encoding and decoding core
+//! Dependencies: half
 
 use super::backend::u8pack;
 use half::f16;

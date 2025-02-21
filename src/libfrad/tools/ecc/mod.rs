@@ -1,7 +1,7 @@
-///                             Error Correction                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Error correction tools
+//!                             Error Correction                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Error correction tools
 
 mod reedsolo;
 pub use reedsolo::RSCodec;

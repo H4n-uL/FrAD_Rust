@@ -1,7 +1,7 @@
-///                              Profile 1 Tools                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Quantisation and Dequantisation tools for Profile 1
+//!                              Profile 1 Tools                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Quantisation and Dequantisation tools for Profile 1
 
 use crate::backend::{bitcvt, linspace};
 

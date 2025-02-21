@@ -1,7 +1,7 @@
-///                         Reed-Solomon ECC for Rust                        ///
-///
-/// Ported from https://github.com/tomerfiliba/reedsolomon
-/// Copyright - Tomer Filiba
+//!                         Reed-Solomon ECC for Rust                        !//
+//!
+//! Ported from https://github.com/tomerfiliba/reedsolomon
+//! Copyright - Tomer Filiba
 
 #[derive(Debug)]
 pub enum RSError {

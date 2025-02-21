@@ -1,8 +1,8 @@
-///                              FrAD Profile 2                              ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD Profile 2 encoding and decoding core
-/// Dependencies: miniz_oxide
+//!                              FrAD Profile 2                              !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: FrAD Profile 2 encoding and decoding core
+//! Dependencies: miniz_oxide
 
 use crate::backend::{SplitFront, Transpose};
 use super::{

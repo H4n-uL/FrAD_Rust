@@ -1,7 +1,7 @@
-///                              Library Backend                             ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Backend for FrAD Library
+//!                              Library Backend                             !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Backend for FrAD Library
 
 pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
 use core::f64::consts::PI;

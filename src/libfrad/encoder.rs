@@ -1,4 +1,4 @@
-///                                  Encoder                                 ///
+//!                                  Encoder                                 ///
 ///
 /// Copyright 2024 HaמuL
 /// Description: FrAD encoder

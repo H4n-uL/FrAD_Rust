@@ -1,8 +1,8 @@
-///                             float64 Converter                            ///
-///
-/// Copyright 2024 HaמuL
-/// Description: float64 <-> PCM format converter
-/// Dependencies: half
+//!                             float64 Converter                            !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: float64 <-> PCM format converter
+//! Dependencies: half
 
 use crate::PCMFormat;
 use half::f16;

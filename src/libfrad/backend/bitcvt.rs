@@ -1,7 +1,7 @@
-///                                Bitconvert                                ///
-///
-/// Copyright 2024 HaמuL
-/// Description: Bitstream <-> Byte array converter
+//!                                Bitconvert                                !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: Bitstream <-> Byte array converter
 
 /// to_bits
 /// Converts byte array to bitstream

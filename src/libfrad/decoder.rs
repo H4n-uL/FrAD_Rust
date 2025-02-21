@@ -1,7 +1,7 @@
-///                                  Decoder                                 ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD decoder
+//!                                  Decoder                                 !//
+//!
+//! Copyright 2024-2025 HaמuL
+//! Description: FrAD decoder
 
 use crate::{
     backend::{hanning_in_overlap, SplitFront, VecPatternFind},
