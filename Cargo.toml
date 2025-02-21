@@ -9,7 +9,7 @@ name = "frad"
 version = "0.0.0"
 authors = ["HaמuL"]
 license = "Archivist Licence"
-edition = "2021"
+edition = "2024"
 
 [[bin]]
 name = "frad-rs"

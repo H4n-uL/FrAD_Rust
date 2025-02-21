@@ -29,7 +29,7 @@ pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endia
     let max_abs = pcm_flat.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
 
     let bit_depth_index = DEPTHS.iter().zip(FLOAT_DR_LIMITS.iter())
-    .enumerate().find(|(_, (&value, &limit))| value >= bit_depth && value > 0 && max_abs < limit)
+    .enumerate().find(|(_, (value, limit))| **value >= bit_depth && **value > 0 && max_abs < **limit)
     .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
 
     let frad = u8pack::pack(pcm_flat, DEPTHS[bit_depth_index], little_endian);

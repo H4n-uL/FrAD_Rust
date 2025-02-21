@@ -89,20 +89,20 @@ fn rs_generator_poly(parity_size: usize, fcr: u8, generator: u8, gf_exp: &[u8; 5
     return g;
 }
 
-fn rs_encode_msg(msg_in: &[u8], parity_size: usize, fcr: u8, generator: u8, gen: Option<&[u8]>, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
+fn rs_encode_msg(msg_in: &[u8], parity_size: usize, fcr: u8, generator: u8, polynomial: Option<&[u8]>, gf_exp: &[u8; 512], gf_log: &[u8; 256]) -> Vec<u8> {
     if msg_in.len() + parity_size > 255 { panic!("Message is too long"); }
     let get_tmp = rs_generator_poly(parity_size, fcr, generator, gf_exp, gf_log);
-    let gen = gen.unwrap_or_else(|| &get_tmp);
+    let polynomial = polynomial.unwrap_or_else(|| &get_tmp);
 
-    let mut msg_out = vec![0; msg_in.len() + gen.len() - 1];
+    let mut msg_out = vec![0; msg_in.len() + polynomial.len() - 1];
     msg_out[..msg_in.len()].copy_from_slice(msg_in);
 
     for i in 0..msg_in.len() {
         let coef = msg_out[i];
 
         if coef != 0 {
-            for j in 1..gen.len() {
-                msg_out[i + j] ^= gf_mul(gen[j], coef, gf_exp, gf_log);
+            for j in 1..polynomial.len() {
+                msg_out[i + j] ^= gf_mul(polynomial[j], coef, gf_exp, gf_log);
             }
         }
     }
@@ -410,7 +410,7 @@ pub struct RSCodec {
     pub c_exp: u32,
     gf_log: [u8; 256],
     gf_exp: [u8; 512],
-    gen: Vec<u8>,
+    polynomial: Vec<u8>,
 }
 
 impl RSCodec {
@@ -421,7 +421,7 @@ impl RSCodec {
             generator, c_exp,
             gf_log: [0; 256],
             gf_exp: [0; 512],
-            gen: Vec::new(),
+            polynomial: Vec::new(),
         };
         let block_size = data_size + parity_size;
 
@@ -437,7 +437,7 @@ impl RSCodec {
         rs.gf_log = gf_log;
         rs.gf_exp = gf_exp;
 
-        rs.gen = rs_generator_poly(parity_size, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
+        rs.polynomial = rs_generator_poly(parity_size, rs.fcr, rs.generator, &rs.gf_exp, &rs.gf_log);
 
         return rs;
     }
