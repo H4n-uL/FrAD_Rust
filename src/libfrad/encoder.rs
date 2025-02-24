@@ -1,7 +1,7 @@
-//!                                  Encoder                                 ///
-///
-/// Copyright 2024 HaמuL
-/// Description: FrAD encoder
+//!                                  Encoder                                 !//
+//!
+//! Copyright 2024 HaמuL
+//! Description: FrAD encoder
 
 use crate::{
     PCMFormat, f64cvt::any_to_f64,
@@ -10,7 +10,6 @@ use crate::{
     tools::  {asfh::ASFH, ecc},
 };
 
-use std::process::exit;
 // use rand::prelude::*;
 
 pub struct EncodeResult {
@@ -31,9 +30,7 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    pub fn new(profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32, pcm_format: PCMFormat) -> Self {
-        if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
-
+    pub fn new(profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32, pcm_format: PCMFormat) -> Result<Self, String> {
         let mut encoder = Self {
             asfh: ASFH::new(), buffer: Vec::new(),
             bit_depth: 0, channels: 0,
@@ -43,33 +40,35 @@ impl Encoder {
             pcm_format,
             loss_level: 0.5,
         };
-        encoder.set_profile(profile, srate, channels, bit_depth, frame_size);
+        encoder.set_profile(profile, srate, channels, bit_depth, frame_size)?;
 
-        return encoder;
+        return Ok(encoder);
     }
 
     /// set_profile
     /// Modify the profile while running
     /// Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
-    pub fn set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) {
-        if !AVAILABLE.contains(&profile) { eprintln!("Invalid profile! Available: {:?}", AVAILABLE); exit(1); }
+    pub fn set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) -> Result<(), String> {
+        if !AVAILABLE.contains(&profile) { return Err(format!("Invalid profile! Available: {:?}", AVAILABLE)); }
 
         self.asfh.profile = profile;
-        self.set_srate(srate);
-        self.set_channels(channels);
-        self.set_bit_depth(bit_depth);
-        self.set_frame_size(frame_size);
+        self.set_srate(srate)?;
+        self.set_channels(channels)?;
+        self.set_bit_depth(bit_depth)?;
+        self.set_frame_size(frame_size)?;
+        return Ok(());
     }
 
     // Critical info - set after initialising, before processing (Global)
     pub fn get_channels(&self) -> u16 { self.channels }
-    pub fn set_channels(&mut self, channels: u16) {
-        if channels == 0 { eprintln!("Channel count cannot be zero"); exit(1); }
+    pub fn set_channels(&mut self, channels: u16) -> Result<(), String> {
+        if channels == 0 { return Err("Channel count cannot be zero".to_string()); }
         self.channels = channels;
+        return Ok(());
     }
     pub fn get_srate(&self) -> u32 { self.srate }
-    pub fn set_srate(&mut self, mut srate: u32) {
-        if srate == 0 { eprintln!("Sample rate cannot be zero"); exit(1); }
+    pub fn set_srate(&mut self, mut srate: u32) -> Result<(), String> {
+        if srate == 0 { return Err("Sample rate cannot be zero".to_string()); }
         if COMPACT.contains(&self.asfh.profile) {
             let x = compact::get_valid_srate(srate);
             if x != srate {
@@ -79,24 +78,26 @@ impl Encoder {
             }
         }
         self.srate = srate;
+        return Ok(());
     }
 
     // Semi-critical info - set after resetting profile
     pub fn get_frame_size(&self) -> u32 { self.fsize }
-    pub fn set_frame_size(&mut self, frame_size: u32) {
-        if frame_size == 0 { eprintln!("Frame size cannot be zero"); exit(1); }
-        if frame_size > SEGMAX[self.asfh.profile as usize] { eprintln!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]); exit(1); }
+    pub fn set_frame_size(&mut self, frame_size: u32) -> Result<(), String> {
+        if frame_size == 0 { return Err("Frame size cannot be zero".to_string()); }
+        if frame_size > SEGMAX[self.asfh.profile as usize] { return Err(format!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize])); }
         self.fsize = frame_size;
+        return Ok(());
     }
     pub fn get_bit_depth(&self) -> u16 { self.bit_depth }
-    pub fn set_bit_depth(&mut self, bit_depth: u16) {
-        if bit_depth == 0 { eprintln!("Bit depth cannot be zero"); exit(1); }
+    pub fn set_bit_depth(&mut self, bit_depth: u16) -> Result<(), String> {
+        if bit_depth == 0 { return Err("Bit depth cannot be zero".to_string()); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
-            eprintln!("Invalid bit depth! Valid depths for profile {}: {:?}",
-            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<u16>>());
-            exit(1);
+            return Err(format!("Invalid bit depth! Valid depths for profile {}: {:?}",
+            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<u16>>()));
         }
         self.bit_depth = bit_depth;
+        return Ok(());
     }
 
     // Non-critical info - can be set anytime

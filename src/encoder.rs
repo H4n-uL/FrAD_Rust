@@ -116,14 +116,13 @@ pub fn encode(input: String, params: CliParams) {
         eprintln!("Channel count should be set except zero");
         exit(1);
     }
-    let mut encoder = Encoder::new(
-        params.profile,
-        params.srate,
-        params.channels,
-        params.bits,
-        params.frame_size,
-        params.pcm,
-    );
+    let mut encoder = match Encoder::new(
+        params.profile, params.srate, params.channels,
+        params.bits, params.frame_size, params.pcm)
+    {
+        Ok(enc) => enc,
+        Err(err) => { eprintln!("{}", err); exit(1); }
+    };
 
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
     encoder.set_little_endian(params.little_endian);
