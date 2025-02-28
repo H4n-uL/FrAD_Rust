@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.8 - 2025. 2. 20.
+V1.9 - 2025. 2. 28.
 
 ## Definition of Terms
 
@@ -46,8 +46,8 @@ When distributing or implementing FrAD, the following must be observed.
 
 - Contributors or third-party developers are welcome to create software compatible with the Work and use it for any purpose, non-commercial or commercial. The original author does not require any royalties for this.
 - Any use of the Work in your implementation must be under Archivist licence and comply with its terms.
-- The original author reserves the right to certify compliance with the FrAD format and may, in some cases, request the source code.
-- After review of the source code, the developer may request removal of the source code, limited to the original code provided, in which case the original author loses access to the source code and must immediately destroy all copies.
+- The Project Lead reserves the right to certify compliance with the FrAD format. The Project Lead may, in some cases, request source code from the Developer, which the Developer reserves the right to refuse.
+- After review of the source code, the developer may request removal of the source code, limited to the original code provided, in which case the Project Lead loses access to the source code and must immediately destroy all copies.
 
 ## About Contributions
 
@@ -74,20 +74,12 @@ After confirming that one or more of the conditions below has been met, the orig
 3. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
 4. Obfuscation of end-consumer products is strictly prohibited unless security is more important than preservation, such as for internet/voice communications or disk encryption. It is unacceptable to apply technologies that interfere with the legitimate rights of consumers to FrAD, a format that is open to all.
 
-If the violation is not resolved and the grace period has elapsed, the user will be immediately listed on FrAD's blacklist and the original author will notify them of the blacklisting.
-
-Once blacklisted, you will lose all access to the Work. This includes, but is not limited to accessing, distributing, selling, etc. to encoders and decoders, end-consumer products in violation of the licence, etc.
-
-Continued use of the Work without resolving the violation may result in corresponding legal action under applicable law.
+Once the grace period has elapsed without remedying the breach, corresponding legal action may be taken under applicable law.
 
 1. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (m)
 2. Criminal Act Articles 231 and 232, Copyright Act Article 137 Paragraph 1, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (a)
 3. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1
 4. Criminal Act Article 355 Paragraph 2, Framework Act on Consumers Article 19 Paragraph 2, Act on the Consumer Protection in Electronic Commerce Article 21
-
-### Unblacklisting
-
-Once you fix the licence violation and pass the unblacklisting review, you will be immediately removed from the FrAD blacklist.
 
 ## Disclaimer
 
