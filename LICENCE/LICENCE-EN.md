@@ -2,11 +2,13 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.9 - 2025. 2. 28.
+V1.10 - 2025. 3. 13.
 
 ## Definition of Terms
 
 "Work" means Fourier Analogue-in-Digital formats, abstract algorithms, documentation, etc.
+
+"Public repository" means a repository that is publicly available on a source code repository hosting site, such as GitHub.
 
 "Original Author" means HaמuL, the original initiator and primary maintainer of the Fourier Analogue-in-Digital project.
 
@@ -14,7 +16,7 @@ V1.9 - 2025. 2. 28.
 
 "Contributor" means any person or entity who has contributed to the Work in any form, including by raising issues or modifying the source code.
 
-"End-Consumer Product" means an end product, such as physical or electronic good or service, that reaches the end consumer that is created using Fourier Analogue-in-Digital.
+"End-Consumer Product" means an end product, whether physical or electronic, that reaches the end consumer created in the format of Fourier Analogue-in-Digital.
 
 "Implement" means to create and distribute software that is compatible with the Work, and "Implementations" means the source code and software so implemented.
 
@@ -40,12 +42,12 @@ When distributing or implementing FrAD, the following must be observed.
 
 ### Distribution
 
-- You may not demand any royalties from End-Consumers when distributing public repositories, their source code, or official documentation.
+- You may not demand any royalties from End-Consumers when distributing Public Repositories, their source code, or official documentation.
 
 ### Implementation
 
-- Contributors or third-party developers are welcome to create software compatible with the Work and use it for any purpose, non-commercial or commercial. The original author does not require any royalties for this.
-- Any use of the Work in your implementation must be under Archivist licence and comply with its terms.
+- Contributors or third-party developers are welcome to create software compatible with the Work and use it for any purpose, non-commercial or commercial. The Original Author does not require any royalties for this.
+- Any use of the Work in your implementation, or any apparent ambiguity in the interpretation of the Work as stated by the Work, must be under the Archivist Licence and must comply with its terms.
 - The Project Lead reserves the right to certify compliance with the FrAD format. The Project Lead may, in some cases, request source code from the Developer, which the Developer reserves the right to refuse.
 - After review of the source code, the developer may request removal of the source code, limited to the original code provided, in which case the Project Lead loses access to the source code and must immediately destroy all copies.
 
@@ -53,7 +55,7 @@ When distributing or implementing FrAD, the following must be observed.
 
 The Project Lead is the general manager of FrAD and sets the direction of the project and has final decision-making authority. Contributors provide suggestions and make technical contributions for the development of FrAD.
 
-Contributors are guaranteed moral rights to their contributions to the development of FrAD, regardless of the size or impact of their technical contributions, on a par with the original authors. Contributions automatically constitute acceptance of the rights and obligations under Archivist Licence.
+Contributors are guaranteed moral rights to their contributions to the development of FrAD, regardless of the size or impact of their technical contributions, on a par with the Original Authors'. Contributions automatically constitute acceptance of the rights and obligations under Archivist Licence.
 
 Disputes between Contributors shall be resolved by mutual agreement. If agreement cannot be reached, the Project Lead will arbitrate. If either party is dissatisfied with the outcome of the arbitration, they may take the matter to court.
 
@@ -61,20 +63,20 @@ Disputes between the Project Lead and a Contributor may only arise from a breach
 
 ## Intellectual Property Rights
 
-The original author does not claim any intellectual property rights, such as patent, trademark, or design rights, in the abstract algorithms, concrete code, or ideas developed by the author.
+The Original Author does not claim any intellectual property rights, such as patent, trademark, or design rights, in the abstract algorithms, concrete code, or ideas developed by the author.
 
-However, add-ons or plug-ins developed by contributors or third parties may have independent intellectual property rights independent of Archivist Licence.
+However, add-ons or plug-ins developed by Contributors or third parties may have independent intellectual property rights independent of Archivist Licence.
 
 ## Licence Violations
 
-After confirming that one or more of the conditions below has been met, the original author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
+After confirming that one or more of the conditions below has been met, the Original Author will notify the user of the violation and will request it to be resolved. The grace period is three periods of one month each, totalling three months.
 
 1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the public repository, but it's prohibited anyway.
-2. You are not required to credit the original author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the original author and the names of the contributors.
+2. You are not required to credit the Original Author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the Original Author and the names of the Contributors.
 3. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
-4. Obfuscation of end-consumer products is strictly prohibited unless security is more important than preservation, such as for internet/voice communications or disk encryption. It is unacceptable to apply technologies that interfere with the legitimate rights of consumers to FrAD, a format that is open to all.
+4. Obfuscation of End-Consumer Products is strictly prohibited, except where required for security purposes or where technical necessity, such as compression or optimisation, renders it unrecognisable.
 
-Once the grace period has elapsed without remedying the breach, corresponding legal action may be taken under applicable law.
+Once the grace period has elapsed without remedying the breach, corresponding legal action may be taken under all applicable laws, including the following laws.
 
 1. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (m)
 2. Criminal Act Articles 231 and 232, Copyright Act Article 137 Paragraph 1, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (a)
@@ -85,11 +87,11 @@ Once the grace period has elapsed without remedying the breach, corresponding le
 
 Archivist Licence is a format licence, not a software licence. You are free to license your software, and if an existing software licence exists, you must comply with it.
 
-The original author and contributors are not liable for any direct, indirect, incidental, punitive, or consequential damages resulting from the use of this Work except to the extent that liability is acknowledged.
+The Original Author and Contributors are not liable for any direct, indirect, incidental, punitive, or consequential damages resulting from the use of this Work except to the extent that liability is acknowledged.
 
 ## Priority between licence languages
 
-In case of a dispute between the original author and the consumer, or any violation of the licence by the consumer, the licence in the consumer's native language or a representative equivalent of it shall take priority. However, in the event of a dispute between consumers, and if there is a conflict between the licences or their interpretation, the Korean licence shall take priority.
+In case of a dispute between the Original Author and the consumer, or any violation of the licence by the consumer, the licence in the consumer's native language or a representative equivalent of it shall take priority. However, in the event of a dispute between consumers, and if there is a conflict between the licences or their interpretation, the Korean licence shall take priority.
 
 ## Developer information
 
