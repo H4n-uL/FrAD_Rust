@@ -31,36 +31,16 @@ impl ProcessInfo {
     /// Parameters: Stream size, Sample count, Sample rate
     pub fn update(&mut self, size: usize, samples: usize, srate: u32) {
         self.total_size += size as u128;
-        if srate == 0 {
-            return;
-        }
-        self.duration.insert(
-            srate,
-            if self.duration.contains_key(&srate) {
-                self.duration[&srate]
-            } else {
-                0
-            } + samples as u128,
-        );
-        self.bitrate.insert(
-            srate,
-            if self.bitrate.contains_key(&srate) {
-                self.bitrate[&srate]
-            } else {
-                0
-            } + size as u128,
-        );
+        if srate == 0 { return; }
+        self.duration.insert(srate, if self.duration.contains_key(&srate) { self.duration[&srate] } else { 0 } + samples as u128);
+        self.bitrate.insert(srate, if self.bitrate.contains_key(&srate) { self.bitrate[&srate] } else { 0 } + size as u128);
     }
 
     /// get_duration
     /// Gets the total duration of the stream in f64 seconds
     /// Returns: Total duration
     pub fn get_duration(&self) -> f64 {
-        return self
-            .duration
-            .iter()
-            .map(|(k, v)| if *k != 0 { *v as f64 / *k as f64 } else { 0.0 })
-            .sum();
+        return self.duration.iter().map(|(k, v)| if *k != 0 { *v as f64 / *k as f64 } else  { 0.0 } ).sum();
     }
 
     /// get_bitrate
@@ -69,11 +49,7 @@ impl ProcessInfo {
     pub fn get_bitrate(&self) -> f64 {
         let total_bits: f64 = self.bitrate.values().sum::<u128>() as f64 * 8.0;
         let total_duration: f64 = self.get_duration();
-        return if total_duration > 0.0 {
-            total_bits / total_duration
-        } else {
-            0.0
-        };
+        return if total_duration > 0.0 { total_bits / total_duration } else { 0.0 };
     }
 
     /// get_speed
@@ -82,19 +58,13 @@ impl ProcessInfo {
     pub fn get_speed(&self) -> f64 {
         let encoding_time = self.start_time.elapsed().as_secs_f64();
         let total_duration: f64 = self.get_duration();
-        return if encoding_time > 0.0 {
-            total_duration / encoding_time
-        } else {
-            0.0
-        };
+        return if encoding_time > 0.0 { total_duration / encoding_time } else { 0.0 };
     }
 
     /// get_total_size
     /// Getter for private total_size
     /// Returns: Total size
-    pub fn get_total_size(&self) -> u128 {
-        return self.total_size;
-    }
+    pub fn get_total_size(&self) -> u128 { return self.total_size; }
 
     /// block
     /// Blocks the stream timer

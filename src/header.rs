@@ -3,20 +3,12 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Metadata modificator for FrAD
 
+use libfrad::{common::{SIGNATURE, FRM_SIGN}, head};
 use crate::{
     common::{get_file_stem, move_all},
-    tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG},
+    tools::cli::{CliParams, META_ADD, META_OVERWRITE, META_PARSE, META_REMOVE, META_RMIMG}
 };
-use libfrad::{
-    common::{FRM_SIGN, SIGNATURE},
-    head,
-};
-use std::{
-    fs::File,
-    io::{Read, Seek, SeekFrom, Write},
-    path::Path,
-    process::exit,
-};
+use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::{json, Value};
@@ -27,13 +19,8 @@ use tempfile::NamedTempFile;
 /// Parameters: File path, Modification type, Metadata, Image path
 /// Returns: FrAD file with modified metadata
 pub fn modify(file_name: String, modtype: String, params: CliParams) {
-    if file_name.is_empty() {
-        eprintln!("Input file must be given");
-        exit(1);
-    } else if !Path::new(&file_name).exists() {
-        eprintln!("Input file does not exist");
-        exit(1);
-    }
+    if file_name.is_empty() { eprintln!("Input file must be given"); exit(1); }
+    else if !Path::new(&file_name).exists() { eprintln!("Input file does not exist"); exit(1); }
 
     let mut head = vec![0u8; 64];
 
@@ -61,32 +48,17 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
         for (key, data) in meta_old {
             let (data, itype) = match String::from_utf8(data.clone()) {
                 Ok(data_str) => (data_str.to_string(), "string".to_string()),
-                Err(_) => (
-                    BASE64_STANDARD.encode(data).to_string(),
-                    "base64".to_string(),
-                ),
+                Err(_) => (BASE64_STANDARD.encode(data).to_string(), "base64".to_string())
             };
             json.push(json!({"key": key, "type": itype, "value": data}));
         }
         let mut wfile = params.output;
 
-        if wfile.is_empty() {
-            wfile = get_file_stem(&file_name);
-        }
-        File::create(format!("{}.json", wfile))
-            .unwrap()
-            .write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes())
-            .unwrap();
+        if wfile.is_empty() { wfile = get_file_stem(&file_name); }
+        File::create(format!("{}.json", wfile)).unwrap().write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
         if !img_old.is_empty() {
-            let img_suffix = if let Some(imgtype) = infer::get(&img_old) {
-                imgtype.extension()
-            } else {
-                "img"
-            };
-            File::create(format!("{}.{}", wfile, img_suffix))
-                .unwrap()
-                .write_all(&img_old)
-                .unwrap();
+            let img_suffix = if let Some(imgtype) = infer::get(&img_old) { imgtype.extension() } else { "img" };
+            File::create(format!("{}.{}", wfile, img_suffix)).unwrap().write_all(&img_old).unwrap();
         }
 
         return;
@@ -98,47 +70,25 @@ pub fn modify(file_name: String, modtype: String, params: CliParams) {
     let mut img = Vec::new();
     if !params.image_path.is_empty() {
         match File::open(&params.image_path) {
-            Ok(mut imgfile) => {
-                imgfile.read_to_end(&mut img).unwrap();
-            }
-            Err(_) => {
-                eprintln!("Image not found");
-            }
+            Ok(mut imgfile) => { imgfile.read_to_end(&mut img).unwrap(); },
+            Err(_) => { eprintln!("Image not found"); }
         }
     }
 
     match modtype.as_str() {
         META_ADD => {
-            if !meta_old.is_empty() {
-                meta_new.append(&mut meta_old);
-            }
+            if !meta_old.is_empty() { meta_new.append(&mut meta_old); }
             meta_new.extend(params.meta);
-            if !img_old.is_empty() {
-                img_new = img_old;
-            }
-            if !img.is_empty() {
-                img_new = img;
-            }
+            if !img_old.is_empty() { img_new = img_old; }
+            if !img.is_empty() { img_new = img; }
         }
         META_REMOVE => {
-            meta_new = meta_old
-                .into_iter()
-                .filter(|(title, _)| !params.meta.iter().any(|(t, _)| t == title))
-                .collect();
+            meta_new = meta_old.into_iter().filter(|(title, _)| !params.meta.iter().any(|(t, _)| t == title)).collect();
             img_new = img_old;
         }
-        META_RMIMG => {
-            meta_new = meta_old;
-            img_new = Vec::new();
-        }
-        META_OVERWRITE => {
-            meta_new = params.meta;
-            img_new = img;
-        }
-        _ => {
-            eprintln!("Invalid modification type.");
-            std::process::exit(1);
-        }
+        META_RMIMG => { meta_new = meta_old; img_new = Vec::new(); }
+        META_OVERWRITE => { meta_new = params.meta; img_new = img; }
+        _ => { eprintln!("Invalid modification type."); std::process::exit(1); }
     }
 
     let head_new = head::builder(&meta_new, img_new, None);

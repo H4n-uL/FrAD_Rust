@@ -72,50 +72,30 @@ impl CliParams {
         }
     }
     pub fn set_meta_from_json(&mut self, meta_path: String) {
-        let contents = match read_to_string(meta_path) {
-            Ok(c) => c,
-            Err(_) => {
-                return;
-            }
-        };
-        let json_meta: Vec<Value> = match from_str(&contents) {
-            Ok(m) => m,
-            Err(_) => {
-                return;
-            }
-        };
+        let contents = match read_to_string(meta_path) { Ok(c) => c, Err(_) => { return; } };
+        let json_meta: Vec<Value> = match from_str(&contents) { Ok(m) => m, Err(_) => { return; } };
 
         for item in json_meta {
             let key = item["key"].as_str();
             let item_type = item["type"].as_str();
             let value_str = item["value"].as_str();
 
-            if key.is_none() && value_str.is_none() {
-                continue;
-            }
+            if key.is_none() && value_str.is_none() { continue; }
             let key = key.unwrap_or_else(|| "");
             let value_str = value_str.unwrap_or_else(|| "");
 
             let value = if item_type == Some("base64") {
                 match BASE64_STANDARD.decode(value_str) {
                     Ok(decoded) => decoded,
-                    Err(_) => {
-                        continue;
-                    }
+                    Err(_) => { continue; }
                 }
-            } else {
-                value_str.as_bytes().to_vec()
-            };
+            }
+            else { value_str.as_bytes().to_vec() };
             self.meta.push((key.to_string(), value));
         }
     }
     pub fn set_meta_from_vorbis(&mut self, meta_path: String) {
-        let contents = match read_to_string(meta_path) {
-            Ok(c) => c,
-            Err(_) => {
-                return;
-            }
-        };
+        let contents = match read_to_string(meta_path) { Ok(c) => c, Err(_) => { return; } };
         let mut meta: Vec<(String, Vec<u8>)> = Vec::new();
         for line in contents.lines() {
             let mut parts = line.splitn(2, '=');
@@ -125,9 +105,8 @@ impl CliParams {
                 None => {
                     if let Some(last) = meta.last_mut() {
                         last.1.extend(format!("\n{}", key).as_str().as_bytes());
-                    } else {
-                        meta.push(("".to_string(), key.as_bytes().to_vec()));
                     }
+                    else { meta.push(("".to_string(), key.as_bytes().to_vec())); }
                 }
             }
         }
@@ -162,15 +141,10 @@ impl CliParams {
             "u64be" => PCMFormat::U64BE,
             "u64le" => PCMFormat::U64LE,
 
-            _ => {
-                eprintln!("Invalid format: {fmt}");
-                exit(1);
-            }
+            _ => { eprintln!("Invalid format: {fmt}"); exit(1); }
         };
     }
-    pub fn set_loglevel(&mut self, loglevel: String) {
-        self.loglevel = loglevel.parse().unwrap();
-    }
+    pub fn set_loglevel(&mut self, loglevel: String) { self.loglevel = loglevel.parse().unwrap(); }
 }
 
 /// parse
@@ -181,9 +155,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
     let mut args: VecDeque<String> = args.collect();
     let mut params: CliParams = CliParams::new();
     let executable = args.pop_front().unwrap();
-    if args.is_empty() {
-        return (String::new(), String::new(), String::new(), params);
-    }
+    if args.is_empty() { return (String::new(), String::new(), String::new(), params); }
 
     let action = args.pop_front().unwrap().to_lowercase();
     let mut metaaction = String::new();
@@ -192,9 +164,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
             || { eprintln!("Metadata action not specified, type `{executable} help meta` for available options."); exit(1); }
         ).to_lowercase();
     }
-    if args.is_empty() {
-        return (action, String::new(), String::new(), params);
-    }
+    if args.is_empty() { return (action, String::new(), String::new(), params); }
     let input = args.pop_front().unwrap();
 
     while !args.is_empty() {
@@ -210,10 +180,7 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                 "ecc" | "enable-ecc" | "e" => {
                     params.enable_ecc = true;
                     if !args.is_empty() && args[0].parse::<u8>().is_ok() {
-                        params.ecc_ratio = [
-                            args.pop_front().unwrap().parse().unwrap(),
-                            args.pop_front().unwrap().parse().unwrap(),
-                        ];
+                        params.ecc_ratio = [args.pop_front().unwrap().parse().unwrap(), args.pop_front().unwrap().parse().unwrap()];
                     }
                 }
                 "y" | "force" => params.overwrite = true,
@@ -221,36 +188,19 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
 
                 // encode settings
                 "bits" | "bit" | "b" => params.bits = args.pop_front().unwrap().parse().unwrap(),
-                "srate" | "sample-rate" | "sr" => {
-                    params.srate = args.pop_front().unwrap().parse().unwrap()
-                }
-                "chnl" | "channels" | "channel" | "ch" => {
-                    params.channels = args.pop_front().unwrap().parse().unwrap()
-                }
-                "frame-size" | "fsize" | "fr" => {
-                    params.frame_size = args.pop_front().unwrap().parse().unwrap()
-                }
-                "overlap-ratio" | "overlap" | "olap" => {
-                    params.overlap_ratio = args.pop_front().unwrap().parse().unwrap()
-                }
+                "srate" | "sample-rate" | "sr" => params.srate = args.pop_front().unwrap().parse().unwrap(),
+                "chnl" | "channels" | "channel" | "ch" => params.channels = args.pop_front().unwrap().parse().unwrap(),
+                "frame-size" | "fsize" | "fr" => params.frame_size = args.pop_front().unwrap().parse().unwrap(),
+                "overlap-ratio" | "overlap" | "olap" => params.overlap_ratio = args.pop_front().unwrap().parse().unwrap(),
                 "le" | "little-endian" => params.little_endian = true,
-                "profile" | "prf" | "p" => {
-                    params.profile = args.pop_front().unwrap().parse().unwrap()
-                }
-                "losslevel" | "level" | "lv" => {
-                    params.losslevel = args.pop_front().unwrap().parse().unwrap()
-                }
+                "profile" | "prf" | "p" => params.profile = args.pop_front().unwrap().parse().unwrap(),
+                "losslevel" | "level" | "lv" => params.losslevel = args.pop_front().unwrap().parse().unwrap(),
 
                 // metadata settings
                 "tag" | "meta" | "m" => {
                     let value = args.pop_front().unwrap();
-                    if metaaction == META_REMOVE {
-                        params.meta.push((value, Vec::new()));
-                    } else {
-                        params
-                            .meta
-                            .push((value, args.pop_front().unwrap().as_bytes().to_vec()));
-                    }
+                    if metaaction == META_REMOVE { params.meta.push((value, Vec::new())); }
+                    else { params.meta.push((value, args.pop_front().unwrap().as_bytes().to_vec())); }
                 }
                 "jsonmeta" | "jm" => params.set_meta_from_json(args.pop_front().unwrap()),
                 "vorbismeta" | "vm" => params.set_meta_from_vorbis(args.pop_front().unwrap()),
@@ -259,15 +209,11 @@ pub fn parse(args: Args) -> (String, String, String, CliParams) {
                     if !args.is_empty() && args[0].parse::<u8>().is_ok() {
                         let value = args.pop_front().unwrap();
                         params.set_loglevel(value);
-                    } else {
-                        params.set_loglevel("1".to_string());
                     }
+                    else { params.set_loglevel("1".to_string()); }
                 }
                 "speed" | "spd" => params.speed = args.pop_front().unwrap().parse().unwrap(),
-                "keys" | "key" | "k" => {
-                    params.speed =
-                        2.0f64.powf(args.pop_front().unwrap().parse::<f64>().unwrap() / 12.0)
-                }
+                "keys" | "key" | "k" => params.speed = 2.0f64.powf(args.pop_front().unwrap().parse::<f64>().unwrap() / 12.0),
                 _ => {}
             }
         }
