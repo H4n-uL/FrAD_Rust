@@ -112,9 +112,6 @@ const UNITS: [&str; 11] = ["", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"]
 /// Parameters: Number
 /// Returns: Formatted number string
 pub fn format_si(n: f64) -> String {
-    if n < 1000.0 {
-        return format!("{}", n);
-    }
     let exp = ((n as f64).log10().floor() as usize / 3).min(UNITS.len() - 1);
     format!(
         "{:.3} {}",
