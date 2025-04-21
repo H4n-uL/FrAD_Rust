@@ -44,10 +44,7 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
     let mut y: Vec<Complex> = y.iter().rev().map(|&y| Complex::new(y, 0.0))
         .chain(core::iter::repeat(Complex::new(0.0, 0.0))).take(size).collect();
 
-    // let mut planner = FftPlanner::new();
-    // let fft = planner.plan_fft_forward(size);
     let plan = CfftPlan::new(size);
-
     plan.forward(&mut x, 1.0);
     plan.forward(&mut y, 1.0);
 
