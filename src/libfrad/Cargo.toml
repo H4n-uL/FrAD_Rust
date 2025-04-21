@@ -11,6 +11,6 @@ path = "lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
-half = "2.4.1"
-miniz_oxide = "0.8.4"
+half = "2.6.0"
+miniz_oxide = "0.8.8"
 palmfft = "1.1.1"
