@@ -22,4 +22,4 @@ libfrad = { path = "src/libfrad" }
 rodio = "0.20.1"
 same-file = "1.0.6"
 serde_json = "1.0"
-tempfile = "3.19.1"
+tempfile = "3.20.0"
