@@ -3,7 +3,7 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Decoder implementation example
 
-use libfrad::{f64cvt::f64_to_any, Decoder, PCMFormat, ASFH, BIT_DEPTHS};
+use libfrad::{f64cvt::f64_to_any, DecodeResult, Decoder, PCMFormat, ASFH, BIT_DEPTHS};
 use crate::{
     common::{self, check_overwrite, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
@@ -18,15 +18,15 @@ use same_file::is_same_file;
 /// Parameters: Output file/sink, PCM data, PCM format, Sample rate
 /// Parameters: Output file, PCM data
 /// Returns: None
-fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, pcm: Vec<Vec<f64>>, fmt: &PCMFormat, srate: u32) {
-    if pcm.is_empty() { return; }
+fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, dec: &DecodeResult, fmt: &PCMFormat) {
+    if dec.is_empty() { return; }
     match sink {
         Some(s) => s.append(SamplesBuffer::new(
-                pcm[0].len() as u16, srate,
-                pcm.into_iter().flatten().map(|x| x as f32).collect::<Vec<f32>>()
+                dec.channels(), dec.srate(),
+                dec.pcm().iter().map(|&x| x as f32).collect::<Vec<f32>>()
             )),
         None => {
-            let pcm_bytes: Vec<u8> = pcm.into_iter().flatten().flat_map(|x| f64_to_any(x, fmt)).collect();
+            let pcm_bytes: Vec<u8> = dec.pcm().iter().map(|&x| f64_to_any(x, fmt)).flatten().collect();
             write_safe(file, &pcm_bytes);
         }
     }
@@ -101,11 +101,11 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
 
         let decoded = decoder.process(&buf[..readlen]);
-        procinfo.update(readlen, decoded.pcm.len(), decoded.srate);
-        write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
+        procinfo.update(readlen, decoded.samples(), decoded.srate());
+        write(&mut writefile, sink.as_mut(), &decoded, &pcm_fmt);
         logging_decode(params.loglevel, &procinfo, false, decoder.get_asfh());
 
-        if decoded.crit && !wpipe {
+        if decoded.crit() && !wpipe {
             procinfo.block();
             no += 1; wfile = format!("{}.{}.pcm", wfile_prim, no);
             check_overwrite(&wfile, params.overwrite);
@@ -114,8 +114,8 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         }
     }
     let decoded = decoder.flush();
-    procinfo.update(0, decoded.pcm.len(), decoded.srate);
-    write(&mut writefile, sink.as_mut(), decoded.pcm, &pcm_fmt, decoded.srate);
+    procinfo.update(0, decoded.samples(), decoded.srate());
+    write(&mut writefile, sink.as_mut(), &decoded, &pcm_fmt);
     logging_decode(params.loglevel, &procinfo, true, decoder.get_asfh());
 
     sink.map(|s| s.sleep_until_end());

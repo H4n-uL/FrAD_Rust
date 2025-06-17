@@ -4,7 +4,6 @@
 //! Description: FrAD Profile 0 encoding and decoding core
 /// Dependencies: half
 
-use crate::backend::Transpose;
 use super::backend::{u8pack, core::{dct, idct}};
 use half::f16;
 
@@ -20,31 +19,44 @@ const FLOAT_DR_LIMITS: [f64; 8] = [
 
 /// analogue
 /// Encodes PCM to FrAD
-/// Parameters: f64 PCM, Bit depth, Little endian toggle (and possibly channel count, but it can be extracted from the PCM shape)
+/// Parameters: f64 PCM, Bit depth, Channel count, Sample rate, Little endian toggle
 /// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
-pub fn analogue(pcm: Vec<Vec<f64>>, mut bit_depth: u16, srate: u32, little_endian: bool) -> (Vec<u8>, u16, u16, u32) {
+pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, srate: u32, little_endian: bool) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
-    let channels = pcm[0].len();
 
-    let freqs: Vec<Vec<f64>> = pcm.trans().iter().map(|x| dct(x)).collect();
-    let freqs_flat: Vec<f64> = freqs.trans().iter().flat_map(|x| x.iter()).cloned().collect();
-    let max_abs = freqs_flat.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
+    let mut freqs = vec![0.0; pcm.len()];
+    for c in 0..channels as usize {
+        let pcm_chnl: Vec<f64> = pcm.iter().skip(c).step_by(channels as usize).cloned().collect();
+        for (i, s) in dct(&pcm_chnl).iter().enumerate() {
+            freqs[i * channels as usize + c] = *s;
+        }
+    }
+
+    let max_abs = freqs.iter().map(|&x| x.abs()).fold(0.0f64, f64::max);
 
     let bit_depth_index = DEPTHS.iter().zip(FLOAT_DR_LIMITS.iter())
-    .enumerate().find(|(_, (value, limit))| **value >= bit_depth && **value > 0 && max_abs < **limit)
-    .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
+        .enumerate().find(|(_, (value, limit))| **value >= bit_depth && **value > 0 && max_abs < **limit)
+        .map(|(i, _)| i).unwrap_or_else(|| panic!("Overflow with reaching the max bit depth."));
 
-    let frad = u8pack::pack(freqs_flat, DEPTHS[bit_depth_index], little_endian);
+    let frad = u8pack::pack(freqs, DEPTHS[bit_depth_index], little_endian);
 
-    return (frad, bit_depth_index as u16, channels as u16, srate);
+    return (frad, bit_depth_index as u16, channels, srate);
 }
 
 /// digital
 /// Decodes FrAD to PCM
 /// Parameters: Encoded audio data, Bit depth index, Channel count, Little endian toggle
 /// Returns: Decoded PCM
-pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<Vec<f64>> {
-    let freqs_flat: Vec<f64> = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
-    let freqs: Vec<Vec<f64>> = freqs_flat.chunks(channels as usize).map(|chunk| chunk.to_vec()).collect();
-    return freqs.trans().iter().map(|x| idct(x)).collect::<Vec<Vec<f64>>>().trans();
+pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<f64> {
+    let freqs = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
+
+    let mut pcm = vec![0.0; freqs.len()];
+    for c in 0..channels as usize {
+        let freqs_chnl: Vec<f64> = freqs.iter().skip(c).step_by(channels as usize).cloned().collect();
+        for (i, s) in idct(&freqs_chnl).iter().enumerate() {
+            pcm[i * channels as usize + c] = *s;
+        }
+    }
+
+    return pcm;
 }

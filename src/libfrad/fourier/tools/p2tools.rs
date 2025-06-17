@@ -91,34 +91,43 @@ fn predgain(orig: &[f64], prc: &[f64]) -> f64 {
 
 /// tns_analysis
 /// Performs TNS analysis on Frequency-domain signals
-/// Parameters: DCT Array
+/// Parameters: DCT Array and Channel count
 /// Returns: TNS frequencies and LPC coefficients
-pub fn tns_analysis(freqs: &[Vec<f64>]) -> (Vec<Vec<f64>>, Vec<Vec<i64>>) {
-    let mut tns_freqs = Vec::with_capacity(freqs.len());
-    let mut lpcqs = Vec::with_capacity(freqs.len());
+pub fn tns_analysis(freqs: &[f64], channels: usize) -> (Vec<f64>, Vec<i64>) {
+    let mut tns_freqs = vec![0.0; freqs.len()];
+    let mut lpcqs = vec![0; TNS_MAX_ORDER + 1];
 
-    for freq in freqs {
-        let autocorr = calc_autocorr(freq);
+    for c in 0..channels {
+        let freqs_chnl = freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
+        let autocorr = calc_autocorr(&freqs_chnl);
         let lpc = levinson_durbin(&autocorr);
 
         if lpc.iter().any(|&x| x.abs() >= 1.0) {
-            tns_freqs.push(freq.to_vec());
-            lpcqs.push(vec![0; TNS_MAX_ORDER + 1]);
+            for (i, &s) in freqs_chnl.iter().enumerate() {
+                tns_freqs[i * channels + c] = s;
+            }
             continue;
         }
 
         let lpcq = quantise_lpc(&lpc);
         let lpcdeq = dequantise_lpc(&lpcq);
 
-        let filtered = impulse_filt(&lpcdeq, &[1.0], freq);
-        if filtered.iter().any(|x| !x.is_finite()) || predgain(freq, &filtered) < TNS_MIN_PRED
-         {
-            tns_freqs.push(freq.to_vec());
-            lpcqs.push(vec![0; TNS_MAX_ORDER + 1]);
+        let filtered = impulse_filt(&lpcdeq, &[1.0], &freqs_chnl);
+        let filtered_infinite = filtered.iter().any(|x| !x.is_finite());
+        let predgain_too_low = predgain(&freqs_chnl, &filtered) < TNS_MIN_PRED;
+        if filtered_infinite || predgain_too_low {
+            for (i, &s) in freqs_chnl.iter().enumerate() {
+                tns_freqs[i * channels + c] = s;
+            }
         }
         else {
-            tns_freqs.push(filtered);
-            lpcqs.push(lpcq);
+            for (i, &s) in filtered.iter().enumerate() {
+                tns_freqs[i * channels + c] = s;
+            }
+
+            for (i, &l) in lpcq.iter().enumerate() {
+                lpcqs[i * channels + c] = l;
+            }
         }
     }
 
@@ -127,17 +136,23 @@ pub fn tns_analysis(freqs: &[Vec<f64>]) -> (Vec<Vec<f64>>, Vec<Vec<i64>>) {
 
 /// tns_synthesis
 /// Performs TNS synthesis on Frequency-domain signals
-/// Parameters: TNS frequencies and LPC coefficients
+/// Parameters: TNS frequencies, LPC coefficients, and Channel count
 /// Returns: Synthesised DCT Array
-pub fn tns_synthesis(tns_freqs: &[Vec<f64>], lpcqs: &[Vec<i64>]) -> Vec<Vec<f64>> {
-    return tns_freqs.iter().zip(lpcqs.iter()).map(|(tns_freq, lpcq)| {
-        if lpcq.iter().all(|&x| x == 0) { return tns_freq.to_vec(); }
+pub fn tns_synthesis(tns_freqs: &[f64], lpcqs: &[i64], channels: usize) -> Vec<f64> {
+    let mut freqs = vec![0.0; tns_freqs.len()];
 
-        let lpcdeq = dequantise_lpc(lpcq);
-        let filtered = impulse_filt(&[1.0], &lpcdeq, tns_freq);
+    for c in 0..channels {
+        let tns_freq_chnl = tns_freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
+        let lpcq_chnl = lpcqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
 
-        if filtered.iter().any(|x| !x.is_finite()) { tns_freq.to_vec() }
-        else { filtered }
-    })
-    .collect();
+        let lpcdeq = dequantise_lpc(&lpcq_chnl);
+        let filtered = impulse_filt(&[1.0], &lpcdeq, &tns_freq_chnl);
+
+        let filt = if filtered.iter().any(|x| !x.is_finite()) { tns_freq_chnl } else { filtered };
+        for (i, &s) in filt.iter().enumerate() {
+            freqs[i * channels + c] = s;
+        }
+    }
+
+    return freqs;
 }

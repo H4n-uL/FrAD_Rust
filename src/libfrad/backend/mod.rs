@@ -49,17 +49,6 @@ pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
     .chain(res).collect();
 }
 
-pub trait Transpose<T> {
-    fn trans(&self) -> Vec<Vec<T>> where T: Clone;
-}
-
-impl<T: Clone> Transpose<T> for Vec<Vec<T>> {
-    fn trans(&self) -> Vec<Vec<T>> {
-        if self.is_empty() || self[0].is_empty() { return Vec::new(); }
-        return (0..self[0].len()).map(|i| self.iter().map(|inner| inner[i].clone()).collect()).collect();
-    }
-}
-
 pub trait SplitFront<T> {
     fn split_front(&mut self, n: usize) -> Vec<T> where T: Clone;
 }

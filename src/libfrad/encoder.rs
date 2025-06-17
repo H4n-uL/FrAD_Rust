@@ -13,8 +13,18 @@ use crate::{
 // use rand::prelude::*;
 
 pub struct EncodeResult {
-    pub buf: Vec<u8>,
-    pub samples: usize
+    buf: Vec<u8>,
+    samples: usize
+}
+
+impl EncodeResult {
+    pub fn new(buf: Vec<u8>, samples: usize) -> Self {
+        return Self { buf, samples };
+    }
+
+    pub fn is_empty(&self) -> bool { self.buf.is_empty() || self.samples == 0 }
+    pub fn buf(&self) -> Vec<u8> { self.buf.clone() }
+    pub fn samples(&self) -> usize { self.samples }
 }
 
 /// Encoder
@@ -23,7 +33,7 @@ pub struct Encoder {
     asfh: ASFH, buffer: Vec<u8>,
     bit_depth: u16, channels: u16,
     fsize: u32, srate: u32,
-    overlap_fragment: Vec<Vec<f64>>,
+    overlap_fragment: Vec<f64>,
 
     pcm_format: PCMFormat,
     loss_level: f64,
@@ -129,7 +139,8 @@ impl Encoder {
     /// Overlaps the current frame with the overlap fragment
     /// Parameters: Current frame, Overlap fragment, Overlap rate, Profile
     /// Returns: Overlapped frame, Next overlap fragment
-    fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    fn overlap(&mut self, mut frame: Vec<f64>) -> Vec<f64> {
+        let channels = self.channels as usize;
         // 1. If overlap fragment is not empty,
         if !self.overlap_fragment.is_empty() {
             // prepent the fragment to the frame
@@ -141,8 +152,10 @@ impl Encoder {
         if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio > 1 {
             // Copy the last olap samples to the next overlap fragment
             let overlap_ratio = self.asfh.overlap_ratio as usize;
-            let cutoff = frame.len() * (overlap_ratio - 1) / overlap_ratio;
-            next_overlap = frame[cutoff..].to_vec();
+            // Samples * (Overlap ratio - 1) / Overlap ratio
+            // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
+            let cutoff = (frame.len() / channels) * (overlap_ratio - 1) / overlap_ratio;
+            next_overlap = frame[cutoff * channels..].to_vec();
         }
         self.overlap_fragment = next_overlap;
         return frame;
@@ -157,7 +170,7 @@ impl Encoder {
         let (mut ret, mut samples) = (Vec::new(), 0);
 
         if self.srate == 0 || self.channels == 0 || self.fsize == 0 {
-            return EncodeResult { buf: ret, samples }
+            return EncodeResult::new(ret, samples);
         }
 
         loop {
@@ -177,12 +190,14 @@ impl Encoder {
             if COMPACT.contains(&self.asfh.profile) {
                 // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
                 let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= self.fsize as u32).min().unwrap() as usize;
-                if li_val <= self.overlap_fragment.len() // if overlap fragment is equal or bigger than frame size
-                { // find the smallest value in SMPLS_LI bigger than fragment and subtract fragment size
-                    rlen = *compact::SAMPLES_LI.iter().filter(|&x| *x > self.overlap_fragment.len() as u32).min().unwrap() as usize - self.overlap_fragment.len();
+                let overlap_len = self.overlap_fragment.len() / self.channels as usize;
+                if li_val <= overlap_len {
+                    // if overlap fragment is equal or bigger than frame size
+                    // find the smallest value in SMPLS_LI bigger than fragment and subtract fragment size
+                    rlen = *compact::SAMPLES_LI.iter().filter(|&x| *x > overlap_len as u32).min().unwrap() as usize - overlap_len;
                 }
                 else { // else, just subtract fragment size
-                    rlen = li_val - self.overlap_fragment.len();
+                    rlen = li_val - overlap_len;
                 };
             }
             let bytes_per_sample = self.pcm_format.bit_depth() / 8;
@@ -190,39 +205,38 @@ impl Encoder {
             if self.buffer.len() < read_bytes && !flush { break; }
 
             // 1. Cut out the frame from the buffer
-            let pcm_bytes: Vec<u8> = self.buffer.split_front(read_bytes);
-            let pcm_flat: Vec<f64> = pcm_bytes.chunks(bytes_per_sample).map(|bytes| any_to_f64(bytes, &self.pcm_format)).collect();
-
-            // Unravel flat PCM to 2D PCM array
-            let mut frame: Vec<Vec<f64>> = pcm_flat.chunks(self.channels as usize).map(Vec::from).collect();
+            let pcm_bytes = self.buffer.split_front(read_bytes);
+            let mut frame = pcm_bytes.chunks(bytes_per_sample)
+                .map(|bytes| any_to_f64(bytes, &self.pcm_format))
+                .collect::<Vec<f64>>();
             if frame.is_empty() { ret.extend(self.asfh.force_flush()); break; } // If frame is empty, break
-            samples += frame.len();
+            samples += frame.len() / self.channels as usize;
 
             // 2. Overlap the frame with the previous overlap fragment
             frame = self.overlap(frame);
-            let fsize: u32 = frame.len() as u32;
+            let fsize = (frame.len() / self.channels as usize) as u32;
 
             // 3. Encode the frame
             if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
             let (mut frad, bit_depth_index, channels, srate) = match self.asfh.profile {
-                1 => fourier::profile1::analogue(frame, self.bit_depth, self.srate, self.loss_level),
-                2 => fourier::profile2::analogue(frame, self.bit_depth, self.srate),
-                4 => fourier::profile4::analogue(frame, self.bit_depth, self.srate, self.asfh.endian),
-                _ => fourier::profile0::analogue(frame, self.bit_depth, self.srate, self.asfh.endian)
+                1 => fourier::profile1::analogue(frame, self.bit_depth, self.channels, self.srate, self.loss_level),
+                2 => fourier::profile2::analogue(frame, self.bit_depth, self.channels, self.srate),
+                4 => fourier::profile4::analogue(frame, self.bit_depth, self.channels, self.srate, self.asfh.endian),
+                _ => fourier::profile0::analogue(frame, self.bit_depth, self.channels, self.srate, self.asfh.endian)
             };
 
             // 4. Create Reed-Solomon error correction code
-            if self.asfh.ecc {
-                frad = ecc::encode(frad, self.asfh.ecc_ratio);
-            }
+            if self.asfh.ecc { frad = ecc::encode(frad, self.asfh.ecc_ratio); }
 
             // 5. Write the frame to the buffer
             (self.asfh.bit_depth_index, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_depth_index, channels, fsize, srate);
+            // eprintln!("Encoding frame: {} samples, {} bytes, profile: {}, bit depth: {}, channels: {}, srate: {}",
+                // fsize, frad.len(), self.asfh.profile, self.bit_depth, self.channels, self.srate);
             ret.extend(self.asfh.write(frad));
             if flush { ret.extend(self.asfh.force_flush()); }
         }
 
-        return EncodeResult { buf: ret, samples };
+        return EncodeResult::new(ret, samples);
     }
 
     /// process

@@ -93,12 +93,12 @@ pub fn encode(input: String, params: CliParams) {
         if readlen == 0 { break; }
 
         let encoded = encoder.process(&pcm_buf[..readlen]);
-        procinfo.update(encoded.buf.len(), encoded.samples, encoder.get_srate());
-        write_safe(&mut writefile, &encoded.buf);
+        procinfo.update(encoded.buf().len(), encoded.samples(), encoder.get_srate());
+        write_safe(&mut writefile, &encoded.buf());
         logging_encode(params.loglevel, &procinfo, false);
     }
     let encoded = encoder.flush();
-    procinfo.update(encoded.buf.len(), encoded.samples, encoder.get_srate());
-    write_safe(&mut writefile, &encoded.buf);
+    procinfo.update(encoded.buf().len(), encoded.samples(), encoder.get_srate());
+    write_safe(&mut writefile, &encoded.buf());
     logging_encode(params.loglevel, &procinfo, true);
 }

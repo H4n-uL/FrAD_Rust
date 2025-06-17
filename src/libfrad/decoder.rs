@@ -11,10 +11,25 @@ use crate::{
 };
 
 pub struct DecodeResult {
-    pub pcm: Vec<Vec<f64>>,
-    pub srate: u32,
-    pub frames: usize,
-    pub crit: bool,
+    pcm: Vec<f64>,
+    channels: u16,
+    srate: u32,
+    frames: usize,
+    crit: bool,
+}
+
+impl DecodeResult {
+    pub fn new(pcm: Vec<f64>, channels: u16, srate: u32, frames: usize, crit: bool) -> Self {
+        return Self { pcm, channels, srate, frames, crit };
+    }
+
+    pub fn is_empty(&self) -> bool { self.pcm.is_empty() || self.channels == 0 || self.srate == 0 }
+    pub fn pcm(&self) -> Vec<f64> { self.pcm.clone() }
+    pub fn channels(&self) -> u16 { self.channels }
+    pub fn samples(&self) -> usize { self.pcm.len() / (self.channels as usize).max(1)}
+    pub fn srate(&self) -> u32 { self.srate }
+    pub fn frames(&self) -> usize { self.frames }
+    pub fn crit(&self) -> bool { self.crit }
 }
 
 /// Decoder
@@ -22,7 +37,7 @@ pub struct DecodeResult {
 pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
-    overlap_fragment: Vec<Vec<f64>>,
+    overlap_fragment: Vec<f64>,
 
     fix_error: bool,
     broken_frame: bool,
@@ -44,12 +59,15 @@ impl Decoder {
     /// Apply overlap to the decoded PCM
     /// Parameters: Decoded PCM
     /// Returns: PCM with overlap applied
-    fn overlap(&mut self, mut frame: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    fn overlap(&mut self, mut frame: Vec<f64>) -> Vec<f64> {
+        let channels = (self.asfh.channels as usize).max(1);
         // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
-            let fade_in = hanning_in_overlap(self.overlap_fragment.len());
-            for i in 0..self.overlap_fragment.len() { for j in 0..frame[i].len() {
-                frame[i][j] = frame[i][j] * fade_in[i] + self.overlap_fragment[i][j] * fade_in[fade_in.len() - i - 1];
+            let overlap_len = self.overlap_fragment.len() / channels;
+            let fade_in = hanning_in_overlap(overlap_len);
+            for i in 0..overlap_len { for j in 0..channels {
+                frame[i * channels + j] *= fade_in[i];
+                frame[i * channels + j] += self.overlap_fragment[i * channels + j] * fade_in[fade_in.len() - i - 1];
             }}
         }
 
@@ -57,8 +75,10 @@ impl Decoder {
         let mut next_overlap = Vec::new();
         if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
             let overlap_ratio = self.asfh.overlap_ratio as usize;
-            let frame_cutout = frame.len() * (overlap_ratio - 1) / overlap_ratio;
-            next_overlap = frame.split_off(frame_cutout); // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
+            // Samples * (Overlap ratio - 1) / Overlap ratio
+            // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
+            let frame_cutout = (frame.len() / channels) * (overlap_ratio - 1) / overlap_ratio;
+            next_overlap = frame.split_off(frame_cutout * channels);
         }
         self.overlap_fragment = next_overlap;
         return frame;
@@ -153,7 +173,8 @@ impl Decoder {
                             self.info = self.asfh.clone();
                             if srate != 0 || chnl != 0 { // If the info struct is not empty
                                 ret_pcm.extend(self.flush().pcm); // Flush the overlap buffer
-                                return DecodeResult { pcm: ret_pcm, srate, frames, crit: true }; // Set the critical flag and break
+                                return DecodeResult::new(ret_pcm, chnl, srate, frames, true);
+                                // Set the critical flag and break
                             }
                         }
                     },
@@ -165,7 +186,7 @@ impl Decoder {
             }
         }
 
-        return DecodeResult { pcm: ret_pcm, srate: self.asfh.srate, frames, crit: false };
+        return DecodeResult::new(ret_pcm, self.asfh.channels, self.asfh.srate, frames, false);
     }
 
     /// flush
@@ -181,11 +202,6 @@ impl Decoder {
         let ret_pcm = self.overlap_fragment.clone();
         self.overlap_fragment.clear();
         self.asfh.clear();
-        return DecodeResult {
-            pcm: ret_pcm,
-            srate: self.asfh.srate,
-            frames: 0,
-            crit: true,
-        };
+        return DecodeResult::new(ret_pcm, self.asfh.channels, self.asfh.srate, 0, true);
     }
 }
