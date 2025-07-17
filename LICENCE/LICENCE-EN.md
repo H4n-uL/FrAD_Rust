@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.10 - 2025. 3. 13.
+V1.10.1 - 2025. 7. 17.
 
 ## Definition of Terms
 
@@ -74,14 +74,14 @@ After confirming that one or more of the conditions below has been met, the Orig
 1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the public repository, but it's prohibited anyway.
 2. You are not required to credit the Original Author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the Original Author and the names of the Contributors.
 3. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
-4. Obfuscation of End-Consumer Products is strictly prohibited, except where required for security purposes or where technical necessity, such as compression or optimisation, renders it unrecognisable.
+4. Obfuscation of End-Consumer Products is strictly prohibited. If required, obfuscation may be applied to electronic goods only, in which case a decryption tool and decryption key (which may be omitted if a decryption key is not required) must be provided with the accompanying user manual. The output format of the decryption tool must be compatible with official documentation and easily permanently preserved by the End-Consumer.
 
-Once the grace period has elapsed without remedying the breach, corresponding legal action may be taken under all applicable laws, including the following laws.
+Once the grace period has elapsed without remedying the breach, corresponding legal action will be taken under all applicable laws, including the following laws.
 
 1. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (m)
 2. Criminal Act Articles 231 and 232, Copyright Act Article 137 Paragraph 1, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (a)
 3. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1
-4. Criminal Act Article 355 Paragraph 2, Framework Act on Consumers Article 19 Paragraph 2, Act on the Consumer Protection in Electronic Commerce Article 21
+4. Criminal Act Article 347 and 355 Paragraph 2, Framework Act on Consumers Article 19 Paragraph 2, Act on the Consumer Protection in Electronic Commerce Article 21
 
 ## Disclaimer
 
