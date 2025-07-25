@@ -40,7 +40,7 @@ pub struct Decoder {
     overlap_fragment: Vec<f64>,
 
     fix_error: bool,
-    broken_frame: bool,
+    broken_frame: bool
 }
 
 impl Decoder {
@@ -51,7 +51,7 @@ impl Decoder {
             overlap_fragment: Vec::new(),
 
             fix_error,
-            broken_frame: false,
+            broken_frame: false
         };
     }
 
@@ -113,7 +113,7 @@ impl Decoder {
                 if self.buffer.len() < self.asfh.frmbytes as usize { break; }
 
                 // 1.1. Split out the frame data
-                let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
+                let mut frad = self.buffer.split_front(self.asfh.frmbytes as usize);
 
                 // 1.2. Correct the error if ECC is enabled
                 if self.asfh.ecc {

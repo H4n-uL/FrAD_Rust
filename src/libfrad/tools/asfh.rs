@@ -89,7 +89,7 @@ pub struct ASFH {
 
     // COMPACT
     pub overlap_ratio: u16,
-    pub crc16: u16,
+    pub crc16: u16
 }
 
 impl ASFH {
@@ -103,7 +103,7 @@ impl ASFH {
 
             ecc: false, ecc_ratio: [0; 2],
             profile: 0,
-            overlap_ratio: 0, crc16: 0, crc32: 0,
+            overlap_ratio: 0, crc16: 0, crc32: 0
         }
     }
 

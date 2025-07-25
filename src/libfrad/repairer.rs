@@ -17,7 +17,7 @@ pub struct Repairer {
     buffer: Vec<u8>,
 
     ecc_ratio: [u8; 2],
-    broken_frame: bool,
+    broken_frame: bool
 }
 
 impl Repairer {
@@ -39,7 +39,7 @@ impl Repairer {
             buffer: Vec::new(),
 
             ecc_ratio,
-            broken_frame: false,
+            broken_frame: false
         };
     }
 

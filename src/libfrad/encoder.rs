@@ -36,7 +36,7 @@ pub struct Encoder {
     overlap_fragment: Vec<f64>,
 
     pcm_format: PCMFormat,
-    loss_level: f64,
+    loss_level: f64
 }
 
 impl Encoder {
@@ -48,7 +48,7 @@ impl Encoder {
             overlap_fragment: Vec::new(),
 
             pcm_format,
-            loss_level: 0.5,
+            loss_level: 0.5
         };
         encoder.set_profile(profile, srate, channels, bit_depth, frame_size)?;
 
