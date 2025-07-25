@@ -3,8 +3,8 @@
     encode     | Encode any audio formats to FrAD    (alias: enc)
     decode     | Encode FrAD to any audio formats    (alias: dec)
     repair     | Enable ECC protection / Repair file (alias: ecc)
-    play       | Play FrAD file or stream            (alias: p)
-    meta       | Edit metadata on FrAD               (alias: metadata)
+    play       | Play a FrAD file or stream          (alias: p)
+    meta       | Edit metadata of a FrAD file        (alias: metadata)
 
 ---------------------------------- More helps ----------------------------------
 
