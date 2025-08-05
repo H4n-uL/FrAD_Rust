@@ -8,9 +8,9 @@ use super::backend::u8pack;
 use half::f16;
 
 // Bit depth table
-pub const DEPTHS: [u16; 8] = [12, 16, 24, 32, 48, 64, 0, 0];
+pub const DEPTHS: &[u16] = &[12, 16, 24, 32, 48, 64];
 // Dynamic ranges for preventing overflow
-const FLOAT_DR_LIMITS: [f64; 8] = [
+const FLOAT_DR_LIMITS: &[f64] = &[
     // 12, 16, 24, 32
     // 48, 64, 128, 256
     f16::MAX.to_f64_const(), f16::MAX.to_f64_const(), f32::MAX as f64, f32::MAX as f64,

@@ -7,7 +7,7 @@
 use crate::backend::SplitFront;
 use super::{
     backend::core::{dct, idct},
-    compact::{get_valid_srate, SAMPLES_LI},
+    compact::{get_valid_srate, SAMPLES},
     tools::p1tools
 };
 
@@ -15,7 +15,7 @@ use core::iter::repeat;
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
-pub const DEPTHS: [u16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
+pub const DEPTHS: &[u16] = &[8, 12, 16, 24, 32, 48, 64];
 
 /// pad_pcm
 /// Pads the PCM to the nearest sample count greater than the original
@@ -23,7 +23,7 @@ pub const DEPTHS: [u16; 8] = [8, 12, 16, 24, 32, 48, 64, 0];
 /// Returns: Padded f64 PCM
 pub fn pad_pcm(mut pcm: Vec<f64>, channels: u16) -> Vec<f64> {
     let len_smpl = pcm.len() / channels as usize;
-    let pad_len = *SAMPLES_LI.iter().find(|&&x| x as usize >= len_smpl).unwrap_or(&(len_smpl as u32)) as usize - len_smpl;
+    let pad_len = *SAMPLES.iter().find(|&&x| x as usize >= len_smpl).unwrap_or(&(len_smpl as u32)) as usize - len_smpl;
     pcm.extend(repeat(0.0).take(pad_len * channels as usize));
     return pcm;
 }

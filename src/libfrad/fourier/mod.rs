@@ -18,10 +18,10 @@ pub mod tools;
 
 use profiles::compact;
 
-pub const AVAILABLE: [u8; 3] = [0, 1, 4];
+pub const AVAILABLE: &[u8] = &[0, 1, 4];
 
-pub const SEGMAX: [u32; 8] =
-[
+pub const SEGMAX: &[u32] =
+&[
     u32::MAX, // Profile 0
     compact::MAX_SMPL, // Profile 1
     compact::MAX_SMPL, // Profile 2
@@ -32,13 +32,13 @@ pub const SEGMAX: [u32; 8] =
     0, // Profile 7
 ];
 
-pub const BIT_DEPTHS: [[u16; 8]; 8] = [
+pub const BIT_DEPTHS: &[&[u16]] = &[
     profile0::DEPTHS,
     profile1::DEPTHS,
     profile2::DEPTHS,
-    [0; 8],
+    &[0; 8],
     profile4::DEPTHS,
-    [0; 8],
-    [0; 8],
-    [0; 8],
+    &[0; 8],
+    &[0; 8],
+    &[0; 8]
 ];

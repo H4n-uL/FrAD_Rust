@@ -15,7 +15,7 @@ use super::{
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
-pub const DEPTHS: [u16; 8] = [8, 9, 10, 11, 12, 14, 16, 0];
+pub const DEPTHS: &[u16] = &[8, 9, 10, 11, 12, 14, 16];
 
 /// analogue
 /// Encodes PCM to FrAD Profile 2
