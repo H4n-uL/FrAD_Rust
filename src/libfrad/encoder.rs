@@ -194,10 +194,12 @@ impl Encoder {
         loop {
             // let rng = &mut rand::rng();
             // let prf = *AVAILABLE.choose(rng).unwrap();
-            // self.set_profile(prf, self.srate, self.channels,
-            //     *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //     if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
-            // ).unwrap();
+            // let prm = EncoderParams {
+            //     profile: prf, srate: self.srate,
+            //     channels: self.channels, bit_depth: *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
+            //     frame_size: if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
+            // };
+            // self.set_profile(prm).unwrap();
             // self.set_loss_level(rng.random_range(0.125..10.0));
             // let ecc_data = rng.random_range(1..255);
             // self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
