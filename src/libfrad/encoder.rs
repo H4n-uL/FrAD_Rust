@@ -174,16 +174,16 @@ impl Encoder {
         }
 
         loop {
-            // let rng = &mut rand::thread_rng();
+            // let rng = &mut rand::rng();
             // let prf = *AVAILABLE.choose(rng).unwrap();
-            // self._set_profile(prf, self.srate, self.channels,
+            // self.set_profile(prf, self.srate, self.channels,
             //     *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //     if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.gen_range(128..32768) }
-            // );
-            // self.set_loss_level(rng.gen_range(0.125..10.0));
-            // let ecc_data = rng.gen_range(1..255);
-            // self.set_ecc(rng.gen_bool(0.5), [ecc_data, rng.gen_range(0..(255 - ecc_data))]);
-            // self.set_overlap_ratio(rng.gen_range(2..256));
+            //     if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.random_range(128..32768) }
+            // ).unwrap();
+            // self.set_loss_level(rng.random_range(0.125..10.0));
+            // let ecc_data = rng.random_range(1..255);
+            // self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
+            // self.set_overlap_ratio(rng.random_range(2..256));
 
             // 0. Set read length in samples
             let mut rlen = self.fsize as usize;
