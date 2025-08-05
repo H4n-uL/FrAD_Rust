@@ -91,7 +91,7 @@ impl Encoder {
         if COMPACT.contains(&self.asfh.profile) && !compact::SRATES.contains(&srate) {
             return Err(
                 format!("Invalid sample rate! Valid rates for profile {}: {:?}",
-                self.asfh.profile, compact::SRATES.iter().rev())
+                self.asfh.profile, compact::SRATES.iter().rev().collect::<Vec<&u32>>())
             );
         }
         self.srate = srate;
@@ -113,8 +113,8 @@ impl Encoder {
         if bit_depth == 0 { return Err("Bit depth cannot be zero".to_string()); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
             return Err(
-                format!("Invalid bit depth! Valid depths for profile {}: {:?}", self.asfh.profile,
-                BIT_DEPTHS[self.asfh.profile as usize].iter())
+                format!("Invalid bit depth! Valid depths for profile {}: {:?}",
+                self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize])
             );
         }
         self.bit_depth = bit_depth;
