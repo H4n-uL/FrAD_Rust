@@ -1,6 +1,6 @@
 //!                                  Encoder                                 !//
 //!
-//! Copyright 2024 HaמuL
+//! Copyright 2024-2025 HaמuL
 //! Description: FrAD encoder
 
 use crate::{
@@ -39,8 +39,16 @@ pub struct Encoder {
     loss_level: f64
 }
 
+pub struct EncoderParams {
+    pub profile: u8,
+    pub srate: u32,
+    pub channels: u16,
+    pub bit_depth: u16,
+    pub frame_size: u32
+}
+
 impl Encoder {
-    pub fn new(profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32, pcm_format: PCMFormat) -> Result<Self, String> {
+    pub fn new(args: EncoderParams, pcm_format: PCMFormat) -> Result<Self, String> {
         let mut encoder = Self {
             asfh: ASFH::new(), buffer: Vec::new(),
             bit_depth: 0, channels: 0,
@@ -50,7 +58,7 @@ impl Encoder {
             pcm_format,
             loss_level: 0.5
         };
-        encoder.set_profile(profile, srate, channels, bit_depth, frame_size)?;
+        encoder.set_profile(args)?;
 
         return Ok(encoder);
     }
@@ -58,14 +66,15 @@ impl Encoder {
     /// set_profile
     /// Modify the profile while running
     /// Parameters: Profile, Sample rate, Channel count, Bit depth, Frame size
-    pub fn set_profile(&mut self, profile: u8, srate: u32, channels: u16, bit_depth: u16, frame_size: u32) -> Result<(), String> {
-        if !AVAILABLE.contains(&profile) { return Err(format!("Invalid profile! Available: {:?}", AVAILABLE)); }
+    pub fn set_profile(&mut self, args: EncoderParams) -> Result<(), String> {
+        if !AVAILABLE.contains(&args.profile) { return Err(format!("Invalid profile! Available: {:?}", AVAILABLE)); }
 
-        self.asfh.profile = profile;
-        self.set_srate(srate)?;
-        self.set_channels(channels)?;
-        self.set_bit_depth(bit_depth)?;
-        self.set_frame_size(frame_size)?;
+
+        self.asfh.profile = args.profile;
+        self.set_srate(args.srate)?;
+        self.set_channels(args.channels)?;
+        self.set_bit_depth(args.bit_depth)?;
+        self.set_frame_size(args.frame_size)?;
         return Ok(());
     }
 
@@ -77,15 +86,13 @@ impl Encoder {
         return Ok(());
     }
     pub fn get_srate(&self) -> u32 { self.srate }
-    pub fn set_srate(&mut self, mut srate: u32) -> Result<(), String> {
+    pub fn set_srate(&mut self, srate: u32) -> Result<(), String> {
         if srate == 0 { return Err("Sample rate cannot be zero".to_string()); }
-        if COMPACT.contains(&self.asfh.profile) {
-            let x = compact::get_valid_srate(srate);
-            if x != srate {
-                eprintln!("Invalid sample rate! Valid rates for profile {}: {:?}\nAuto-adjusting to: {}",
-                self.asfh.profile, compact::SRATES.iter().rev().filter(|&&x| x != 0).cloned().collect::<Vec<u32>>(), x);
-                srate = x;
-            }
+        if COMPACT.contains(&self.asfh.profile) && !compact::SRATES.contains(&srate) {
+            return Err(
+                format!("Invalid sample rate! Valid rates for profile {}: {:?}",
+                self.asfh.profile, compact::SRATES.iter().rev())
+            );
         }
         self.srate = srate;
         return Ok(());
@@ -95,7 +102,9 @@ impl Encoder {
     pub fn get_frame_size(&self) -> u32 { self.fsize }
     pub fn set_frame_size(&mut self, frame_size: u32) -> Result<(), String> {
         if frame_size == 0 { return Err("Frame size cannot be zero".to_string()); }
-        if frame_size > SEGMAX[self.asfh.profile as usize] { return Err(format!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize])); }
+        if frame_size > SEGMAX[self.asfh.profile as usize] {
+            return Err(format!("Samples per frame cannot exceed {}", SEGMAX[self.asfh.profile as usize]));
+        }
         self.fsize = frame_size;
         return Ok(());
     }
@@ -103,24 +112,33 @@ impl Encoder {
     pub fn set_bit_depth(&mut self, bit_depth: u16) -> Result<(), String> {
         if bit_depth == 0 { return Err("Bit depth cannot be zero".to_string()); }
         if !BIT_DEPTHS[self.asfh.profile as usize].contains(&bit_depth) {
-            return Err(format!("Invalid bit depth! Valid depths for profile {}: {:?}",
-            self.asfh.profile, BIT_DEPTHS[self.asfh.profile as usize].iter().filter(|&&x| x != 0).cloned().collect::<Vec<u16>>()));
+            return Err(
+                format!("Invalid bit depth! Valid depths for profile {}: {:?}", self.asfh.profile,
+                BIT_DEPTHS[self.asfh.profile as usize].iter())
+            );
         }
         self.bit_depth = bit_depth;
         return Ok(());
     }
 
     // Non-critical info - can be set anytime
-    pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) {
+    pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) -> String {
         self.asfh.ecc = ecc;
         let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255);
+        let mut result = String::new();
         if dsize_zero || exceed_255 {
-            if dsize_zero { eprintln!("ECC data size must not be zero"); }
-            if exceed_255 { eprintln!("ECC data size and check size must not exceed 255, given: {} and {}", ecc_ratio[0], ecc_ratio[1]); }
-            eprintln!("Setting ECC to default 96 24");
+            if dsize_zero { result = "ECC data size must not be zero".to_string(); }
+            if exceed_255 {
+                result = format!(
+                    "ECC data size and check size must not exceed 255, given: {} and {}",
+                    ecc_ratio[0], ecc_ratio[1]
+                );
+            }
+            result.push_str("\nSetting ECC to default 96/24");
             ecc_ratio = [96, 24];
         }
         self.asfh.ecc_ratio = ecc_ratio;
+        return result;
     }
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
     pub fn set_loss_level(&mut self, loss_level: f64) { self.loss_level = loss_level.abs().max(0.125); }
@@ -178,7 +196,7 @@ impl Encoder {
             // let prf = *AVAILABLE.choose(rng).unwrap();
             // self.set_profile(prf, self.srate, self.channels,
             //     *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //     if COMPACT.contains(&prf) { *compact::SAMPLES_LI.choose(rng).unwrap() } else { rng.random_range(128..32768) }
+            //     if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
             // ).unwrap();
             // self.set_loss_level(rng.random_range(0.125..10.0));
             // let ecc_data = rng.random_range(1..255);
@@ -189,12 +207,12 @@ impl Encoder {
             let mut rlen = self.fsize as usize;
             if COMPACT.contains(&self.asfh.profile) {
                 // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
-                let li_val = *compact::SAMPLES_LI.iter().filter(|&x| *x >= self.fsize as u32).min().unwrap() as usize;
+                let li_val = *compact::SAMPLES.iter().filter(|&x| *x >= self.fsize as u32).min().unwrap() as usize;
                 let overlap_len = self.overlap_fragment.len() / self.channels as usize;
                 if li_val <= overlap_len {
                     // if overlap fragment is equal or bigger than frame size
                     // find the smallest value in SMPLS_LI bigger than fragment and subtract fragment size
-                    rlen = *compact::SAMPLES_LI.iter().filter(|&x| *x > overlap_len as u32).min().unwrap() as usize - overlap_len;
+                    rlen = *compact::SAMPLES.iter().filter(|&x| *x > overlap_len as u32).min().unwrap() as usize - overlap_len;
                 }
                 else { // else, just subtract fragment size
                     rlen = li_val - overlap_len;

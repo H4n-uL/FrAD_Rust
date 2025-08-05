@@ -3,7 +3,7 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Encoder implementation example
 
-use libfrad::{Encoder, profiles::LOSSLESS, head};
+use libfrad::{head, profiles::LOSSLESS, Encoder, EncoderParams};
 use crate::{
     common::{check_overwrite, format_si, format_speed, format_time, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, process::ProcessInfo}
@@ -62,10 +62,19 @@ pub fn encode(input: String, params: CliParams) {
 
     if params.srate == 0 { eprintln!("Sample rate should be set except zero"); exit(1); }
     if params.channels == 0 { eprintln!("Channel count should be set except zero"); exit(1); }
-    let mut encoder = match Encoder::new(
-        params.profile, params.srate, params.channels,
-        params.bits, params.frame_size, params.pcm)
-    { Ok(enc) => enc, Err(err) => { eprintln!("{}", err); exit(1); } };
+
+    let encparams = EncoderParams {
+        profile: params.profile,
+        srate: params.srate,
+        channels: params.channels,
+        bit_depth: params.bits,
+        frame_size: params.frame_size
+    };
+
+    let mut encoder = match Encoder::new(encparams, params.pcm) {
+        Ok(enc) => enc,
+        Err(err) => { eprintln!("{}", err); exit(1); }
+    };
 
     encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
     encoder.set_little_endian(params.little_endian);
