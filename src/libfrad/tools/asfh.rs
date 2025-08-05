@@ -27,11 +27,8 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_inde
 fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> [u8; 2] {
     let chnl = (channels as u16 - 1) << 10;
     let srate = get_srate_index(srate) << 6;
-    let fsize = *compact::SAMPLES_LI.iter().find(|&&x| x >= fsize).unwrap();
-    let mult = compact::get_samples_from_value(&fsize);
-    let px = (compact::SAMPLES.iter().position(|&(key, _)| key == mult).unwrap() as u16) << 4;
-    let fsize = ((fsize as f64 / mult as f64).log2() as u16) << 1;
-    return (chnl | srate | px | fsize | force_flush as u16).to_be_bytes();
+    let fsize_idx = (compact::SAMPLES.iter().position(|&x| x == fsize).unwrap() as u16) << 1;
+    return (chnl | srate | fsize_idx | force_flush as u16).to_be_bytes();
 }
 
 /// decode_pfb
@@ -54,12 +51,8 @@ fn decode_css(css: &[u8]) -> (u16, u32, u32, bool) {
     let css_int = u16::from_be_bytes(css[0..2].try_into().unwrap());
     let chnl = (css_int >> 10) as u16 + 1;
     let srate = compact::SRATES[(css_int >> 6) as usize & 0b1111];
-
-    let fsize_prefix = compact::SAMPLES[(css_int >> 4) as usize & 0b11].0;
-    let fsize = fsize_prefix * 2u32.pow(((css_int >> 1) & 0b111) as u32);
-
+    let fsize = compact::SAMPLES[(css_int >> 1) as usize & 0b11111];
     let force_flush = css_int & 1 == 1;
-
     return (chnl, srate, fsize, force_flush);
 }
 
