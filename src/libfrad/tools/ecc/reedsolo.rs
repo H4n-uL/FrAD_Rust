@@ -459,15 +459,14 @@ impl ReedSolomon {
 
     pub fn decode(&self, data: &[u8], erase_pos: Option<&[usize]>) -> Result<Vec<u8>, RSError> {
         let chunk_size = self.data_size + self.parity_size;
-        let enc_chunk_size = chunk_size + self.parity_size;
         let erase_pos = erase_pos.unwrap_or(&[]);
 
         let mut chunks = Vec::new();
-        for (chunk_index, chunk) in data.chunks(enc_chunk_size).enumerate() {
+        for (chunk_index, chunk) in data.chunks(chunk_size).enumerate() {
             let chunk_erase_pos: Vec<usize> = erase_pos.iter()
                 .filter_map(|&pos| {
-                    if pos >= chunk_index * enc_chunk_size && pos < (chunk_index + 1) * enc_chunk_size
-                    { Some(pos - chunk_index * enc_chunk_size) } else { None }
+                    if pos >= chunk_index * chunk_size && pos < (chunk_index + 1) * chunk_size
+                    { Some(pos - chunk_index * chunk_size) } else { None }
                 })
                 .collect();
 
