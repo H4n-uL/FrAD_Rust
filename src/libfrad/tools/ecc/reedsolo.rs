@@ -1,6 +1,6 @@
 //!                         Reed-Solomon ECC for Rust                        !//
 //!
-//! Ported from https://github.com/tomerfiliba/reedsolomon
+//! Ported from https://github.com/tomerfiliba-org/reedsolomon
 //! Copyright - Tomer Filiba
 
 #[derive(Debug)]
