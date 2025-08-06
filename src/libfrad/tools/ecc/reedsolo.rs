@@ -401,7 +401,7 @@ fn primes_in_range(start: u32, end: u32) -> Vec<u32> {
     return primes;
 }
 
-pub struct RSCodec {
+pub struct ReedSolomon {
     pub data_size: usize,
     pub parity_size: usize,
     pub fcr: u8,
@@ -410,10 +410,10 @@ pub struct RSCodec {
     pub c_exp: u32,
     gf_log: [u8; 256],
     gf_exp: [u8; 512],
-    polynomial: Vec<u8>,
+    polynomial: Vec<u8>
 }
 
-impl RSCodec {
+impl ReedSolomon {
     pub fn new(data_size: usize, parity_size: usize, fcr: u8, prim: u16, generator: u8, c_exp: u32) -> Self {
         let mut rs = Self {
             data_size, parity_size,
@@ -442,8 +442,8 @@ impl RSCodec {
         return rs;
     }
 
-    pub fn new_default(data_size: usize, parity_size: usize) -> RSCodec {
-        return RSCodec::new(data_size, parity_size, 0, 0x11d, 2, 8);
+    pub fn new_default(data_size: usize, parity_size: usize) -> Self {
+        return Self::new(data_size, parity_size, 0, 0x11d, 2, 8);
     }
 
     pub fn encode(&self, data: &[u8]) -> Vec<u8> {

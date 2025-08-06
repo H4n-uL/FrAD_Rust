@@ -4,7 +4,7 @@
 //! Description: Error correction tools
 
 mod reedsolo;
-pub use reedsolo::RSCodec;
+pub use reedsolo::ReedSolomon;
 
 /// encode_rs
 /// Encodes data w. Reed-Solomon ECC
@@ -12,7 +12,7 @@ pub use reedsolo::RSCodec;
 /// Returns: Encoded data
 pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
-    let rs: RSCodec = RSCodec::new_default(data_size, parity_size);
+    let rs = ReedSolomon::new_default(data_size, parity_size);
 
     return data.chunks(data_size).map(|chunk| {
         rs.encode(chunk)
@@ -26,7 +26,7 @@ pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
 pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let block_size = data_size + parity_size;
-    let rs: RSCodec = RSCodec::new_default(data_size, parity_size);
+    let rs = ReedSolomon::new_default(data_size, parity_size);
 
     return data.chunks(block_size).map(|chunk| {
         if repair {
