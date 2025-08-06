@@ -12,10 +12,10 @@ pub use reedsolo::ReedSolomon;
 /// Returns: Encoded data
 pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
-    let rs = ReedSolomon::new_default(data_size, parity_size);
+    let rs = ReedSolomon::new(data_size, parity_size);
 
     return data.chunks(data_size).map(|chunk| {
-        rs.encode(chunk)
+        rs.encode(chunk).unwrap()
     }).flatten().collect();
 }
 
@@ -26,12 +26,12 @@ pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
 pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let block_size = data_size + parity_size;
-    let rs = ReedSolomon::new_default(data_size, parity_size);
+    let rs = ReedSolomon::new(data_size, parity_size);
 
     return data.chunks(block_size).map(|chunk| {
         if repair {
-            match rs.decode(chunk, None) {
-                Ok(chunk) => chunk,
+            match rs.decode(chunk) {
+                Ok(chunk) => chunk.0,
                 Err(_) => vec![0; chunk.len() - parity_size]
             }
         } else { chunk.iter().take(chunk.len() - parity_size).cloned().collect() }
