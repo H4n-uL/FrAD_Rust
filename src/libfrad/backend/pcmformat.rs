@@ -5,35 +5,49 @@
 
 #[derive(Clone, Copy)]
 pub enum PCMFormat {
-    F16BE, F16LE, F32BE, F32LE, F64BE, F64LE,
-    S8, S16BE, S16LE, S24BE, S24LE, S32BE, S32LE, S64BE, S64LE,
-    U8, U16BE, U16LE, U24BE, U24LE, U32BE, U32LE, U64BE, U64LE
+    F16BE = 16 << 3 | 0b010,
+    F16LE = 16 << 3 | 0b011,
+    F32BE = 32 << 3 | 0b010,
+    F32LE = 32 << 3 | 0b011,
+    F64BE = 64 << 3 | 0b010,
+    F64LE = 64 << 3 | 0b011,
+
+    S8    =  8 << 3 | 0b110,
+    S16BE = 16 << 3 | 0b110,
+    S16LE = 16 << 3 | 0b111,
+    S24BE = 24 << 3 | 0b110,
+    S24LE = 24 << 3 | 0b111,
+    S32BE = 32 << 3 | 0b110,
+    S32LE = 32 << 3 | 0b111,
+    S64BE = 64 << 3 | 0b110,
+    S64LE = 64 << 3 | 0b111,
+
+    U8    =  8 << 3 | 0b100,
+    U16BE = 16 << 3 | 0b100,
+    U16LE = 16 << 3 | 0b101,
+    U24BE = 24 << 3 | 0b100,
+    U24LE = 24 << 3 | 0b101,
+    U32BE = 32 << 3 | 0b100,
+    U32LE = 32 << 3 | 0b101,
+    U64BE = 64 << 3 | 0b100,
+    U64LE = 64 << 3 | 0b101
 }
 
 impl PCMFormat {
     pub fn bit_depth(&self) -> usize {
-        match self {
-            Self::S8 | Self::U8 => 8,
-            Self::F16BE | Self::F16LE | Self::S16BE | Self::S16LE | Self::U16BE | Self::U16LE => 16,
-                                        Self::S24BE | Self::S24LE | Self::U24BE | Self::U24LE => 24,
-            Self::F32BE | Self::F32LE | Self::S32BE | Self::S32LE | Self::U32BE | Self::U32LE => 32,
-            Self::F64BE | Self::F64LE | Self::S64BE | Self::S64LE | Self::U64BE | Self::U64LE => 64
-        }
+        *self as usize >> 3
     }
     pub fn float(&self) -> bool {
-        match self { Self::F16BE | Self::F16LE | Self::F32BE | Self::F32LE | Self::F64BE | Self::F64LE => true, _ => false }
+        *self as usize & 0b100 == 0
     }
     pub fn signed(&self) -> bool {
-        match self { Self::U8 | Self::U16BE | Self::U16LE | Self::U24BE | Self::U24LE | Self::U32BE | Self::U32LE | Self::U64BE | Self::U64LE => false, _ => true }
+        *self as usize & 0b010 != 0
     }
     pub fn scale(&self) -> f64 {
-        match self {
-            Self::S8 | Self::U8 => 128.0,
-            Self::S16BE | Self::S16LE | Self::U16BE | Self::U16LE => 32768.0,
-            Self::S24BE | Self::S24LE | Self::U24BE | Self::U24LE => 8388608.0,
-            Self::S32BE | Self::S32LE | Self::U32BE | Self::U32LE => 2147483648.0,
-            Self::S64BE | Self::S64LE | Self::U64BE | Self::U64LE => 9223372036854775808.0,
-            _ => 1.0
-        }
+        return if self.float() {
+            1.0
+        } else {
+            2.0_f64.powf(self.bit_depth() as f64 - 1.0)
+        };
     }
 }
