@@ -49,8 +49,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     (srate, loss_level) = (get_valid_srate(srate), loss_level.abs().max(0.125));
 
     // 1. Pad and transform PCM with scaling
-    let mut pcm = pad_pcm(pcm, channels);
-    pcm.iter_mut().for_each(|x| *x *= pcm_scale);
+    let pcm = pad_pcm(pcm, channels);
 
     let mut freqs_masked = vec![0; pcm.len()];
     let mut thres = vec![0; p1tools::MOSLEN * channels as usize];
@@ -60,17 +59,17 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
 
         // 3. Subband masking and quantisation
         // 3.1. Masking threshold calculation
-        let thres_chnl = p1tools::mask_thres_mos(freqs_chnl.clone(), srate, loss_level, p1tools::SPREAD_ALPHA);
+        let thres_chnl = p1tools::mask_thres_mos(freqs_chnl.clone(), srate, pcm_scale, loss_level, p1tools::SPREAD_ALPHA);
 
         // 3.2. Remapping thresholds to DCT bins
         // 3.3. Psychoacoustic masking
-        let mut div_factor: Vec<f64> = p1tools::mapping_from_opus(&thres_chnl, freqs_chnl.len(), srate);
+        let mut div_factor = p1tools::mapping_from_opus(&thres_chnl, freqs_chnl.len(), srate);
         div_factor.iter_mut().for_each(|x| if *x == 0.0 { *x = core::f64::INFINITY; });
         let freqs_masked_chnl: Vec<f64> = freqs_chnl.iter().zip(&div_factor).map(|(x, y)| x / y).collect();
 
         // 4. Quantisation
         for (i, &s) in freqs_masked_chnl.iter().enumerate() {
-            freqs_masked[i * channels as usize + c] = p1tools::quant(s).round() as i64;
+            freqs_masked[i * channels as usize + c] = p1tools::quant(s * pcm_scale).round() as i64;
         }
         for (i, &m) in thres_chnl.iter().enumerate() {
             thres[i * channels as usize + c] = p1tools::quant(m * thres_scale).round() as i64;
@@ -110,7 +109,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
     let thres_gol = frad.split_front(thres_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let mut freqs_masked: Vec<f64> = p1tools::exp_golomb_decode(&frad).into_iter().map(|x| p1tools::dequant(x as f64)).collect();
+    let mut freqs_masked: Vec<f64> = p1tools::exp_golomb_decode(&frad).into_iter().map(|x| p1tools::dequant(x as f64) / pcm_scale).collect();
     let mut thres: Vec<f64> = p1tools::exp_golomb_decode(&thres_gol).into_iter().map(|x| p1tools::dequant(x as f64) / thres_scale).collect();
     freqs_masked.resize(fsize * channels, 0.0);
     thres.resize(p1tools::MOSLEN * channels, 0.0);
@@ -127,7 +126,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
         ).map(|(x, y)| x * y).collect::<Vec<f64>>();
 
         // 4.2. Inverse DCT and scaling
-        let pcm_chnl = idct(&freqs_chnl).iter().map(|y| y / pcm_scale).collect::<Vec<f64>>();
+        let pcm_chnl = idct(&freqs_chnl);
         for (i, &val) in pcm_chnl.iter().enumerate() {
             pcm[i * channels + c] = val;
         }
