@@ -2,21 +2,21 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.10.1 - 2025. 7. 17.
+V1.11 - 2025. 8. 10.
 
 ## Definition of Terms
 
-"Work" means Fourier Analogue-in-Digital formats, abstract algorithms, documentation, etc.
+"Work" means Fourier Analogue-in-Digital Project, formats, abstract algorithms, documentation, etc.
 
 "Public repository" means a repository that is publicly available on a source code repository hosting site, such as GitHub.
 
-"Original Author" means HaמuL, the original initiator and primary maintainer of the Fourier Analogue-in-Digital project.
+"Original Author" means HaמuL, the original initiator and primary maintainer of the project.
 
 "Project Lead" means the person with final decision-making authority for the project, either the person appointed by the Original Author or the Project Lead.
 
 "Contributor" means any person or entity who has contributed to the Work in any form, including by raising issues or modifying the source code.
 
-"End-Consumer Product" means an end product, whether physical or electronic, that reaches the end consumer created in the format of Fourier Analogue-in-Digital.
+"End-Consumer Product" means an end product, whether physical or electronic, that reaches the end consumer created in the format of the project.
 
 "Implement" means to create and distribute software that is compatible with the Work, and "Implementations" means the source code and software so implemented.
 
@@ -24,13 +24,13 @@ V1.10.1 - 2025. 7. 17.
 
 ## Coverage
 
-Archivist Licence covers the entire Work, plus the copyright in Fourier Analogue-in-Digital.
+Archivist Licence covers the entire Work.
 
 ## Warranty
 
-Fourier Analogue-in-Digital (hereinafter FrAD) is distributed as is.
+The Work is distributed as is.
 
-Any repository implementing FrAD MUST be fully compatible with the [official FrAD format document](https://mikhael-openworkspace.notion.site/Format-specs-727affae8db043f2b50372d91d534368?pvs=4).
+Any implementation repository MUST be fully compatible with the [official format document](https://mikhael-openworkspace.notion.site/Format-specs-727affae8db043f2b50372d91d534368?pvs=4).
 
 ## About Distribution or Implementation
 
@@ -48,14 +48,14 @@ When distributing or implementing FrAD, the following must be observed.
 
 - Contributors or third-party developers are welcome to create software compatible with the Work and use it for any purpose, non-commercial or commercial. The Original Author does not require any royalties for this.
 - Any use of the Work in your implementation, or any apparent ambiguity in the interpretation of the Work as stated by the Work, must be under the Archivist Licence and must comply with its terms.
-- The Project Lead reserves the right to certify compliance with the FrAD format. The Project Lead may, in some cases, request source code from the Developer, which the Developer reserves the right to refuse.
+- The Project Lead reserves the right to certify compliance with the format. The Project Lead may, in some cases, request source code from the Developer, which the Developer reserves the right to refuse.
 - After review of the source code, the developer may request removal of the source code, limited to the original code provided, in which case the Project Lead loses access to the source code and must immediately destroy all copies.
 
 ## About Contributions
 
-The Project Lead is the general manager of FrAD and sets the direction of the project and has final decision-making authority. Contributors provide suggestions and make technical contributions for the development of FrAD.
+The Project Lead is the general manager of the project and sets the direction of the project and has final decision-making authority. Contributors provide suggestions and make technical contributions for the development of the project.
 
-Contributors are guaranteed moral rights to their contributions to the development of FrAD, regardless of the size or impact of their technical contributions, on a par with the Original Authors'. Contributions automatically constitute acceptance of the rights and obligations under Archivist Licence.
+Contributors are guaranteed moral rights to their contributions to the development of the project, regardless of the size or impact of their technical contributions, on a par with the Original Authors'. Contributions automatically constitute acceptance of the rights and obligations under Archivist Licence.
 
 Disputes between Contributors shall be resolved by mutual agreement. If agreement cannot be reached, the Project Lead will arbitrate. If either party is dissatisfied with the outcome of the arbitration, they may take the matter to court.
 
@@ -73,7 +73,7 @@ After confirming that one or more of the conditions below has been met, the Orig
 
 1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the public repository, but it's prohibited anyway.
 2. You are not required to credit the Original Author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the Original Author and the names of the Contributors.
-3. Commercial use of FrAD's official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
+3. Commercial use of official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
 4. Obfuscation of End-Consumer Products is strictly prohibited. If required, obfuscation may be applied to electronic goods only, in which case a decryption tool and decryption key (which may be omitted if a decryption key is not required) must be provided with the accompanying user manual. The output format of the decryption tool must be compatible with official documentation and easily permanently preserved by the End-Consumer.
 
 Once the grace period has elapsed without remedying the breach, corresponding legal action will be taken under all applicable laws, including the following laws.
