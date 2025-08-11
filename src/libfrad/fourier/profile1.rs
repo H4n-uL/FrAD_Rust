@@ -59,7 +59,10 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
 
         // 3. Subband masking and quantisation
         // 3.1. Masking threshold calculation
-        let thres_chnl = p1tools::mask_thres_mos(freqs_chnl.clone(), srate, pcm_scale, loss_level, p1tools::SPREAD_ALPHA);
+        let thres_chnl = p1tools::mask_thres_mos(
+            freqs_chnl.iter().map(|&x| x * pcm_scale).collect::<Vec<f64>>(),
+            srate, loss_level, p1tools::SPREAD_ALPHA
+        );
 
         // 3.2. Remapping thresholds to DCT bins
         // 3.3. Psychoacoustic masking
