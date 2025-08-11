@@ -68,7 +68,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
         // 3.3. Psychoacoustic masking
         let mut div_factor = p1tools::mapping_from_opus(&thres_chnl, freqs_chnl.len(), srate);
         div_factor.iter_mut().for_each(|x| if *x == 0.0 { *x = core::f64::INFINITY; });
-        let freqs_masked_chnl: Vec<f64> = freqs_chnl.iter().zip(&div_factor).map(|(x, y)| x / y).collect();
+        let freqs_masked_chnl = freqs_chnl.iter().zip(&div_factor).map(|(x, y)| x / y).collect::<Vec<f64>>();
 
         // 4. Quantisation
         for (i, &s) in freqs_masked_chnl.iter().enumerate() {
@@ -80,12 +80,12 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     }
 
     // 5. Exponential Golomb-Rice encoding
-    let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(&freqs_masked);
-    let thres_gol: Vec<u8> = p1tools::exp_golomb_encode(&thres);
+    let freqs_gol = p1tools::exp_golomb_encode(&freqs_masked);
+    let thres_gol = p1tools::exp_golomb_encode(&thres);
 
     // 6. Connecting data
     //    [ Thresholds length in u32be | Thresholds | Frequencies ]
-    let frad: Vec<u8> = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect();
+    let frad = (thres_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(thres_gol).chain(freqs_gol).collect::<Vec<u8>>();
 
     // 7. Deflate compression
     let frad = deflate::compress_to_vec(&frad, 10);
@@ -112,8 +112,14 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
     let thres_gol = frad.split_front(thres_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let mut freqs_masked: Vec<f64> = p1tools::exp_golomb_decode(&frad).into_iter().map(|x| p1tools::dequant(x as f64) / pcm_scale).collect();
-    let mut thres: Vec<f64> = p1tools::exp_golomb_decode(&thres_gol).into_iter().map(|x| p1tools::dequant(x as f64) / thres_scale).collect();
+    let mut freqs_masked = p1tools::exp_golomb_decode(&frad).into_iter().map(|x|
+        p1tools::dequant(x as f64) / pcm_scale
+    ).collect::<Vec<f64>>();
+
+    let mut thres = p1tools::exp_golomb_decode(&thres_gol).into_iter().map(|x|
+        p1tools::dequant(x as f64) / thres_scale
+    ).collect::<Vec<f64>>();
+
     freqs_masked.resize(fsize * channels, 0.0);
     thres.resize(p1tools::MOSLEN * channels, 0.0);
 

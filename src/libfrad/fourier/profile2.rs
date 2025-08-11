@@ -32,9 +32,9 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     // 2. DCT
     let mut freqs = vec![0.0; pcm.len()];
     for c in 0..channels as usize {
-        let pcm_chnl: Vec<f64> = pcm.iter().skip(c).step_by(channels as usize).cloned().collect();
-        for (i, s) in dct(&pcm_chnl).iter().enumerate() {
-            freqs[i * channels as usize + c] = *s;
+        let pcm_chnl = pcm.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>();
+        for (i, &s) in dct(&pcm_chnl).iter().enumerate() {
+            freqs[i * channels as usize + c] = s;
         }
     }
 
@@ -42,14 +42,14 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     let (tns_freqs, lpc) = p2tools::tns_analysis(&freqs, channels as usize);
 
     // 4. Exponential Golomb-Rice encoding
-    let freqs_gol: Vec<u8> = p1tools::exp_golomb_encode(
+    let freqs_gol = p1tools::exp_golomb_encode(
         &tns_freqs.iter().map(|x| (x * pcm_scale) as i64).collect::<Vec<i64>>()
     );
-    let lpc_gol: Vec<u8> = p1tools::exp_golomb_encode(&lpc);
+    let lpc_gol = p1tools::exp_golomb_encode(&lpc);
 
     // 5. Connecting data
     //    [ LPC length in u32be | Thresholds | Frequencies ]
-    let frad: Vec<u8> = (lpc_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(lpc_gol).chain(freqs_gol).collect();
+    let frad = (lpc_gol.len() as u32).to_be_bytes().to_vec().into_iter().chain(lpc_gol).chain(freqs_gol).collect::<Vec<u8>>();
 
     // 6. Deflate compression
     let frad = deflate::compress_to_vec(&frad, 10);
@@ -76,8 +76,11 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     let lpc_gol = frad.split_front(lpc_len).to_vec();
 
     // 3. Exponential Golomb-Rice decoding
-    let mut lpc: Vec<i64> = p1tools::exp_golomb_decode(&lpc_gol);
-    let mut tns_freqs: Vec<f64> = p1tools::exp_golomb_decode(&frad).into_iter().map(|x| x as f64 / pcm_scale).collect();
+    let mut lpc = p1tools::exp_golomb_decode(&lpc_gol);
+    let mut tns_freqs = p1tools::exp_golomb_decode(&frad).into_iter().map(|x|
+        x as f64 / pcm_scale
+    ).collect::<Vec<f64>>();
+
     lpc.resize((p2tools::TNS_MAX_ORDER + 1) * channels, 0);
     tns_freqs.resize(fsize * channels, 0.0);
 
@@ -87,7 +90,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     // 5. Inverse DCT
     let mut pcm = vec![0.0; freqs.len()];
     for c in 0..channels as usize {
-        let freqs_chnl: Vec<f64> = freqs.iter().skip(c).step_by(channels as usize).cloned().collect();
+        let freqs_chnl = freqs.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>();
         for (i, s) in idct(&freqs_chnl).iter().enumerate() {
             pcm[i * channels as usize + c] = *s;
         }
