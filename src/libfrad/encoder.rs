@@ -250,8 +250,6 @@ impl Encoder {
 
             // 5. Write the frame to the buffer
             (self.asfh.bit_depth_index, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_depth_index, channels, fsize, srate);
-            // eprintln!("Encoding frame: {} samples, {} bytes, profile: {}, bit depth: {}, channels: {}, srate: {}",
-                // fsize, frad.len(), self.asfh.profile, self.bit_depth, self.channels, self.srate);
             ret.extend(self.asfh.write(frad));
             if flush { ret.extend(self.asfh.force_flush()); }
         }
