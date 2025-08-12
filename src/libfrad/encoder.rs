@@ -98,23 +98,25 @@ impl Encoder {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
 
-        if self.srate == 0 || self.channels == 0 || self.fsize == 0 {
+        if !self.init {
             return EncodeResult::new(ret, samples);
         }
 
         loop {
-            // let rng = &mut rand::rng();
-            // let prf = *AVAILABLE.choose(rng).unwrap();
-            // let prm = EncoderParams {
-            //     profile: prf, srate: self.srate,
-            //     channels: self.channels, bit_depth: *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //     frame_size: if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
-            // };
-            // self.set_profile(prm).unwrap();
-            // self.set_loss_level(rng.random_range(0.125..10.0));
-            // let ecc_data = rng.random_range(1..255);
-            // self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
-            // self.set_overlap_ratio(rng.random_range(2..256));
+            // if !flush {
+            //     let rng = &mut rand::rng();
+            //     let prf = *AVAILABLE.choose(rng).unwrap();
+            //     let prm = EncoderParams {
+            //         profile: prf, srate: self.srate,
+            //         channels: self.channels, bit_depth: *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
+            //         frame_size: if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
+            //     };
+            //     self.set_profile(prm).unwrap();
+            //     self.set_loss_level(rng.random_range(0.125..10.0));
+            //     let ecc_data = rng.random_range(1..255);
+            //     self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
+            //     self.set_overlap_ratio(rng.random_range(2..256));
+            // }
 
             // 0. Set read length in samples
             let mut rlen = self.fsize as usize;
@@ -171,10 +173,7 @@ impl Encoder {
     /// Encodes the remaining data in the buffer and flush
     /// Returns: Encoded audio data
     pub fn flush(&mut self) -> EncodeResult {
-        if self.init {
-            return self.inner(b"", true);
-        }
-        return EncodeResult::new(Vec::new(), 0);
+        return self.inner(b"", true);
     }
 }
 
@@ -230,7 +229,11 @@ impl Encoder {
         Self::verify_bit_depth(args.profile, args.bit_depth)?;
         Self::verify_frame_size(args.profile, args.frame_size)?;
 
-        let res = self.flush();
+        let mut res = EncodeResult::new(Vec::new(), 0);
+        if self.channels != args.channels || self.srate != args.srate {
+            res = self.flush();
+        }
+
         self.asfh.profile = args.profile;
         self.srate = args.srate;
         self.channels = args.channels;
@@ -243,14 +246,16 @@ impl Encoder {
     pub fn get_channels(&self) -> u16 { self.channels }
     pub fn set_channels(&mut self, channels: u16) -> Result<EncodeResult, String> {
         Self::verify_channels(self.get_profile(), channels)?;
-        let res = self.flush();
+        let mut res = EncodeResult::new(Vec::new(), 0);
+        if self.channels != channels { res = self.flush(); }
         self.channels = channels;
         return Ok(res);
     }
     pub fn get_srate(&self) -> u32 { self.srate }
     pub fn set_srate(&mut self, srate: u32) -> Result<EncodeResult, String> {
         Self::verify_srate(self.get_profile(), srate)?;
-        let res = self.flush();
+        let mut res = EncodeResult::new(Vec::new(), 0);
+        if self.srate != srate { res = self.flush(); }
         self.srate = srate;
         return Ok(res);
     }
