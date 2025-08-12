@@ -119,17 +119,8 @@ impl Encoder {
             // 0. Set read length in samples
             let mut rlen = self.fsize as usize;
             if COMPACT.contains(&self.asfh.profile) {
-                // Read length = smallest value in SMPLS_LI bigger than frame size and overlap fragment size
-                let li_val = *compact::SAMPLES.iter().filter(|&x| *x >= self.fsize as u32).min().unwrap() as usize;
                 let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-                if li_val <= overlap_len {
-                    // if overlap fragment is equal or bigger than frame size
-                    // find the smallest value in SMPLS_LI bigger than fragment and subtract fragment size
-                    rlen = *compact::SAMPLES.iter().filter(|&x| *x > overlap_len as u32).min().unwrap() as usize - overlap_len;
-                }
-                else { // else, just subtract fragment size
-                    rlen = li_val - overlap_len;
-                };
+                rlen = compact::get_samples_min_ge(rlen.max(overlap_len) as u32) as usize;
             }
             let bytes_per_sample = self.pcm_format.bit_depth() / 8;
             let read_bytes = rlen * self.channels as usize * bytes_per_sample;

@@ -40,6 +40,11 @@ pub mod compact {
         16384, 20480, 24576, 28672
     ];
 
+    // Get minimum sample count greater than or equal to given value
+    pub fn get_samples_min_ge(value: u32) -> u32 {
+        return *SAMPLES.iter().filter(|&&x| x >= value).min().unwrap_or(&0);
+    }
+
     // Get sample count multiplier from value
     pub fn get_samples_mult_from_value(key: &u32) -> u32 {
         return SAMPLES[

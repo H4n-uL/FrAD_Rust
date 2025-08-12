@@ -27,7 +27,7 @@ fn encode_pfb(profile: u8, enable_ecc: bool, little_endian: bool, bit_depth_inde
 fn encode_css(channels: u16, srate: u32, fsize: u32, force_flush: bool) -> [u8; 2] {
     let chnl = (channels as u16 - 1) << 10;
     let srate = get_srate_index(srate) << 6;
-    let fsize_idx = (compact::SAMPLES.iter().position(|&x| x >= fsize).unwrap() as u16) << 1;
+    let fsize_idx = (compact::get_samples_min_ge(fsize) as u16) << 1;
     return (chnl | srate | fsize_idx | force_flush as u16).to_be_bytes();
 }
 
