@@ -45,6 +45,12 @@ pub mod compact {
         return *SAMPLES.iter().filter(|&&x| x >= value).min().unwrap_or(&0);
     }
 
+    // Get sample count index of given value
+    pub fn get_samples_index(mut value: u32) -> u16 {
+        value = get_samples_min_ge(value);
+        return SAMPLES.iter().position(|&x| x == value).unwrap_or(0) as u16;
+    }
+
     // Get sample count multiplier from value
     pub fn get_samples_mult_from_value(key: &u32) -> u32 {
         return SAMPLES[

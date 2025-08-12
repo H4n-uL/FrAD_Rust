@@ -120,7 +120,7 @@ impl Encoder {
             let mut rlen = self.fsize as usize;
             if COMPACT.contains(&self.asfh.profile) {
                 let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-                rlen = compact::get_samples_min_ge(rlen.max(overlap_len) as u32) as usize;
+                rlen = compact::get_samples_min_ge(rlen.max(overlap_len + 1) as u32) as usize - overlap_len;
             }
             let bytes_per_sample = self.pcm_format.bit_depth() / 8;
             let read_bytes = rlen * self.channels as usize * bytes_per_sample;
