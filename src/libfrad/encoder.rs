@@ -65,10 +65,10 @@ impl Encoder {
     }
 
     /// overlap
-    /// Overlaps the current frame with the overlap fragment
+    /// Overlaps the current frame with the overlap fragment, Flush flag
     /// Parameters: Current frame, Overlap fragment, Overlap rate, Profile
     /// Returns: Overlapped frame, Next overlap fragment
-    fn overlap(&mut self, mut frame: Vec<f64>) -> Vec<f64> {
+    fn overlap(&mut self, mut frame: Vec<f64>, flush: bool) -> Vec<f64> {
         let channels = self.channels as usize;
         // 1. If overlap fragment is not empty,
         if !self.overlap_fragment.is_empty() {
@@ -78,7 +78,13 @@ impl Encoder {
 
         // 2. If overlap is enabled and profile uses overlap
         let mut next_overlap = Vec::new();
-        if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio > 1 {
+        let next_flag = {
+            !flush &&
+            COMPACT.contains(&self.asfh.profile) &&
+            self.asfh.overlap_ratio > 1
+        };
+
+        if next_flag {
             // Copy the last olap samples to the next overlap fragment
             let overlap_ratio = self.asfh.overlap_ratio as usize;
             // Samples * (Overlap ratio - 1) / Overlap ratio
@@ -136,15 +142,16 @@ impl Encoder {
                 .map(|bytes| any_to_f64(bytes, &self.pcm_format))
                 .collect::<Vec<f64>>();
 
-            if frame.is_empty() && self.overlap_fragment.is_empty() {
-                // If this frame is empty; or maybe empty, break
+            let samples_in_frame = frame.len() / self.channels as usize;
+
+            // 2. Overlap the frame with the previous overlap fragment
+            frame = self.overlap(frame, flush);
+            if frame.is_empty() {
+                // If this frame is empty, break
                 ret.extend(self.asfh.force_flush());
                 break;
             }
-            samples += frame.len() / self.channels as usize;
-
-            // 2. Overlap the frame with the previous overlap fragment
-            frame = self.overlap(frame);
+            samples += samples_in_frame;
             let fsize = (frame.len() / self.channels as usize) as u32;
 
             // 3. Encode the frame
