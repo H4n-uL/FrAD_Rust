@@ -119,11 +119,11 @@ impl Encoder {
             // }
 
             // 0. Set read length in samples
-            let mut rlen = self.fsize as usize;
+            let overlap_len = self.overlap_fragment.len() / self.channels as usize;
+            let mut rlen = (self.fsize as usize).max(overlap_len + 1);
             if COMPACT.contains(&self.asfh.profile) {
-                let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-                rlen = compact::get_samples_min_ge(rlen.max(overlap_len + 1) as u32) as usize - overlap_len;
-            }
+                rlen = compact::get_samples_min_ge(rlen as u32) as usize;
+            } rlen -= overlap_len;
             let bytes_per_sample = self.pcm_format.bit_depth() / 8;
             let read_bytes = rlen * self.channels as usize * bytes_per_sample;
             if self.buffer.len() < read_bytes && !flush { break; }
