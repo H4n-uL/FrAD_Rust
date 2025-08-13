@@ -51,13 +51,6 @@ pub mod compact {
         return SAMPLES.iter().position(|&x| x == value).unwrap_or(0) as u16;
     }
 
-    // Get sample count multiplier from value
-    pub fn get_samples_mult_from_value(key: &u32) -> u32 {
-        return SAMPLES[
-            SAMPLES.iter().position(|&x| x == *key).unwrap() % 8
-        ];
-    }
-
     pub const MAX_SMPL: u32 = max_smpl();
     const fn max_smpl() -> u32 {
         let (mut max, mut i) = (0, 0);

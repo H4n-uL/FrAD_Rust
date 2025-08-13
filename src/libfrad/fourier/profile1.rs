@@ -7,11 +7,11 @@
 use crate::backend::SplitFront;
 use super::{
     backend::core::{dct, idct},
-    compact::{get_valid_srate, SAMPLES},
+    compact::{get_samples_min_ge, get_valid_srate},
     tools::p1tools
 };
 
-use core::iter::repeat;
+use core::{f64::consts::E, iter::repeat};
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
@@ -23,20 +23,17 @@ pub const DEPTHS: &[u16] = &[8, 12, 16, 24, 32, 48, 64];
 /// Returns: Padded f64 PCM
 pub fn pad_pcm(mut pcm: Vec<f64>, channels: u16) -> Vec<f64> {
     let len_smpl = pcm.len() / channels as usize;
-    let pad_len = *SAMPLES.iter().find(|&&x| x as usize >= len_smpl).unwrap_or(&(len_smpl as u32)) as usize - len_smpl;
+    let pad_len = get_samples_min_ge(len_smpl as u32) as usize - len_smpl;
     pcm.extend(repeat(0.0).take(pad_len * channels as usize));
     return pcm;
 }
 
-/// get_scale_factors
-/// Gets the scale factors for PCM and thresholds
+/// get_scale_factor
+/// Gets the scale factor from bit depth
 /// Parameters: Bit depth
-/// Returns: 2.0 ^ (bit_depth - 1) as PCM scale factor,
-///          4.0 * ((1.0 / bit_depth) ^ 0.5 * 4.0) ^ 16.0 as threshold scale factor
-pub fn get_scale_factors(bit_depth: u16) -> (f64, f64) {
-    let pcm_scale = 2.0_f64.powi(bit_depth as i32 - 1);
-    let thres_scale = 4.0 * ((1.0 / bit_depth as f64).sqrt() * 4.0).powf(16.0);
-    return (pcm_scale, thres_scale);
+/// Returns: 2.0 ^ (bit_depth - 1)
+pub fn get_scale_factor(bit_depth: u16) -> f64 {
+    return 2.0_f64.powi(bit_depth as i32 - 1);
 }
 
 /// analogue
@@ -45,7 +42,7 @@ pub fn get_scale_factors(bit_depth: u16) -> (f64, f64) {
 /// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32, mut loss_level: f64) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
-    let (pcm_scale, thres_scale) = get_scale_factors(bit_depth);
+    let pcm_scale = get_scale_factor(bit_depth);
     (srate, loss_level) = (get_valid_srate(srate), loss_level.abs().max(0.125));
 
     // 1. Pad and transform PCM with scaling
@@ -75,7 +72,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
             freqs_masked[i * channels as usize + c] = p1tools::quant(s * pcm_scale).round() as i64;
         }
         for (i, &m) in thres_chnl.iter().enumerate() {
-            thres[i * channels as usize + c] = p1tools::quant(m * thres_scale).round() as i64;
+            thres[i * channels as usize + c] = p1tools::dequant(m.max(1.0).log(E / 2.0)).round() as i64;
         }
     }
 
@@ -99,7 +96,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
 /// Returns: f64 PCM
 pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u32, fsize: u32) -> Vec<f64> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
-    let ((pcm_scale, thres_scale), fsize) = (get_scale_factors(bit_depth), fsize as usize);
+    let (pcm_scale, fsize) = (get_scale_factor(bit_depth), fsize as usize);
 
     // 1. Deflate decompression
     frad = match inflate::decompress_to_vec(&frad) {
@@ -117,7 +114,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
     ).collect::<Vec<f64>>();
 
     let mut thres = p1tools::exp_golomb_decode(&thres_gol).into_iter().map(|x|
-        p1tools::dequant(x as f64) / thres_scale
+        (E / 2.0).powf(p1tools::quant(x as f64))
     ).collect::<Vec<f64>>();
 
     freqs_masked.resize(fsize * channels, 0.0);

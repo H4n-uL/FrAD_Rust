@@ -8,7 +8,7 @@ use crate::backend::SplitFront;
 use super::{
     backend::core::{dct, idct},
     compact::get_valid_srate,
-    profile1::{get_scale_factors, pad_pcm},
+    profile1::{get_scale_factor, pad_pcm},
     tools::{p1tools, p2tools}
 };
 
@@ -23,7 +23,7 @@ pub const DEPTHS: &[u16] = &[8, 9, 10, 11, 12, 14, 16];
 /// Returns: Encoded audio data, Encoded bit depth index, Encoded channel count
 pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
-    let (pcm_scale, _) = get_scale_factors(bit_depth);
+    let pcm_scale = get_scale_factor(bit_depth);
     srate = get_valid_srate(srate);
 
     // 1. Pad and transform PCM with scaling
@@ -63,7 +63,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
 /// Returns: f64 PCM
 pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u32, fsize: u32) -> Vec<f64> {
     let (bit_depth, channels) = (DEPTHS[bit_depth_index as usize], channels as usize);
-    let ((pcm_scale, _), fsize) = (get_scale_factors(bit_depth), fsize as usize);
+    let (pcm_scale, fsize) = (get_scale_factor(bit_depth), fsize as usize);
 
     // 1. Deflate decompression
     frad = match inflate::decompress_to_vec(&frad) {
