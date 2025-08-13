@@ -123,7 +123,9 @@ impl Encoder {
             let mut rlen = (self.fsize as usize).max(overlap_len);
             if COMPACT.contains(&self.asfh.profile) {
                 rlen = compact::get_samples_min_ge(rlen as u32) as usize;
-            } rlen -= overlap_len;
+            }
+            rlen -= overlap_len;
+
             let bytes_per_sample = self.pcm_format.bit_depth() / 8;
             let read_bytes = rlen * self.channels as usize * bytes_per_sample;
             if self.buffer.len() < read_bytes && !flush { break; }
@@ -133,7 +135,12 @@ impl Encoder {
             let mut frame = pcm_bytes.chunks(bytes_per_sample)
                 .map(|bytes| any_to_f64(bytes, &self.pcm_format))
                 .collect::<Vec<f64>>();
-            if frame.is_empty() { ret.extend(self.asfh.force_flush()); break; } // If frame is empty, break
+
+            if frame.is_empty() && self.overlap_fragment.is_empty() {
+                // If this frame is empty; or maybe empty, break
+                ret.extend(self.asfh.force_flush());
+                break;
+            }
             samples += frame.len() / self.channels as usize;
 
             // 2. Overlap the frame with the previous overlap fragment
