@@ -120,7 +120,7 @@ impl Encoder {
 
             // 0. Set read length in samples
             let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-            let mut rlen = (self.fsize as usize).max(overlap_len + 1);
+            let mut rlen = (self.fsize as usize).max(overlap_len);
             if COMPACT.contains(&self.asfh.profile) {
                 rlen = compact::get_samples_min_ge(rlen as u32) as usize;
             } rlen -= overlap_len;
