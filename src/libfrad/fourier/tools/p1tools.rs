@@ -63,7 +63,7 @@ pub fn mapping_from_opus(mapped_thres: &[f64], freqs_len: usize, srate: u32) -> 
         let range = get_bin_range(freqs_len, srate, i);
         let num = range.end - range.start;
         // Linearly spaced values between the mapped thresholds
-        thres[range].copy_from_slice(&linspace(mapped_thres[i], mapped_thres[i + 1], num + 1)[..num]);
+        thres[range].copy_from_slice(&linspace(mapped_thres[i], mapped_thres[i + 1], num, false));
     }
 
     return thres;
