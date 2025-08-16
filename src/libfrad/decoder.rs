@@ -38,6 +38,7 @@ pub struct Decoder {
     asfh: ASFH, info: ASFH,
     buffer: Vec<u8>,
     overlap_fragment: Vec<f64>,
+    overlap_prog: usize,
 
     fix_error: bool,
     broken_frame: bool
@@ -49,6 +50,7 @@ impl Decoder {
             asfh: ASFH::new(), info: ASFH::new(),
             buffer: Vec::new(),
             overlap_fragment: Vec::new(),
+            overlap_prog: 0,
 
             fix_error,
             broken_frame: false
@@ -61,26 +63,33 @@ impl Decoder {
     /// Returns: PCM with overlap applied
     fn overlap(&mut self, mut frame: Vec<f64>) -> Vec<f64> {
         let channels = (self.asfh.channels as usize).max(1);
+        let overlap_len = self.overlap_fragment.len() / channels;
         // 1. If overlap buffer not empty, apply Forward linear overlap-add
         if !self.overlap_fragment.is_empty() {
-            let overlap_len = self.overlap_fragment.len() / channels;
             let fade_in = hanning_in_overlap(overlap_len);
-            for i in 0..overlap_len { for j in 0..channels {
-                frame[i * channels + j] *= fade_in[i];
-                frame[i * channels + j] += self.overlap_fragment[i * channels + j] * fade_in[fade_in.len() - i - 1];
-            }}
+            let ov_left = (overlap_len - self.overlap_prog).min(frame.len() / channels);
+            for i in 0..ov_left {
+                let i_ov = i + self.overlap_prog;
+                for j in 0..channels {
+                    frame[i * channels + j] *= fade_in[i_ov];
+                    frame[i * channels + j] += self.overlap_fragment[i_ov * channels + j] * fade_in[fade_in.len() - i_ov - 1];
+                }
+            }
+            self.overlap_prog += ov_left;
         }
 
-        // 2. if COMPACT profile and overlap is enabled, split this frame
-        let mut next_overlap = Vec::new();
-        if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
-            let overlap_ratio = self.asfh.overlap_ratio as usize;
-            // Samples * (Overlap ratio - 1) / Overlap ratio
-            // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
-            let frame_cutout = (frame.len() / channels) * (overlap_ratio - 1) / overlap_ratio;
-            next_overlap = frame.split_off(frame_cutout * channels);
+        if overlap_len <= self.overlap_prog {
+            // 2. if COMPACT profile and overlap is enabled, split this frame
+            self.overlap_prog = 0;
+            self.overlap_fragment.clear();
+            if COMPACT.contains(&self.asfh.profile) && self.asfh.overlap_ratio != 0 {
+                let overlap_ratio = self.asfh.overlap_ratio as usize;
+                // Samples * (Overlap ratio - 1) / Overlap ratio
+                // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
+                let frame_cutout = (frame.len() / channels) * (overlap_ratio - 1) / overlap_ratio;
+                self.overlap_fragment = frame.split_off(frame_cutout * channels);
+            }
         }
-        self.overlap_fragment = next_overlap;
         return frame;
     }
 
