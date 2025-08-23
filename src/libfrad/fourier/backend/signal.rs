@@ -50,5 +50,5 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
 
     let mut z: Vec<Complex> = x.iter().zip(y.iter()).map(|(a, b)| *a * *b).collect();
     plan.backward(&mut z, 1.0);
-    return z.iter().take(n).map(|c| c.r / z.len() as f64).collect();
+    return z.iter().take(n).map(|c| c.re / z.len() as f64).collect();
 }

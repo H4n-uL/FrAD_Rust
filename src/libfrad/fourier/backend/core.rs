@@ -20,7 +20,7 @@ pub fn dct3_core(x: &[f64], fct: f64) -> Vec<f64> {
     let alpha = (0..n).map(|i| Complex::from_polar(x[i], -PI * i as f64 / (2.0 * n as f64)));
     let mut beta: Vec<Complex> = alpha.clone().chain(Some(Complex::zero())).chain(alpha.skip(1).rev().map(|z| z.conj())).collect();
     CfftPlan::new(2 * n).forward(&mut beta, fct);
-    return (0..n).map(|k| beta[k].r).collect();
+    return (0..n).map(|k| beta[k].re).collect();
 }
 
 // pub fn dct4_core(x: &[f64], fct: f64) -> Vec<f64> {

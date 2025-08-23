@@ -10,7 +10,7 @@ use crate::{
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 
-use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
+use rodio::{buffer::SamplesBuffer, OutputStreamBuilder, Sink};
 use same_file::is_same_file;
 
 /// write
@@ -82,12 +82,12 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let (_stream, _stream_handle, mut sink) = if play {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
-        (Some(_stream), Some(stream_handle), Some(sink))
-    }
-    else { (None, None, None) };
+    let (_stream, mut sink) = if play {
+        let mut stream = OutputStreamBuilder::open_default_stream().unwrap();
+        stream.log_on_drop(false);
+        let sink = Sink::connect_new(stream.mixer());
+        (Some(stream), Some(sink))
+    } else { (None, None) };
 
     params.speed = if params.speed > 0.0 { params.speed } else { 1.0 };
     sink.as_mut().map(|s| { s.set_speed(params.speed as f32); params.loglevel = 0; });
