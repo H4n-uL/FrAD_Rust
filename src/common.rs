@@ -6,8 +6,8 @@
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};
 
 // Pipe and null device
-pub const PIPEIN: &[&str] = &["pipe:", "pipe:0", "-", "/dev/stdin", "dev/fd/0"];
-pub const PIPEOUT: &[&str] = &["pipe:", "pipe:1", "-", "/dev/stdout", "dev/fd/1"];
+pub const PIPEIN: &[&str] = &["-", "/dev/stdin", "/dev/fd/0"];
+pub const PIPEOUT: &[&str] = &["-", "/dev/stdout", "/dev/fd/1"];
 
 /// read_exact
 /// Reads a file or stdin to a buffer with exact size
