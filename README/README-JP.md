@@ -63,7 +63,7 @@ export PATH=/path/to/bin:$PATH
 
 ## 貢献方法
 
-### FrAD 規格への貢献
+### FrAD規格への貢献
 
 以下は貢献の手順です。
 
