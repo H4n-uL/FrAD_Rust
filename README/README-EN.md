@@ -63,13 +63,17 @@ export PATH=/path/to/bin:$PATH
 
 ## How to contribute
 
-### Contributing to FrAD format
+### Contributing to FrAD standard
 
-Contributions to the FrAD format itself should be made [here](https://github.com/H4n-uL/Fourier_Analogue-in-Digital) or by emailing me directly.
+Here is how to contribute
+
+1. if you notice a problem or something that could be improved
+2. outline how you would like to address it (feel free to leave it out)
+3. create an issue or email me directly.
+
+I'll review it and give you feedback or respond to the issue.
 
 ### Contributions to Rust Master
-
-Contributions that are specific to the Rust implementation can be made directly to this repository. Anything from feature additions, bug fixes, or performance improvements are welcome.
 
 Here's how to contribute
 
