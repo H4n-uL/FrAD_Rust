@@ -24,7 +24,8 @@ impl DecodeResult {
     }
 
     pub fn is_empty(&self) -> bool { self.pcm.is_empty() || self.channels == 0 || self.srate == 0 }
-    pub fn pcm(&self) -> Vec<f64> { self.pcm.clone() }
+    pub fn pcm(&self) -> &Vec<f64> { &self.pcm }
+    pub fn pcm_mut(&mut self) -> &mut Vec<f64> { &mut self.pcm }
     pub fn channels(&self) -> u16 { self.channels }
     pub fn samples(&self) -> usize { self.pcm.len() / (self.channels as usize).max(1)}
     pub fn srate(&self) -> u32 { self.srate }
