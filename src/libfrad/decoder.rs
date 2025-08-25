@@ -117,9 +117,11 @@ impl Decoder {
             if self.asfh.all_set {
                 // 1.0. If the buffer is not enough to decode the frame, break
                 // 1.0.1. If the stream is empty while ASFH is set (which means broken frame), break
-                if stream.is_empty() { self.broken_frame = true; break; }
                 self.broken_frame = false;
-                if self.buffer.len() < self.asfh.frmbytes as usize { break; }
+                if self.buffer.len() < self.asfh.frmbytes as usize {
+                    if stream.is_empty() { self.broken_frame = true; }
+                    break;
+                }
 
                 // 1.1. Split out the frame data
                 let mut frad = self.buffer.split_front(self.asfh.frmbytes as usize);
