@@ -3,10 +3,8 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Backend for FrAD Library
 
-pub mod bitcvt; pub mod f64cvt; pub mod pcmformat;
+pub mod bitcvt;
 use core::f64::consts::PI;
-
-pub use pcmformat::PCMFormat;
 
 /// linspace
 /// Generates a linear spaced vector
@@ -49,12 +47,12 @@ pub fn hanning_in_overlap(olap_len: usize) -> Vec<f64> {
 }
 
 pub trait SplitFront<T> {
-    fn split_front(&mut self, n: usize) -> Vec<T> where T: Clone;
+    fn split_front(&mut self, n: usize) -> Vec<T>;
 }
 
-impl<T: Clone> SplitFront<T> for Vec<T> {
+impl<T> SplitFront<T> for Vec<T> {
     fn split_front(&mut self, at: usize) -> Self {
-        let mut other = if at >= self.len() { Vec::new() } else { self.split_off(at) };
+        let mut other = self.split_off(at.min(self.len()));
         core::mem::swap(self, &mut other);
         return other;
     }

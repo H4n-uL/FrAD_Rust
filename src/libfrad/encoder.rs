@@ -4,7 +4,6 @@
 //! Description: FrAD encoder
 
 use crate::{
-    PCMFormat, f64cvt::any_to_f64,
     backend::{Prepend, SplitFront},
     fourier::{self, profiles::{compact, COMPACT}, AVAILABLE, BIT_DEPTHS, SEGMAX},
     tools::  {asfh::ASFH, ecc},
@@ -30,12 +29,11 @@ impl EncodeResult {
 /// Encoder
 /// Struct for FrAD encoder
 pub struct Encoder {
-    asfh: ASFH, buffer: Vec<u8>,
+    asfh: ASFH, buffer: Vec<f64>,
     bit_depth: u16, channels: u16,
     fsize: u32, srate: u32,
     overlap_fragment: Vec<f64>,
 
-    pcm_format: PCMFormat,
     loss_level: f64,
     init: bool
 }
@@ -49,14 +47,13 @@ pub struct EncoderParams {
 }
 
 impl Encoder {
-    pub fn new(args: EncoderParams, pcm_format: PCMFormat) -> Result<Self, String> {
+    pub fn new(args: EncoderParams) -> Result<Self, String> {
         let mut encoder = Self {
             asfh: ASFH::new(), buffer: Vec::new(),
             bit_depth: 0, channels: 0,
             fsize: 0, srate: 0,
             overlap_fragment: Vec::new(),
 
-            pcm_format,
             loss_level: 0.5,
             init: false
         };
@@ -100,7 +97,7 @@ impl Encoder {
     /// Inner encoder loop
     /// Parameters: PCM stream, Flush flag
     /// Returns: Encoded audio data
-    fn inner(&mut self, stream: &[u8], flush: bool) -> EncodeResult {
+    fn inner(&mut self, stream: &[f64], flush: bool) -> EncodeResult {
         self.buffer.extend(stream);
         let (mut ret, mut samples) = (Vec::new(), 0);
 
@@ -126,22 +123,16 @@ impl Encoder {
 
             // 0. Set read length in samples
             let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-            let mut rlen = (self.fsize as usize).max(overlap_len);
+            let mut read_len = (self.fsize as usize).max(overlap_len);
             if COMPACT.contains(&self.asfh.profile) {
-                rlen = compact::get_samples_min_ge(rlen as u32) as usize;
+                read_len = compact::get_samples_min_ge(read_len as u32) as usize;
             }
-            rlen -= overlap_len;
-
-            let bytes_per_sample = self.pcm_format.bit_depth() / 8;
-            let read_bytes = rlen * self.channels as usize * bytes_per_sample;
-            if self.buffer.len() < read_bytes && !flush { break; }
+            read_len -= overlap_len;
+            read_len *= self.channels as usize;
+            if self.buffer.len() < read_len && !flush { break; }
 
             // 1. Cut out the frame from the buffer
-            let pcm_bytes = self.buffer.split_front(read_bytes);
-            let mut frame = pcm_bytes.chunks(bytes_per_sample)
-                .map(|bytes| any_to_f64(bytes, &self.pcm_format))
-                .collect::<Vec<f64>>();
-
+            let mut frame = self.buffer.split_front(read_len);
             let samples_in_frame = frame.len() / self.channels as usize;
 
             // 2. Overlap the frame with the previous overlap fragment
@@ -179,7 +170,7 @@ impl Encoder {
     /// Processes the input stream
     /// Parameters: Input stream
     /// Returns: Encoded audio data
-    pub fn process(&mut self, stream: &[u8]) -> EncodeResult {
+    pub fn process(&mut self, stream: &[f64]) -> EncodeResult {
         return self.inner(stream, false);
     }
 
@@ -187,7 +178,7 @@ impl Encoder {
     /// Encodes the remaining data in the buffer and flush
     /// Returns: Encoded audio data
     pub fn flush(&mut self) -> EncodeResult {
-        return self.inner(b"", true);
+        return self.inner(&[], true);
     }
 }
 
@@ -309,7 +300,6 @@ impl Encoder {
     }
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
     pub fn set_loss_level(&mut self, loss_level: f64) { self.loss_level = loss_level.abs().max(0.125); }
-    pub fn set_pcm_format(&mut self, pcm_format: PCMFormat) { self.pcm_format = pcm_format; }
     pub fn set_overlap_ratio(&mut self, mut overlap_ratio: u16) {
         if overlap_ratio != 0 { overlap_ratio = overlap_ratio.max(2).min(256); }
         self.asfh.overlap_ratio = overlap_ratio;

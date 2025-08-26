@@ -3,7 +3,7 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Simple CLI parser for FrAD Executable
 
-use libfrad::PCMFormat;
+use crate::tools::pcmproc::PCMFormat;
 use std::{collections::VecDeque, env::Args, fs::read_to_string, process::exit};
 
 use base64::{prelude::BASE64_STANDARD, Engine};

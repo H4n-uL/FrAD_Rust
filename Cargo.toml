@@ -17,6 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22.1"
+half = "2.6.0"
 infer = "0.19.0"
 libfrad = { path = "src/libfrad" }
 rodio = "0.21"

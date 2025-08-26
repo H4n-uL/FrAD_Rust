@@ -6,7 +6,7 @@
 use libfrad::{head, profiles::LOSSLESS, Encoder, EncoderParams};
 use crate::{
     common::{check_overwrite, format_si, format_speed, format_time, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
-    tools::{cli::CliParams, process::ProcessInfo}
+    tools::{cli::CliParams, pcmproc::PCMProcessor, process::ProcessInfo}
 };
 use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
 use same_file::is_same_file;
@@ -71,7 +71,7 @@ pub fn encode(input: String, params: CliParams) {
         frame_size: params.frame_size
     };
 
-    let mut encoder = match Encoder::new(encparams, params.pcm) {
+    let mut encoder = match Encoder::new(encparams) {
         Ok(enc) => enc,
         Err(err) => { eprintln!("{}", err); exit(1); }
     };
@@ -96,12 +96,16 @@ pub fn encode(input: String, params: CliParams) {
     write_safe(&mut writefile, &head::builder(&params.meta, image, None));
 
     let mut procinfo = ProcessInfo::new();
+    let mut pcmproc = PCMProcessor::new(params.pcm);
     loop {
-        let mut pcm_buf = vec![0u8; 32768];
-        let readlen = read_exact(&mut readfile, &mut pcm_buf);
+        let mut pcm_bytes = vec![0u8; 32768];
+        let readlen = read_exact(&mut readfile, &mut pcm_bytes);
         if readlen == 0 { break; }
 
-        let encoded = encoder.process(&pcm_buf[..readlen]);
+        let frame = pcmproc.into_f64(&pcm_bytes[..readlen]);
+        if frame.is_empty() { break; }
+
+        let encoded = encoder.process(&frame);
         procinfo.update(encoded.buf().len(), encoded.samples(), encoder.get_srate());
         write_safe(&mut writefile, &encoded.buf());
         logging_encode(params.loglevel, &procinfo, false);
