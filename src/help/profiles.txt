@@ -13,7 +13,7 @@
             64000, 88200, 96000 Hz
         Channels: 1 ~ 8
         Samples per channel:
-            <128|144|192> × 2^n
+            <128|160|192|224> × 2^n
             n = 0 ~ 7
         Overlap ratio: 0 or 1/<2~256>
 
