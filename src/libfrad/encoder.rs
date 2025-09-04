@@ -9,6 +9,8 @@ use crate::{
     tools::  {asfh::ASFH, ecc},
 };
 
+use alloc::{format, string::{String, ToString}, vec::Vec};
+
 // use rand::prelude::*;
 
 pub struct EncodeResult {
@@ -283,20 +285,20 @@ impl Encoder {
     pub fn set_ecc(&mut self, ecc: bool, mut ecc_ratio: [u8; 2]) -> String {
         self.asfh.ecc = ecc;
         let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255);
-        let mut result = String::new();
+        let mut warn = String::new();
         if dsize_zero || exceed_255 {
-            if dsize_zero { result = "ECC data size must not be zero".to_string(); }
+            if dsize_zero { warn = "ECC data size must not be zero".to_string(); }
             if exceed_255 {
-                result = format!(
+                warn = format!(
                     "ECC data size and check size must not exceed 255, given: {} and {}",
                     ecc_ratio[0], ecc_ratio[1]
                 );
             }
-            result.push_str("\nSetting ECC to default 96/24");
+            warn.push_str("\nSetting ECC to default 96/24");
             ecc_ratio = [96, 24];
         }
         self.asfh.ecc_ratio = ecc_ratio;
-        return result;
+        return warn;
     }
     pub fn set_little_endian(&mut self, little_endian: bool) { self.asfh.endian = little_endian; }
     pub fn set_loss_level(&mut self, loss_level: f64) { self.loss_level = loss_level.abs().max(0.125); }

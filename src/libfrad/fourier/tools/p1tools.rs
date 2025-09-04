@@ -4,6 +4,7 @@
 //! Description: Quantisation and Dequantisation tools for Profile 1
 
 use crate::backend::{bitcvt, linspace};
+use alloc::vec::Vec;
 
 pub const SPREAD_ALPHA: f64 = 0.8;
 const QUANT_ALPHA: f64 = 0.75;
@@ -31,7 +32,7 @@ fn get_bin_range(len: usize, srate: u32, i: usize) -> core::ops::Range<usize> {
 /// Returns: Masking threshold array
 pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, loss_level: f64, alpha: f64) -> Vec<f64> {
     freqs = freqs.iter().map(|x| x.abs()).collect();
-    let mut thres = vec![0.0; MOSLEN];
+    let mut thres = alloc::vec![0.0; MOSLEN];
 
     // for each subband
     for i in 0..MOSLEN {
@@ -57,7 +58,7 @@ pub fn mask_thres_mos(mut freqs: Vec<f64>, srate: u32, loss_level: f64, alpha: f
 /// Parameters: MOS-Mapped thresholds, Length of the DCT Array, Sample rate
 /// Returns: Inverse-mapped thresholds
 pub fn mapping_from_opus(mapped_thres: &[f64], freqs_len: usize, srate: u32) -> Vec<f64> {
-    let mut thres = vec![0.0; freqs_len];
+    let mut thres = alloc::vec![0.0; freqs_len];
 
     for i in 0..MOSLEN-1 {
         let range = get_bin_range(freqs_len, srate, i);
@@ -86,7 +87,7 @@ pub fn dequant(y: f64) -> f64 { return y.signum() * y.abs().powf(1.0 / QUANT_ALP
 /// Parameters: Integer array
 /// Returns: Encoded binary data
 pub fn exp_golomb_encode(data: &[i64]) -> Vec<u8> {
-    if data.is_empty() { return vec![0]; }
+    if data.is_empty() { return alloc::vec![0]; }
     let dmax = data.iter().map(|x| x.abs()).max().unwrap();
     let k = if dmax > 0 { (dmax as f64).log2().ceil() as u8 } else { 0 };
     let (mut params, mut pos) = (Vec::with_capacity(data.len()), 8);
@@ -98,7 +99,7 @@ pub fn exp_golomb_encode(data: &[i64]) -> Vec<u8> {
         pos += bits;
     }
 
-    let mut encoded = vec![0u8; (pos + 7) / 8];
+    let mut encoded = alloc::vec![0u8; (pos + 7) / 8];
     encoded[0] = k;
 
     for (pos, x, bits) in params {

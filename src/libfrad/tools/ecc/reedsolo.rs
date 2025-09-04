@@ -9,6 +9,8 @@ use core::{
     result::Result as CoreResult
 };
 
+use alloc::{format, string::{String, ToString}, vec::Vec};
+
 #[derive(Clone, Debug)]
 pub struct ReedSolomonError {
     pub message: String
@@ -33,8 +35,8 @@ struct GFContext {
 impl GFContext {
     fn new(prim: usize, generator: usize, c_exp: usize) -> Self {
         let field_charac = (1 << c_exp) - 1;
-        let mut gf_exp = vec![0u8; field_charac * 2];
-        let mut gf_log = vec![0u8; field_charac + 1];
+        let mut gf_exp = alloc::vec![0u8; field_charac * 2];
+        let mut gf_log = alloc::vec![0u8; field_charac + 1];
 
         let mut x = 1;
         for i in 0..field_charac {
@@ -99,7 +101,7 @@ impl GFContext {
 
     fn gf_poly_add(&self, p: &[u8], q: &[u8]) -> Vec<u8> {
         let max_len = p.len().max(q.len());
-        let mut r = vec![0u8; max_len];
+        let mut r = alloc::vec![0u8; max_len];
 
         let p_offset = max_len - p.len();
         let q_offset = max_len - q.len();
@@ -116,7 +118,7 @@ impl GFContext {
     }
 
     fn gf_poly_mul(&self, p: &[u8], q: &[u8]) -> Vec<u8> {
-        let mut r = vec![0u8; p.len() + q.len() - 1];
+        let mut r = alloc::vec![0u8; p.len() + q.len() - 1];
 
         let lp: Vec<u8> = p.iter().map(|&x| if x != 0 { self.gf_log[x as usize] } else { 0 }).collect();
 
@@ -159,7 +161,7 @@ fn gf_mult_nolut(mut x: usize, mut y: usize, prim: usize, field_charac_full: usi
 }
 
 fn rs_generator_poly(ctx: &GFContext, nsym: usize, fcr: usize, generator: usize) -> Vec<u8> {
-    let mut g = vec![1u8];
+    let mut g = alloc::vec![1u8];
     for i in 0..nsym {
         g = ctx.gf_poly_mul(&g, &[1, ctx.gf_pow(generator as u8, i + fcr)]);
     }
@@ -179,7 +181,7 @@ fn rs_encode_msg(ctx: &GFContext, msg_in: &[u8], nsym: usize, fcr: usize, genera
     };
 
     let mut msg_out = msg_in.to_vec();
-    msg_out.extend(vec![0u8; gen_poly.len() - 1]);
+    msg_out.extend(alloc::vec![0u8; gen_poly.len() - 1]);
 
     let lgen: Vec<u8> = gen_poly.iter().map(|&x| if x != 0 { ctx.gf_log[x as usize] } else { 0 }).collect();
 
@@ -201,7 +203,7 @@ fn rs_encode_msg(ctx: &GFContext, msg_in: &[u8], nsym: usize, fcr: usize, genera
 }
 
 fn rs_calc_syndromes(ctx: &GFContext, msg: &[u8], nsym: usize, fcr: usize, generator: usize) -> Vec<u8> {
-    let mut synd = vec![0u8; nsym + 1];
+    let mut synd = alloc::vec![0u8; nsym + 1];
     for i in 0..nsym {
         synd[i + 1] = ctx.gf_poly_eval(msg, ctx.gf_pow(generator as u8, i + fcr));
     }
@@ -211,7 +213,7 @@ fn rs_calc_syndromes(ctx: &GFContext, msg: &[u8], nsym: usize, fcr: usize, gener
 fn rs_find_error_locator(ctx: &GFContext, synd: &[u8], nsym: usize, erase_loc: Option<&[u8]>, erase_count: usize) -> Result<Vec<u8>> {
     let (mut err_loc, mut old_loc) = match erase_loc {
         Some(loc) => (loc.to_vec(), loc.to_vec()),
-        None => (vec![1u8], vec![1u8])
+        None => (alloc::vec![1u8], alloc::vec![1u8])
     };
 
     let synd_shift = if synd.len() > nsym { synd.len() - nsym } else { 0 };
@@ -255,9 +257,9 @@ fn rs_find_error_locator(ctx: &GFContext, synd: &[u8], nsym: usize, erase_loc: O
 }
 
 fn rs_find_errata_locator(ctx: &GFContext, e_pos: &[usize], generator: usize) -> Vec<u8> {
-    let mut e_loc = vec![1u8];
+    let mut e_loc = alloc::vec![1u8];
     for &i in e_pos {
-        let poly = vec![1u8, ctx.gf_pow(generator as u8, i), 0];
+        let poly = alloc::vec![1u8, ctx.gf_pow(generator as u8, i), 0];
         e_loc = ctx.gf_poly_mul(&e_loc, &ctx.gf_poly_add(&[1], &poly[1..]));
     }
     return e_loc;
@@ -302,13 +304,13 @@ fn rs_correct_errata(ctx: &GFContext, msg_in: &[u8], synd: &[u8], err_pos: &[usi
     let err_loc = rs_find_errata_locator(ctx, &coef_pos, generator);
     let err_eval = inverted(&rs_find_error_evaluator(ctx, &inverted(synd), &err_loc, err_loc.len() - 1));
 
-    let mut x_vec = vec![0u8; coef_pos.len()];
+    let mut x_vec = alloc::vec![0u8; coef_pos.len()];
     for i in 0..coef_pos.len() {
         let l = ctx.field_charac - coef_pos[i];
         x_vec[i] = ctx.gf_pow(generator as u8, ctx.field_charac - l);
     }
 
-    let mut e = vec![0u8; msg.len()];
+    let mut e = alloc::vec![0u8; msg.len()];
     for (i, &xi) in x_vec.iter().enumerate() {
         let xi_inv = ctx.gf_inverse(xi);
 
@@ -467,7 +469,7 @@ impl ReedSolomon {
         let ctx = GFContext::new(prim, generator, c_exp);
 
         let gen_polys = if single_gen {
-            let mut gen_vec = vec![vec![]; nsize + 1];
+            let mut gen_vec = alloc::vec![alloc::vec![]; nsize + 1];
             gen_vec[nsym] = rs_generator_poly(&ctx, nsym, fcr, generator);
             gen_vec
         } else {
@@ -598,7 +600,7 @@ impl ReedSolomon {
     // pub fn check_with_nsym(&self, data: &[u8], nsym: usize) -> Vec<bool> {
     //     let chunk_size = self.nsize;
     //     let total_chunks = (data.len() + chunk_size - 1) / chunk_size;
-    //     let mut check = vec![false; total_chunks];
+    //     let mut check = alloc::vec![false; total_chunks];
 
     //     for i in 0..total_chunks {
     //         let start = i * chunk_size;
@@ -616,7 +618,7 @@ fn find_prime_poly(generator: usize, c_exp: usize) -> usize {
     let field_charac_next = (1 << (c_exp + 1)) - 1;
 
     for prim in (field_charac + 2)..field_charac_next {
-        let mut seen = vec![false; field_charac + 1];
+        let mut seen = alloc::vec![false; field_charac + 1];
         let mut conflict = false;
         let mut x = 1;
 

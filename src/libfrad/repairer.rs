@@ -10,6 +10,8 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc},
 };
 
+use alloc::{format, string::{String, ToString}, vec::Vec};
+
 /// Repairer
 /// Struct for FrAD repairer
 pub struct Repairer {
@@ -21,26 +23,28 @@ pub struct Repairer {
 }
 
 impl Repairer {
-    pub fn new(mut ecc_ratio: [u8; 2]) -> Self {
-        if ecc_ratio[0] == 0 {
-            eprintln!("ECC data size must not be zero");
-            eprintln!("Setting ECC to default 96 24");
-            ecc_ratio = [96, 24];
-        }
-        if ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255 {
-            eprintln!("ECC data size and check size must not exceed 255, given: {} and {}",
-                ecc_ratio[0], ecc_ratio[1]);
-            eprintln!("Setting ECC to default 96 24");
+    pub fn new(mut ecc_ratio: [u8; 2]) -> (Self, String) {
+        let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255);
+        let mut warn = String::new();
+        if dsize_zero || exceed_255 {
+            if dsize_zero { warn = "ECC data size must not be zero".to_string(); }
+            if exceed_255 {
+                warn = format!(
+                    "ECC data size and check size must not exceed 255, given: {} and {}",
+                    ecc_ratio[0], ecc_ratio[1]
+                );
+            }
+            warn.push_str("\nSetting ECC to default 96/24");
             ecc_ratio = [96, 24];
         }
 
-        return Self {
+        return (Self {
             asfh: ASFH::new(),
             buffer: Vec::new(),
 
             ecc_ratio,
             broken_frame: false
-        };
+        }, warn);
     }
 
     /// is_empty

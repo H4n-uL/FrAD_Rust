@@ -4,6 +4,7 @@
 //! Description: FrAD Header Builder and Parser
 
 use crate::{backend::SplitFront, common::SIGNATURE};
+use alloc::{string::String, vec::Vec};
 
 const COMMENT: [u8; 2] = [0xfa, 0xaa];
 const IMAGE: [u8; 1] = [0xf5];
@@ -69,9 +70,9 @@ pub fn builder(meta: &Vec<(String, Vec<u8>)>, img: Vec<u8>, itype: Option<u8>) -
 
     let mut header = Vec::new();
     header.extend(SIGNATURE);
-    header.extend(vec![0; 4]);
+    header.extend(alloc::vec![0; 4]);
     header.extend(length);
-    header.extend(vec![0; 48]);
+    header.extend(alloc::vec![0; 48]);
     header.extend(blocks);
 
     return header;
@@ -110,5 +111,5 @@ pub fn parser(mut header: Vec<u8>) -> (Vec<(String, Vec<u8>)>, Vec<u8>, u8) {
 /// Returns: u64 number
 fn u48be_to_u64(data: &[u8]) -> u64 {
     if data.len() != 6 { return 0; }
-    return u64::from_be_bytes([vec![0; 2], data.to_vec()].concat().try_into().unwrap());
+    return u64::from_be_bytes([alloc::vec![0; 2], data.to_vec()].concat().try_into().unwrap());
 }

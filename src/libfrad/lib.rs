@@ -3,6 +3,10 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Fourier Analogue-in-Digital Rust Master Library
 
+#![no_std]
+
+extern crate alloc;
+
 mod backend;
 mod fourier;
 mod tools;

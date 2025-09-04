@@ -12,6 +12,7 @@ use super::{
     tools::{p1tools, p2tools}
 };
 
+use alloc::vec::Vec;
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
@@ -30,7 +31,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     let pcm = pad_pcm(pcm, channels);
 
     // 2. DCT
-    let mut freqs = vec![0.0; pcm.len()];
+    let mut freqs = alloc::vec![0.0; pcm.len()];
     for c in 0..channels as usize {
         let pcm_chnl = pcm.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>();
         for (i, &s) in dct(&pcm_chnl).iter().enumerate() {
@@ -68,7 +69,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     // 1. Deflate decompression
     frad = match inflate::decompress_to_vec(&frad) {
         Ok(x) => x,
-        Err(_) => { return vec![0.0; channels * fsize]; }
+        Err(_) => { return alloc::vec![0.0; channels * fsize]; }
     };
 
     // 2. Splitting LPC and frequencies
@@ -88,7 +89,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, _srate: u
     let freqs = p2tools::tns_synthesis(&tns_freqs, &lpc, channels as usize);
 
     // 5. Inverse DCT
-    let mut pcm = vec![0.0; freqs.len()];
+    let mut pcm = alloc::vec![0.0; freqs.len()];
     for c in 0..channels as usize {
         let freqs_chnl = freqs.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>();
         for (i, s) in idct(&freqs_chnl).iter().enumerate() {

@@ -5,6 +5,7 @@
 //! Dependencies: half
 
 use crate::backend::bitcvt;
+use alloc::vec::Vec;
 use half::f16;
 
 /// cut_float3s
@@ -67,7 +68,7 @@ fn pack_f64(input: Vec<f64>, little_endian: bool) -> Vec<u8> {
 /// Parameters: Bitstream, Bit depth divisable by 3, Little endian toggle
 /// Returns: bitstream
 fn pad_float3s(bstr: Vec<u8>, bits: usize, little_endian: bool) -> Vec<u8> {
-    let (pad_bits, pad_bytes) = (vec![false; bits / 3], vec![0; bits / 24]);
+    let (pad_bits, pad_bytes) = (alloc::vec![false; bits / 3], alloc::vec![0; bits / 24]);
     return if bits % 8 != 0 {
         bitcvt::to_bytes(&bitcvt::to_bits(&bstr)
         .chunks(bits).filter(|x| x.len() == bits).flat_map(|x| {

@@ -10,6 +10,8 @@ use crate::{
     tools::  {asfh::{ASFH, ParseResult::{Complete, Incomplete, ForceFlush}}, ecc},
 };
 
+use alloc::vec::Vec;
+
 pub struct DecodeResult {
     pcm: Vec<f64>,
     channels: u16,

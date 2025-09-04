@@ -4,7 +4,9 @@
 //! Description: Error correction tools
 
 mod reedsolo;
-pub use reedsolo::ReedSolomon;
+
+use crate::tools::ecc::reedsolo::ReedSolomon;
+use alloc::vec::Vec;
 
 /// encode_rs
 /// Encodes data w. Reed-Solomon ECC
@@ -32,7 +34,7 @@ pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
         if repair {
             match rs.decode(chunk) {
                 Ok(chunk) => chunk.0,
-                Err(_) => vec![0; chunk.len() - parity_size]
+                Err(_) => alloc::vec![0; chunk.len() - parity_size]
             }
         } else { chunk.iter().take(chunk.len() - parity_size).cloned().collect() }
     }).flatten().collect();

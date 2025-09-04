@@ -3,6 +3,8 @@
 //! Copyright 2024-2025 HaמuL
 //! Description: Bitstream <-> Byte array converter
 
+use alloc::vec::Vec;
+
 /// to_bits
 /// Converts byte array to bitstream
 /// Parameters: Byte array

@@ -12,6 +12,7 @@ use super::{
 };
 
 use core::{f64::consts::E, iter::repeat};
+use alloc::vec::Vec;
 use miniz_oxide::{deflate, inflate};
 
 // Bit depth table
@@ -48,8 +49,8 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, mut srate: u32
     // 1. Pad and transform PCM with scaling
     let pcm = pad_pcm(pcm, channels);
 
-    let mut freqs_masked = vec![0; pcm.len()];
-    let mut thres = vec![0; p1tools::MOSLEN * channels as usize];
+    let mut freqs_masked = alloc::vec![0; pcm.len()];
+    let mut thres = alloc::vec![0; p1tools::MOSLEN * channels as usize];
     for c in 0..channels as usize {
         // 2. DCT
         let freqs_chnl = dct(&pcm.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>());
@@ -101,7 +102,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
     // 1. Deflate decompression
     frad = match inflate::decompress_to_vec(&frad) {
         Ok(x) => x,
-        Err(_) => { return vec![0.0; channels * fsize]; }
+        Err(_) => { return alloc::vec![0.0; channels * fsize]; }
     };
 
     // 2. Splitting thresholds and frequencies
@@ -121,7 +122,7 @@ pub fn digital(mut frad: Vec<u8>, bit_depth_index: u16, channels: u16, srate: u3
     thres.resize(p1tools::MOSLEN * channels, 0.0);
 
     // 4. Dequantisation and inverse masking
-    let mut pcm = vec![0.0; fsize * channels];
+    let mut pcm = alloc::vec![0.0; fsize * channels];
     for c in 0..channels {
         let freqs_masked_chnl = freqs_masked.iter().skip(c).step_by(channels as usize).cloned().collect::<Vec<f64>>();
         let thres_chnl = thres.iter().skip(c).step_by(channels).cloned().collect::<Vec<f64>>();

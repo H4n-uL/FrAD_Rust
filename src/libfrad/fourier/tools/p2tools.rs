@@ -4,6 +4,7 @@
 //! Description: TNS analysis and synthesis tools for Profile 2
 
 use crate::fourier::backend::signal::{correlate_full, impulse_filt};
+use alloc::vec::Vec;
 
 pub const TNS_MAX_ORDER: usize = 12;
 pub const TNS_COEF_RES: usize = 4;
@@ -24,7 +25,7 @@ fn calc_autocorr(freq: &[f64]) -> Vec<f64> {
 /// Parameters: Auto-correlation array
 /// Returns: LPC coefficients
 fn levinson_durbin(autocorr: &[f64]) -> Vec<f64> {
-    let mut lpc = vec![0.0; TNS_MAX_ORDER + 1];
+    let mut lpc = alloc::vec![0.0; TNS_MAX_ORDER + 1];
     lpc[0] = 1.0;
     let mut error = autocorr[0];
 
@@ -94,8 +95,8 @@ fn predgain(orig: &[f64], prc: &[f64]) -> f64 {
 /// Parameters: DCT Array and Channel count
 /// Returns: TNS frequencies and LPC coefficients
 pub fn tns_analysis(freqs: &[f64], channels: usize) -> (Vec<f64>, Vec<i64>) {
-    let mut tns_freqs = vec![0.0; freqs.len()];
-    let mut lpcqs = vec![0; TNS_MAX_ORDER + 1];
+    let mut tns_freqs = alloc::vec![0.0; freqs.len()];
+    let mut lpcqs = alloc::vec![0; TNS_MAX_ORDER + 1];
 
     for c in 0..channels {
         let freqs_chnl = freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
@@ -139,7 +140,7 @@ pub fn tns_analysis(freqs: &[f64], channels: usize) -> (Vec<f64>, Vec<i64>) {
 /// Parameters: TNS frequencies, LPC coefficients, and Channel count
 /// Returns: Synthesised DCT Array
 pub fn tns_synthesis(tns_freqs: &[f64], lpcqs: &[i64], channels: usize) -> Vec<f64> {
-    let mut freqs = vec![0.0; tns_freqs.len()];
+    let mut freqs = alloc::vec![0.0; tns_freqs.len()];
 
     for c in 0..channels {
         let tns_freq_chnl = tns_freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();

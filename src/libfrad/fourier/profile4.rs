@@ -5,6 +5,7 @@
 //! Dependencies: half
 
 use super::backend::u8pack;
+use alloc::vec::Vec;
 use half::f16;
 
 // Bit depth table

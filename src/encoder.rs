@@ -76,7 +76,8 @@ pub fn encode(input: String, params: CliParams) {
         Err(err) => { eprintln!("{}", err); exit(1); }
     };
 
-    encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
+    let warn = encoder.set_ecc(params.enable_ecc, params.ecc_ratio);
+    if !warn.is_empty() { eprintln!("{}", warn); }
     encoder.set_little_endian(params.little_endian);
     encoder.set_overlap_ratio(params.overlap_ratio);
 

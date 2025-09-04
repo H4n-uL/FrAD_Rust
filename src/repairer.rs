@@ -53,7 +53,8 @@ pub fn repair(rfile: String, params: CliParams) {
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(&rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(&wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let mut repairer = Repairer::new(params.ecc_ratio);
+    let (mut repairer, warn) = Repairer::new(params.ecc_ratio);
+    if !warn.is_empty() { eprintln!("{}", warn); }
     let mut procinfo = ProcessInfo::new();
     loop {
         let mut buffer = vec![0; 32768];

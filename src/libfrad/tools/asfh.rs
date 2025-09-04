@@ -9,6 +9,8 @@ use crate::{
     fourier::profiles::{compact, COMPACT}
 };
 
+use alloc::vec::Vec;
+
 /// encode_pfb
 /// Encodes PFloat byte (containing necessary info for the frame)
 /// Parameters: Profile, ECC toggle, Little-endian toggle, Bit depth index
@@ -130,7 +132,7 @@ impl ASFH {
             fhead.push((self.channels - 1) as u8);
             fhead.extend(self.ecc_ratio.to_vec());
             fhead.extend(self.srate.to_be_bytes().to_vec());
-            fhead.extend(vec![0u8; 8]);
+            fhead.extend(alloc::vec![0u8; 8]);
             fhead.extend(self.fsize.to_be_bytes().to_vec());
             fhead.extend(crc32(0, &frad).to_be_bytes());
         }
@@ -145,7 +147,7 @@ impl ASFH {
     /// Returns: Frame buffer
     pub fn force_flush(&mut self) -> Vec<u8> {
         let mut fhead = FRM_SIGN.to_vec();
-        fhead.extend(vec![0u8; 4]);
+        fhead.extend(alloc::vec![0u8; 4]);
         fhead.push(encode_pfb(self.profile, self.ecc, self.endian, self.bit_depth_index));
 
         if COMPACT.contains(&self.profile) {

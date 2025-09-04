@@ -5,14 +5,15 @@
 
 pub mod bitcvt;
 use core::f64::consts::PI;
+use alloc::vec::Vec;
 
 /// linspace
 /// Generates a linear spaced vector
 /// Parameters: Start value, Stop value, Number of values, Endpoint inclusion
 /// Returns: Linear spaced vector
 pub fn linspace(start: f64, stop: f64, num: usize, ep: bool) -> Vec<f64> {
-    if num == 0 { return vec![]; }
-    if num == 1 { return vec![(start + stop) / 2.0]; }
+    if num == 0 { return alloc::vec![]; }
+    if num == 1 { return alloc::vec![(start + stop) / 2.0]; }
     let step = (stop - start) / (num - ep as usize) as f64;
 
     let mut result = Vec::with_capacity(num);

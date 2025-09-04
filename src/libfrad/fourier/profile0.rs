@@ -5,6 +5,7 @@
 /// Dependencies: half
 
 use super::backend::{u8pack, core::{dct, idct}};
+use alloc::vec::Vec;
 use half::f16;
 
 // Bit depth table
@@ -24,7 +25,7 @@ const FLOAT_DR_LIMITS: &[f64] = &[
 pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, srate: u32, little_endian: bool) -> (Vec<u8>, u16, u16, u32) {
     if !DEPTHS.contains(&bit_depth) || bit_depth == 0 { bit_depth = 16; }
 
-    let mut freqs = vec![0.0; pcm.len()];
+    let mut freqs = alloc::vec![0.0; pcm.len()];
     for c in 0..channels as usize {
         let pcm_chnl: Vec<f64> = pcm.iter().skip(c).step_by(channels as usize).cloned().collect();
         for (i, s) in dct(&pcm_chnl).iter().enumerate() {
@@ -50,7 +51,7 @@ pub fn analogue(pcm: Vec<f64>, mut bit_depth: u16, channels: u16, srate: u32, li
 pub fn digital(frad: Vec<u8>, bit_depth_index: u16, channels: u16, little_endian: bool) -> Vec<f64> {
     let freqs = u8pack::unpack(frad, DEPTHS[bit_depth_index as usize], little_endian);
 
-    let mut pcm = vec![0.0; freqs.len()];
+    let mut pcm = alloc::vec![0.0; freqs.len()];
     for c in 0..channels as usize {
         let freqs_chnl: Vec<f64> = freqs.iter().skip(c).step_by(channels as usize).cloned().collect();
         for (i, s) in idct(&freqs_chnl).iter().enumerate() {

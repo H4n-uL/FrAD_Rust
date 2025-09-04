@@ -4,6 +4,7 @@
 //! Description: Library for signal processing
 //! Dependencies: palmfft
 
+use alloc::vec::Vec;
 use palmfft::{CfftPlan, Complex};
 
 /// impulse_filt
@@ -11,9 +12,9 @@ use palmfft::{CfftPlan, Complex};
 /// Parameters: Numerator coefficients, Denominator coefficients, Input signal
 /// Returns: Filtered signal
 pub fn impulse_filt(b: &[f64], a: &[f64], input: &[f64]) -> Vec<f64> {
-    let mut output = vec![0.0; input.len()];
-    let mut x_hist = vec![0.0; b.len()];
-    let mut y_hist = vec![0.0; a.len()-1];
+    let mut output = alloc::vec![0.0; input.len()];
+    let mut x_hist = alloc::vec![0.0; b.len()];
+    let mut y_hist = alloc::vec![0.0; a.len()-1];
 
     for (i, &x) in input.iter().enumerate() {
         for j in (1..x_hist.len()).rev() { x_hist[j] = x_hist[j-1]; }
@@ -45,10 +46,10 @@ pub fn correlate_full(x: &[f64], y: &[f64]) -> Vec<f64> {
         .chain(core::iter::repeat(Complex::new(0.0, 0.0))).take(size).collect();
 
     let plan = CfftPlan::new(size);
-    plan.forward(&mut x, 1.0);
-    plan.forward(&mut y, 1.0);
+    plan.forward(&mut x, 1.0).unwrap();
+    plan.forward(&mut y, 1.0).unwrap();
 
     let mut z: Vec<Complex> = x.iter().zip(y.iter()).map(|(a, b)| *a * *b).collect();
-    plan.backward(&mut z, 1.0);
+    plan.backward(&mut z, 1.0).unwrap();
     return z.iter().take(n).map(|c| c.re / z.len() as f64).collect();
 }
