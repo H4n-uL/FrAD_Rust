@@ -12,7 +12,7 @@ pub struct ProcessInfo {
     t_block: Option<Instant>,
     total_size: u128,
     duration: HashMap<u32, u128>,
-    bitrate: HashMap<u32, u128>,
+    bitrate: HashMap<u32, u128>
 }
 
 impl ProcessInfo {
@@ -22,7 +22,7 @@ impl ProcessInfo {
             t_block: None,
             duration: HashMap::new(),
             total_size: 0,
-            bitrate: HashMap::new(),
+            bitrate: HashMap::new()
         }
     }
 
@@ -40,7 +40,7 @@ impl ProcessInfo {
     /// Gets the total duration of the stream in f64 seconds
     /// Returns: Total duration
     pub fn get_duration(&self) -> f64 {
-        return self.duration.iter().map(|(k, v)| if *k != 0 { *v as f64 / *k as f64 } else  { 0.0 } ).sum();
+        return self.duration.iter().map(|(k, v)| if *k != 0 { *v as f64 / *k as f64 } else { 0.0 }).sum();
     }
 
     /// get_bitrate
