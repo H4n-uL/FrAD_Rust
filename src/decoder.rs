@@ -8,8 +8,7 @@ use crate::{
     common::{self, check_overwrite, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, pcmproc::PCMProcessor, process::ProcessInfo}
 };
-use std::{fs::File, io::{Read, Write}, path::Path, process::exit};
-
+use std::{fs::File, io::{Read, Write}, path::Path, process::exit, thread::sleep, time::Duration};
 use rodio::{buffer::SamplesBuffer, OutputStreamBuilder, Sink};
 use same_file::is_same_file;
 
@@ -33,13 +32,16 @@ fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, dec: &DecodeResult,
 
 /// logging_decode
 /// Logs a message to stderr
-/// Parameters: Log level, Process info, Linefeed flag, ASFH
-fn logging_decode(loglevel: u8, log: &ProcessInfo, linefeed: bool, asfh: &ASFH) {
+/// Parameters: ASFH, Process info, Log level, Linefeed flag
+fn logging_decode(asfh: &ASFH, log: &ProcessInfo, loglevel: u8, linefeed: bool) {
     if loglevel == 0 { return; }
     let mut out = Vec::new();
 
     out.push(format!("size={}B time={} bitrate={}bit/s speed={}x    ",
-        common::format_si(log.get_total_size() as f64), common::format_time(log.get_duration()), common::format_si(log.get_bitrate()), common::format_speed(log.get_speed())
+        common::format_si(log.get_total_size() as f64),
+        common::format_time(log.get_duration()),
+        common::format_si(log.get_bitrate()),
+        common::format_speed(log.get_speed())
     ));
     if loglevel > 1 {
         out.push(format!("Profile {}, {}bits {}ch@{}Hz, ECC={}    ", asfh.profile,
@@ -97,12 +99,15 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     loop {
         let mut buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut buf);
-        if readlen == 0 && decoder.is_empty() && sink.as_ref().map_or(true, |s| s.empty()) { break; }
+        if readlen == 0 && decoder.is_empty() {
+            if sink.as_ref().map_or(true, |s| s.empty()) { break; }
+            sleep(Duration::from_millis(10));
+        }
 
         let decoded = decoder.process(&buf[..readlen]);
         procinfo.update(readlen, decoded.samples(), decoded.srate());
         write(&mut writefile, sink.as_mut(), &decoded, &pcmproc);
-        logging_decode(params.loglevel, &procinfo, false, decoder.get_asfh());
+        logging_decode(decoder.get_asfh(), &procinfo, params.loglevel, false);
 
         if decoded.crit() && !wpipe {
             procinfo.block();
@@ -115,7 +120,7 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let decoded = decoder.flush();
     procinfo.update(0, decoded.samples(), decoded.srate());
     write(&mut writefile, sink.as_mut(), &decoded, &pcmproc);
-    logging_decode(params.loglevel, &procinfo, true, decoder.get_asfh());
+    logging_decode(decoder.get_asfh(), &procinfo, params.loglevel, true);
 
     sink.map(|s| s.sleep_until_end());
 }
