@@ -287,12 +287,12 @@ impl Encoder {
         let (dsize_zero, exceed_255) = (ecc_ratio[0] == 0, ecc_ratio[0] as u16 + ecc_ratio[1] as u16 > 255);
         let mut warn = String::new();
         if dsize_zero || exceed_255 {
-            if dsize_zero { warn = "ECC data size must not be zero".to_string(); }
+            if dsize_zero { warn.push_str("ECC data size must not be zero"); }
             if exceed_255 {
-                warn = format!(
+                warn.push_str(format!(
                     "ECC data size and check size must not exceed 255, given: {} and {}",
                     ecc_ratio[0], ecc_ratio[1]
-                );
+                ).as_str());
             }
             warn.push_str("\nSetting ECC to default 96/24");
             ecc_ratio = [96, 24];
