@@ -27,7 +27,7 @@
 
 1. Git cloneでライブラリをダウンロード
 2. cargo build --release でビルド
-3. target/releaseにある実行ファイルを好きな場所に移動します。
+3. target/releaseにある実行ファイルを好きな場所に移動
 4. PATHに変数を登録
 
 ```bash
