@@ -151,7 +151,7 @@ impl Encoder {
             if !BIT_DEPTHS[self.asfh.profile as usize].contains(&self.bit_depth) { panic!("Invalid bit depth"); }
             let (mut frad, bit_depth_index, channels, srate) = match self.asfh.profile {
                 1 => fourier::profile1::analogue(frame, self.bit_depth, self.channels, self.srate, self.loss_level),
-                2 => fourier::profile2::analogue(frame, self.bit_depth, self.channels, self.srate),
+                2 => fourier::profile2::analogue(frame, self.bit_depth, self.channels, self.srate, self.loss_level),
                 4 => fourier::profile4::analogue(frame, self.bit_depth, self.channels, self.srate, self.asfh.endian),
                 _ => fourier::profile0::analogue(frame, self.bit_depth, self.channels, self.srate, self.asfh.endian)
             };

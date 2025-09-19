@@ -15,9 +15,17 @@ pub const TNS_MIN_PRED: f64 = 3.01029995663981195213738894724493027;
 /// Parameters: Frequency-domain signal
 /// Returns: Auto-correlation array of the signal
 fn calc_autocorr(freq: &[f64]) -> Vec<f64> {
-    let window: Vec<f64> = (0..=TNS_MAX_ORDER).map(|i| (-0.5 * (i as f64 * 0.4).powi(2)).exp()).collect();
-    let corr = correlate_full(freq, freq);
-    return (0..=TNS_MAX_ORDER).map(|i| corr[freq.len() - 1 + i] * window[i]).collect();
+    let freq_mean = freq.iter().sum::<f64>() / freq.len() as f64;
+    let mut sig = freq.iter().map(|&x| x - freq_mean).collect::<Vec<f64>>();
+    let norm = sig.iter().sum::<f64>();
+    if norm > 1e-6 {
+        sig.iter_mut().for_each(|x| *x /= norm);
+    }
+
+    let full_corr = correlate_full(&sig, &sig);
+    let autocorr = &full_corr[freq.len() - 1..freq.len() + TNS_MAX_ORDER];
+    let window = (0..=TNS_MAX_ORDER).map(|i| (-0.5 * (i as f64 * 0.01).powi(2)).exp()).collect::<Vec<f64>>();
+    return window.iter().zip(autocorr.iter()).map(|(&w, &c)| w * c).collect();
 }
 
 /// levinson_durbin
@@ -28,23 +36,20 @@ fn levinson_durbin(autocorr: &[f64]) -> Vec<f64> {
     let mut lpc = alloc::vec![0.0; TNS_MAX_ORDER + 1];
     lpc[0] = 1.0;
     let mut error = autocorr[0];
-
-    if error <= 0.0 { return lpc; }
+    if error <= 1e-10 { return lpc; }
 
     for i in 1..=TNS_MAX_ORDER {
-        let mut reflection = -(0..i).map(|j| lpc[j] * autocorr[i - j]).sum::<f64>();
-        if error < 1e-9 { break; }
+        let mut reflection = -(0..i).map(|j| lpc[j] * autocorr[i - j]).sum::<f64>() / error;
+        if reflection.abs() >= 0.96 { reflection = 0.96 * reflection.signum(); }
 
-        reflection /= error;
-        if reflection.abs() >= 1.0 { break; }
-
+        let lpc_old = lpc.clone();
         lpc[i] = reflection;
         for j in 1..i {
-            lpc[j] += reflection * lpc[i - j];
+            lpc[j] += reflection * lpc_old[i - j];
         }
 
         error *= 1.0 - reflection * reflection;
-        if error <= 0.0 { break; }
+        if error <= 1e-12 { break; }
     }
 
     return lpc;
@@ -56,104 +61,111 @@ fn levinson_durbin(autocorr: &[f64]) -> Vec<f64> {
 /// Returns: Quantised LPC coefficients
 fn quantise_lpc(lpc: &[f64]) -> Vec<i64> {
     let scale = (1 << (TNS_COEF_RES - 1)) as f64 - 1.0;
-    let eps = 1e-6;
 
-    return lpc.iter().map(|&coef| {
-        let scaled = (coef * scale).clamp(
-            -(1 << (TNS_COEF_RES - 1)) as f64 + eps,
-            (1 << (TNS_COEF_RES - 1)) as f64 - 1.0 - eps
-        );
-        scaled.round() as i64
-    }).collect();
+    let mut lpc_quant = alloc::vec![0; lpc.len()];
+    if lpc.len() > 1 {
+        lpc_quant[1..].iter_mut().zip(lpc[1..].iter()).for_each(|(q, &x)| {
+            *q = (x * scale).clamp(-scale, scale - 1.0).round() as i64;
+        });
+    }
+
+    return lpc_quant;
 }
 
 /// dequantise_lpc
 /// Dequantises the LPC coefficients to floats
 /// Parameters: Quantised LPC coefficients
 /// Returns: LPC coefficients
-fn dequantise_lpc(lpcq: &[i64]) -> Vec<f64> {
+fn dequantise_lpc(lpc_quant: &[i64]) -> Vec<f64> {
+    if lpc_quant.iter().all(|&x| x == 0) {
+        return alloc::vec![1.0];
+    }
     let scale = (1 << (TNS_COEF_RES - 1)) as f64 - 1.0;
-    return lpcq.iter().map(|&x| x as f64 / scale).collect();
+    let mut lpc_deq = alloc::vec![0.0; lpc_quant.len()];
+    lpc_deq[0] = 1.0;
+    if lpc_quant.len() > 1 {
+        lpc_deq[1..].iter_mut().zip(lpc_quant[1..].iter()).for_each(|(d, &x)| {
+            *d = x as f64 / scale;
+        });
+    }
+    return lpc_deq;
 }
 
 /// predgain
 /// Calculates the prediction gain of a signal
-/// Parameters: Original signal, Predicted signal
+/// Parameters: Original signal, Residual signal
 /// Returns: Prediction gain in dB SPL
-fn predgain(orig: &[f64], prc: &[f64]) -> f64 {
-    let orig_energy: f64 = orig.iter().map(|x| x * x).sum();
-    if orig_energy < 1e-9 { return 0.0; }
+fn predgain(orig: &[f64], resid: &[f64]) -> f64 {
+    let orig_mean = orig.iter().sum::<f64>() / orig.len() as f64;
+    let orig_centred = orig.iter().map(|&x| x - orig_mean).collect::<Vec<f64>>();
+    let resid_mean = resid.iter().sum::<f64>() / resid.len() as f64;
+    let resid_centred = resid.iter().map(|&x| x - resid_mean).collect::<Vec<f64>>();
 
-    let error: f64 = orig.iter().zip(prc.iter()).map(|(x, y)| (x - y) * (x - y)).sum();
-    if error < 1e-9 { return 0.0; }
+    let orig_energy = orig_centred.iter().map(|&x| x * x).sum::<f64>();
+    let resid_energy = resid_centred.iter().map(|&x| x * x).sum::<f64>();
 
-    return 20.0 * (orig_energy / error).log10();
+    if orig_energy < 1e-10 || resid_energy < 1e-10 || resid_energy >= orig_energy {
+        return 0.0;
+    }
+
+    return 20.0 * (orig_energy / resid_energy).log10();
 }
 
 /// tns_analysis
 /// Performs TNS analysis on Frequency-domain signals
-/// Parameters: DCT Array and Channel count
-/// Returns: TNS frequencies and LPC coefficients
-pub fn tns_analysis(freqs: &[f64], channels: usize) -> (Vec<f64>, Vec<i64>) {
-    let mut tns_freqs = alloc::vec![0.0; freqs.len()];
-    let mut lpcqs = alloc::vec![0; TNS_MAX_ORDER + 1];
-
-    for c in 0..channels {
-        let freqs_chnl = freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
-        let autocorr = calc_autocorr(&freqs_chnl);
-        let lpc = levinson_durbin(&autocorr);
-
-        if lpc.iter().any(|&x| x.abs() >= 1.0) {
-            for (i, &s) in freqs_chnl.iter().enumerate() {
-                tns_freqs[i * channels + c] = s;
-            }
-            continue;
-        }
-
-        let lpcq = quantise_lpc(&lpc);
-        let lpcdeq = dequantise_lpc(&lpcq);
-
-        let filtered = impulse_filt(&lpcdeq, &[1.0], &freqs_chnl);
-        let filtered_infinite = filtered.iter().any(|x| !x.is_finite());
-        let predgain_too_low = predgain(&freqs_chnl, &filtered) < TNS_MIN_PRED;
-        if filtered_infinite || predgain_too_low {
-            for (i, &s) in freqs_chnl.iter().enumerate() {
-                tns_freqs[i * channels + c] = s;
-            }
-        }
-        else {
-            for (i, &s) in filtered.iter().enumerate() {
-                tns_freqs[i * channels + c] = s;
-            }
-
-            for (i, &l) in lpcq.iter().enumerate() {
-                lpcqs[i * channels + c] = l;
-            }
-        }
+/// Parameters: DCT Array
+/// Returns: TNS frequencies(mutated) and LPC coefficients
+pub fn tns_analysis(freqs: &mut [f64]) -> Vec<i64> {
+    let lpc_zero = alloc::vec![0; TNS_MAX_ORDER + 1];
+    if freqs.iter().map(|x| x * x).sum::<f64>() < 1e-10 || !lpc_cond(&freqs) {
+        return lpc_zero;
     }
 
-    return (tns_freqs, lpcqs);
+    let autocorr = calc_autocorr(&freqs);
+    let lpc = levinson_durbin(&autocorr);
+
+    if lpc.iter().map(|x| x.abs()).sum::<f64>() < 0.01 {
+        return lpc_zero;
+    }
+
+    let lpc_quant = quantise_lpc(&lpc);
+    if lpc_quant.iter().all(|&x| x == 0) { return lpc_zero; }
+    let lpc_deq = dequantise_lpc(&lpc_quant);
+
+    let residual = impulse_filt(&lpc_deq, &[1.0], &freqs);
+    let max = residual.iter().map(|x| x.abs()).fold(0.0, f64::max);
+    if max > 1e6 || residual.iter().any(|&x| !x.is_finite()) { return lpc_zero; }
+    let gain = predgain(&freqs, &residual);
+    if gain < TNS_MIN_PRED { return lpc_zero; }
+
+    for (i, &s) in residual.iter().enumerate() {
+        freqs[i] = s;
+    }
+    return lpc_quant;
 }
 
 /// tns_synthesis
 /// Performs TNS synthesis on Frequency-domain signals
-/// Parameters: TNS frequencies, LPC coefficients, and Channel count
-/// Returns: Synthesised DCT Array
-pub fn tns_synthesis(tns_freqs: &[f64], lpcqs: &[i64], channels: usize) -> Vec<f64> {
+/// Parameters: TNS frequencies, LPC coefficients
+/// Returns: Synthesised DCT Array(mutated)
+pub fn tns_synthesis(tns_freqs: &mut [f64], lpc_quant: &[i64]) {
     let mut freqs = alloc::vec![0.0; tns_freqs.len()];
+    let lpc_deq = dequantise_lpc(&lpc_quant);
+    let filtered = impulse_filt(&[1.0], &lpc_deq, &tns_freqs);
 
-    for c in 0..channels {
-        let tns_freq_chnl = tns_freqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
-        let lpcq_chnl = lpcqs.iter().skip(c).step_by(channels).cloned().collect::<Vec<_>>();
-
-        let lpcdeq = dequantise_lpc(&lpcq_chnl);
-        let filtered = impulse_filt(&[1.0], &lpcdeq, &tns_freq_chnl);
-
-        let filt = if filtered.iter().any(|x| !x.is_finite()) { tns_freq_chnl } else { filtered };
-        for (i, &s) in filt.iter().enumerate() {
-            freqs[i * channels + c] = s;
-        }
+    let max = filtered.iter().map(|x| x.abs()).fold(0.0, f64::max);
+    if max > 1e6 || filtered.iter().any(|&x| !x.is_finite()) { return; }
+    for (i, &s) in filtered.iter().enumerate() {
+        freqs[i] = s;
     }
+}
 
-    return freqs;
+/// lpc_cond
+/// Checks if the LPC will be effective
+/// Parameters: LPC coefficients
+/// Returns: true if effective, false otherwise
+fn lpc_cond(freqs: &[f64]) -> bool {
+    let geo_mean = (freqs.iter().map(|&x| (x.abs() + 1e-10).ln()).sum::<f64>() / freqs.len() as f64).exp();
+    let arith_mean = freqs.iter().map(|&x| x.abs()).sum::<f64>() / freqs.len() as f64;
+    return geo_mean / (arith_mean + 1e-10) < 0.5;
 }
