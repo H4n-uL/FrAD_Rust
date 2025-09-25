@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.11 - 2025. 8. 10.
+V1.12 - 2025. 9. 25.
 
 ## Definition of Terms
 
@@ -47,7 +47,7 @@ When distributing or implementing FrAD, the following must be observed.
 ### Implementation
 
 - Contributors or third-party developers are welcome to create software compatible with the Work and use it for any purpose, non-commercial or commercial. The Original Author does not require any royalties for this.
-- Any use of the Work in your implementation, or any apparent ambiguity in the interpretation of the Work as stated by the Work, must be under the Archivist Licence and must comply with its terms.
+- Software that creates a set of frames containing unique identifiers from the Work must comply with the Work's instructions.
 - The Project Lead reserves the right to certify compliance with the format. The Project Lead may, in some cases, request source code from the Developer, which the Developer reserves the right to refuse.
 - After review of the source code, the developer may request removal of the source code, limited to the original code provided, in which case the Project Lead loses access to the source code and must immediately destroy all copies.
 
@@ -75,6 +75,7 @@ After confirming that one or more of the conditions below has been met, the Orig
 2. You are not required to credit the Original Author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the Original Author and the names of the Contributors.
 3. Commercial use of official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
 4. Obfuscation of End-Consumer Products is strictly prohibited. If required, obfuscation may be applied to electronic goods only, in which case a decryption tool and decryption key (which may be omitted if a decryption key is not required) must be provided with the accompanying user manual. The output format of the decryption tool must be compatible with official documentation and easily permanently preserved by the End-Consumer.
+5. Creating or distributing a set of frames containing unique identifiers from the Work but causing the official implementation to fail to interpret or error is also strictly prohibited.
 
 Once the grace period has elapsed without remedying the breach, corresponding legal action will be taken under all applicable laws, including the following laws.
 
@@ -82,6 +83,7 @@ Once the grace period has elapsed without remedying the breach, corresponding le
 2. Criminal Act Articles 231 and 232, Copyright Act Article 137 Paragraph 1, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1, Unfair Competition Prevention and Trade Secret Protection Act Article 2 Paragraph 1 Subparagraph (a)
 3. Criminal Act Article 347, Act on the Consumer Protection in Electronic Commerce Article 21, Act on Fair Labeling and Advertising Article 3 Paragraph 1 Subparagraph 1
 4. Criminal Act Article 347 and 355 Paragraph 2, Framework Act on Consumers Article 19 Paragraph 2, Act on the Consumer Protection in Electronic Commerce Article 21
+5. Criminal Act Articles 347 and 366, Framework Act on Consumers Article 19 Paragraph 2, Act on Promotion of Information and Communications Network Utilization and Information Protection Article 48 Paragraph 2
 
 ## Disclaimer
 
