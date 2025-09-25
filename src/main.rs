@@ -57,7 +57,6 @@ fn main() {
             else if tools::cli::PROFILES_OPT.contains(&input.as_str()) { PROFILES_HELP }
             else { GENERAL_HELP }.replace("{frad}", executable)
         );
-        println!();
     }
     else {
         eprintln!("Fourier Analogue-in-Digital Rust Master");
