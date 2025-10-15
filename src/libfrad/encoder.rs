@@ -108,20 +108,18 @@ impl Encoder {
         }
 
         loop {
-            // if !flush {
-            //     let rng = &mut rand::rng();
-            //     let prf = *AVAILABLE.choose(rng).unwrap();
-            //     let prm = EncoderParams {
-            //         profile: prf, srate: self.srate,
-            //         channels: self.channels, bit_depth: *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
-            //         frame_size: if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
-            //     };
-            //     self.set_profile(prm).unwrap();
-            //     self.set_loss_level(rng.random_range(0.125..10.0));
-            //     let ecc_data = rng.random_range(1..255);
-            //     self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
-            //     self.set_overlap_ratio(rng.random_range(2..256));
-            // }
+            // let rng = &mut rand::rng();
+            // let prf = *AVAILABLE.choose(rng).unwrap();
+            // let prm = EncoderParams {
+            //     profile: prf, srate: self.srate,
+            //     channels: self.channels, bit_depth: *BIT_DEPTHS[prf as usize].iter().filter(|&&x| x != 0).choose(rng).unwrap(),
+            //     frame_size: if COMPACT.contains(&prf) { *compact::SAMPLES.choose(rng).unwrap() } else { rng.random_range(128..32768) }
+            // };
+            // self.set_profile(prm).unwrap();
+            // self.set_loss_level(rng.random_range(0.125..10.0));
+            // let ecc_data = rng.random_range(1..255);
+            // self.set_ecc(rng.random_bool(0.5), [ecc_data, rng.random_range(0..(255 - ecc_data))]);
+            // self.set_overlap_ratio(rng.random_range(2..256));
 
             // 0. Set read length in samples
             let overlap_len = self.overlap_fragment.len() / self.channels as usize;
@@ -237,7 +235,10 @@ impl Encoder {
         Self::verify_frame_size(args.profile, args.frame_size)?;
 
         let mut res = EncodeResult::new(Vec::new(), 0);
-        if self.channels != args.channels || self.srate != args.srate {
+        if {
+            self.channels != 0 && self.channels != args.channels
+            || self.srate != 0 && self.srate != args.srate
+        } {
             res = self.flush();
         }
 
@@ -254,7 +255,9 @@ impl Encoder {
     pub fn set_channels(&mut self, channels: u16) -> Result<EncodeResult, String> {
         Self::verify_channels(self.get_profile(), channels)?;
         let mut res = EncodeResult::new(Vec::new(), 0);
-        if self.channels != channels { res = self.flush(); }
+        if self.channels != 0 && self.channels != channels {
+            res = self.flush();
+        }
         self.channels = channels;
         return Ok(res);
     }
@@ -262,7 +265,7 @@ impl Encoder {
     pub fn set_srate(&mut self, srate: u32) -> Result<EncodeResult, String> {
         Self::verify_srate(self.get_profile(), srate)?;
         let mut res = EncodeResult::new(Vec::new(), 0);
-        if self.srate != srate { res = self.flush(); }
+        if self.srate != 0 && self.srate != srate { res = self.flush(); }
         self.srate = srate;
         return Ok(res);
     }
