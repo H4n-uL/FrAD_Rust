@@ -5,7 +5,7 @@
 
 // signatures
 pub const SIGNATURE: [u8; 4] = [0x66, 0x52, 0x61, 0x64];
-pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x97];
+pub const FRM_SIGN: [u8; 4] = [0xff, 0xd0, 0xd2, 0x98];
 
 // CRC Table sizes
 const TABLE_SIZE_CRC32: usize = 16;
