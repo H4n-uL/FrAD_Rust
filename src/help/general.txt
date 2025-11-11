@@ -1,7 +1,7 @@
 ------------------------------- Available actions ------------------------------
 
-    encode     | Encode any audio formats to FrAD    (alias: enc)
-    decode     | Encode FrAD to any audio formats    (alias: dec)
+    encode     | Encode PCM audio into FrAD          (alias: enc)
+    decode     | Decode FrAD into PCM audio          (alias: dec)
     repair     | Enable ECC protection / Repair file (alias: ecc)
     play       | Play a FrAD file or stream          (alias: p)
     meta       | Edit metadata of a FrAD file        (alias: metadata)
