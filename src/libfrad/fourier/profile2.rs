@@ -1,6 +1,6 @@
 //!                              FrAD Profile 2                              !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: FrAD Profile 2 encoding and decoding core
 //! Dependencies: miniz_oxide
 

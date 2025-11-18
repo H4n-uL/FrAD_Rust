@@ -7,7 +7,7 @@ members = [
 [package]
 name = "frad"
 version = "0.0.0"
-authors = ["HaמuL"]
+authors = ["HaƞuL"]
 license = "Archivist Licence"
 edition = "2024"
 

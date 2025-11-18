@@ -1,6 +1,6 @@
 //!                                Bitconvert                                !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Bitstream <-> Byte array converter
 
 use alloc::vec::Vec;

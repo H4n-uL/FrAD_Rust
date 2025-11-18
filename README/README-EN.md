@@ -87,4 +87,4 @@ Once the pull request is created, we'll review it and give you feedback or merge
 
 ## Developer information
 
-HaמuL, <jun061119@proton.me>
+HaƞuL, <jun061119@proton.me>

@@ -1,6 +1,6 @@
 //!                               Process Info                               !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Process information container
 
 use std::{collections::HashMap, time::Instant};

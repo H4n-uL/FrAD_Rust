@@ -1,6 +1,6 @@
 //!                             Error Correction                             !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Error correction tools
 
 mod reedsolo;

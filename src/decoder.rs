@@ -1,6 +1,6 @@
 //!                            Decode application                            !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Decoder implementation example
 
 use libfrad::{DecodeResult, Decoder, ASFH, BIT_DEPTHS};

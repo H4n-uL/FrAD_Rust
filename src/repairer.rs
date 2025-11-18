@@ -1,6 +1,6 @@
 //!                            Repair application                            !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Repairer implementation example
 
 use libfrad::Repairer;

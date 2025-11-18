@@ -1,6 +1,6 @@
 //!                               Common tools                               !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Common tools for FrAD
 
 // signatures

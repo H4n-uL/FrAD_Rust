@@ -10,7 +10,7 @@ V1.12 - 2025. 9. 25.
 
 "Public repository" means a repository that is publicly available on a source code repository hosting site, such as GitHub.
 
-"Original Author" means HaמuL, the original initiator and primary maintainer of the project.
+"Original Author" means HaƞuL, the original initiator and primary maintainer of the project.
 
 "Project Lead" means the person with final decision-making authority for the project, either the person appointed by the Original Author or the Project Lead.
 
@@ -97,4 +97,4 @@ In case of a dispute between the Original Author and the consumer, or any violat
 
 ## Developer information
 
-HaמuL, <jun061119@proton.me>
+HaƞuL, <jun061119@proton.me>

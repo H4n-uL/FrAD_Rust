@@ -1,6 +1,6 @@
 //!                      Fast Discrete Cosine Transform                      !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Fast Discrete Cosine Transform core
 //! Dependencies: palmfft
 

@@ -1,6 +1,6 @@
 //!                             Bytearray packer                             !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Packer and unpacker for floats <-> byte arrays
 //! Dependencies: half
 

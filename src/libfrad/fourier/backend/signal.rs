@@ -1,6 +1,6 @@
 //!                             Signal Processor                             !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Library for signal processing
 //! Dependencies: palmfft
 

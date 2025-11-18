@@ -1,6 +1,6 @@
 //!                               PCM Processor                              !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: PCM processing utilities
 //! Dependencies: half
 

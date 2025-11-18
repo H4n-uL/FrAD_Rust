@@ -1,6 +1,6 @@
 //!                                  Header                                  !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Metadata modificator for FrAD
 
 use libfrad::{common::{SIGNATURE, FRM_SIGN}, head};

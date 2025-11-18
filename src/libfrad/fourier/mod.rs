@@ -1,6 +1,6 @@
 //!                                  Fourier                                 !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Main Fourier tools
 
 pub mod profile0;

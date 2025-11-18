@@ -1,6 +1,6 @@
 //!                          AAPM@Audio-8151 Library                         !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Fourier Analogue-in-Digital Rust Master Library
 
 #![no_std]

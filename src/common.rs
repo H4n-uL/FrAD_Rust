@@ -1,6 +1,6 @@
 //!                         Common application tools                         !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Common tools for FrAD Executable
 
 use std::{fs::File, io::{ErrorKind, IsTerminal, Read, Write}, path::Path, process::exit};

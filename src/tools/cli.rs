@@ -1,6 +1,6 @@
 //!                                CLI Parser                                !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Simple CLI parser for FrAD Executable
 
 use crate::tools::pcmproc::PCMFormat;

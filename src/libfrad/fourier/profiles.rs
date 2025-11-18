@@ -1,6 +1,6 @@
 //!                        FrAD Profiles configuration                       !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Configuration for each FrAD profiles and profiles group
 
 // LOSSLESS profiles

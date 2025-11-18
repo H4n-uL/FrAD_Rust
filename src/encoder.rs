@@ -1,6 +1,6 @@
 //!                            Encode application                            !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Encoder implementation example
 
 use libfrad::{head, profiles::LOSSLESS, Encoder, EncoderParams};

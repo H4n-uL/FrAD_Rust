@@ -1,6 +1,6 @@
 //!                                ASFH Tools                                !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Audio Stream Frame Header tools
 
 use crate::{

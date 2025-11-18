@@ -1,6 +1,6 @@
 //!                              Library Backend                             !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Backend for FrAD Library
 
 pub mod bitcvt;

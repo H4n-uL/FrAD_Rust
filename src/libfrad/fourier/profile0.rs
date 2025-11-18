@@ -1,6 +1,6 @@
 //!                              FrAD Profile 0                              !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: FrAD Profile 0 encoding and decoding core
 /// Dependencies: half
 

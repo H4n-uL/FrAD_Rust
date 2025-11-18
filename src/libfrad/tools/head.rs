@@ -1,6 +1,6 @@
 //!                            Header Configurator                           !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: FrAD Header Builder and Parser
 
 use crate::{backend::SplitFront, common::SIGNATURE};

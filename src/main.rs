@@ -1,6 +1,6 @@
 //!                        AAPM@Audio-8151 Executable                        !//
 //!
-//! Copyright 2024-2025 HaמuL
+//! Copyright 2024-2025 HaƞuL
 //! Description: Fourier Analogue-in-Digital Rust Master
 
 mod tools; mod common;
@@ -10,7 +10,7 @@ use std::{env, path::Path};
 
 const BANNER: &str =
 "                     Fourier Analogue-in-Digital Rust Master
-                             Original Author - HaמuL
+                             Original Author - HaƞuL
 ";
 
 const GENERAL_HELP:    &str = include_str!("help/general.txt");
