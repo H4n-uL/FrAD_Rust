@@ -64,23 +64,23 @@ impl Encoder {
     }
 
     /// overlap
-    /// Overlaps the current frame with the overlap fragment, Flush flag
-    /// Parameters: Current frame, Overlap fragment, Overlap rate, Profile
-    /// Returns: Overlapped frame, Next overlap fragment
-    fn overlap(&mut self, mut frame: Vec<f64>, flush: bool) -> Vec<f64> {
+    /// Overlaps the current frame with the overlap fragment from the previous frame
+    /// Parameters: Current frame, Overlap read length, Flush flag
+    /// Returns: Overlapped frame
+    fn overlap(&mut self, mut frame: Vec<f64>, overlap_read: usize, flush: bool) -> Vec<f64> {
         let channels = self.channels as usize;
         // 1. If overlap fragment is not empty,
         if !self.overlap_fragment.is_empty() {
             // prepent the fragment to the frame
-            frame.prepend(&self.overlap_fragment);
+            frame.prepend(&self.overlap_fragment.split_front(overlap_read));
         }
 
         // 2. If overlap is enabled and profile uses overlap
-        let mut next_overlap = Vec::new();
         let next_flag = {
             !flush &&
             COMPACT.contains(&self.asfh.profile) &&
-            self.asfh.overlap_ratio > 1
+            self.asfh.overlap_ratio > 1 &&
+            self.overlap_fragment.is_empty()
         };
 
         if next_flag {
@@ -89,9 +89,8 @@ impl Encoder {
             // Samples * (Overlap ratio - 1) / Overlap ratio
             // e.g., ([2048], overlap_ratio=16) -> [1920, 128]
             let cutoff = (frame.len() / channels) * (overlap_ratio - 1) / overlap_ratio;
-            next_overlap = frame[cutoff * channels..].to_vec();
+            self.overlap_fragment = frame[cutoff * channels..].to_vec();
         }
-        self.overlap_fragment = next_overlap;
         return frame;
     }
 
@@ -123,11 +122,12 @@ impl Encoder {
 
             // 0. Set read length in samples
             let overlap_len = self.overlap_fragment.len() / self.channels as usize;
-            let mut read_len = (self.fsize as usize).max(overlap_len);
+            let mut read_len = self.fsize as usize;
             if COMPACT.contains(&self.asfh.profile) {
                 read_len = compact::get_samples_min_ge(read_len as u32) as usize;
             }
-            read_len -= overlap_len;
+            let overlap_read = overlap_len.min(read_len);
+            read_len -= overlap_read;
             read_len *= self.channels as usize;
             if self.buffer.len() < read_len && !flush { break; }
 
@@ -136,7 +136,7 @@ impl Encoder {
             let samples_in_frame = frame.len() / self.channels as usize;
 
             // 2. Overlap the frame with the previous overlap fragment
-            frame = self.overlap(frame, flush);
+            frame = self.overlap(frame, overlap_read, flush);
             if frame.is_empty() {
                 // If this frame is empty, break
                 ret.extend(self.asfh.force_flush());
