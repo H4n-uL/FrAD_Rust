@@ -72,7 +72,7 @@ impl Encoder {
         // 1. If overlap fragment is not empty,
         if !self.overlap_fragment.is_empty() {
             // prepent the fragment to the frame
-            frame.prepend(&self.overlap_fragment.split_front(overlap_read));
+            frame.prepend(&self.overlap_fragment.split_front(overlap_read * channels));
         }
 
         // 2. If overlap is enabled and profile uses overlap
