@@ -2,7 +2,7 @@
 
 Archivist Licence - Fourier Analogue-in-Digital
 
-V1.12 - 2025. 9. 25.
+V1.13 - 2025. 12. 10.
 
 ## Definition of Terms
 
@@ -74,8 +74,8 @@ After confirming that one or more of the conditions below has been met, the Orig
 1. Standalone commercial use of public repository without any enhancements is prohibited. Honestly, even the craziest of crazies wouldn't buy some grotesque source that might have malware instead of the public repository, but it's prohibited anyway.
 2. You are not required to credit the Original Author of the project. However, third parties who did not contribute are prohibited from claiming copyright in the Work. If you have made contributions, you may list the Original Author and the names of the Contributors.
 3. Commercial use of official documents is strictly prohibited. All official documents must be distributed free of charge and made accessible to all consumers.
-4. Obfuscation of End-Consumer Products is strictly prohibited. If required, obfuscation may be applied to electronic goods only, in which case a decryption tool and decryption key (which may be omitted if a decryption key is not required) must be provided with the accompanying user manual. The output format of the decryption tool must be compatible with official documentation and easily permanently preserved by the End-Consumer.
-5. Creating or distributing a set of frames containing unique identifiers from the Work but causing the official implementation to fail to interpret or error is also strictly prohibited.
+4. Obfuscation of End-Consumer Products is strictly prohibited. If required, obfuscation may be applied to electronic goods only, in which case a decryption tool and decryption key (which may be omitted if a decryption key is not required) must be provided with the accompanying user manual. The output format of the decryption tool must be compatible with official documentation and easily permanently preserved by the End-Consumer. However, where the maintenance of confidentiality takes precedence over the disclosure and preservation of information such as personal data, security information, privacy, trade secrets, or state secrets, the obligation to provide decryption keys and algorithms shall be exempted. This exception shall not be misused for the purposes of copyright protection or consumer data control.
+5. The distribution of a set of frames containing the unique identifier of a work created from a modified standard, or a modified standard itself, with the intent to mislead others into believing it is fully compatible with the standard, is also strictly prohibited, even if it incorporates proprietary specifications not defined in the official standard. However, this does not apply to incompatibilities arising from mistakes.
 
 Once the grace period has elapsed without remedying the breach, corresponding legal action will be taken under all applicable laws, including the following laws.
 
