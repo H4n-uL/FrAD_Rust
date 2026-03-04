@@ -1,6 +1,6 @@
 //!                                  Encoder                                 !//
 //!
-//! Copyright 2024-2025 HaƞuL
+//! Copyright 2024-2026 HaƞuL
 //! Description: FrAD encoder
 
 use crate::{
@@ -155,7 +155,7 @@ impl Encoder {
             };
 
             // 4. Create Reed-Solomon error correction code
-            if self.asfh.ecc { frad = ecc::encode(frad, self.asfh.ecc_ratio); }
+            if self.asfh.ecc { frad = ecc::encode(&frad, self.asfh.ecc_ratio); }
 
             // 5. Write the frame to the buffer
             (self.asfh.bit_depth_index, self.asfh.channels, self.asfh.fsize, self.asfh.srate) = (bit_depth_index, channels, fsize, srate);

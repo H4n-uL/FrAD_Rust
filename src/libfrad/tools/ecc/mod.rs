@@ -1,6 +1,6 @@
 //!                             Error Correction                             !//
 //!
-//! Copyright 2024-2025 HaƞuL
+//! Copyright 2024-2026 HaƞuL
 //! Description: Error correction tools
 
 mod reedsolo;
@@ -12,7 +12,7 @@ use alloc::vec::Vec;
 /// Encodes data w. Reed-Solomon ECC
 /// Parameters: Data, ECC ratio
 /// Returns: Encoded data
-pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
+pub fn encode(data: &[u8], ratio: [u8; 2]) -> Vec<u8> {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let rs = ReedSolomon::new(data_size, parity_size);
 
@@ -25,17 +25,25 @@ pub fn encode(data: Vec<u8>, ratio: [u8; 2]) -> Vec<u8> {
 /// Decodes data and corrects errors w. Reed-Solomon ECC
 /// Parameters: Data, ECC ratio
 /// Returns: Decoded data
-pub fn decode(data: Vec<u8>, ratio: [u8; 2], repair: bool) -> Vec<u8> {
+pub fn decode(data: &[u8], ratio: [u8; 2], repair: bool) -> (Vec<u8>, bool) {
     let (data_size, parity_size) = (ratio[0] as usize, ratio[1] as usize);
     let block_size = data_size + parity_size;
     let rs = ReedSolomon::new(data_size, parity_size);
 
-    return data.chunks(block_size).map(|chunk| {
+    let mut err = false;
+    let res = data.chunks(block_size).map(|chunk| {
         if repair {
             match rs.decode(chunk) {
                 Ok(chunk) => chunk.0,
-                Err(_) => alloc::vec![0; chunk.len() - parity_size]
+                Err(_) => {
+                    err = true;
+                    alloc::vec![0; chunk.len() - parity_size]
+                }
             }
-        } else { chunk.iter().take(chunk.len() - parity_size).cloned().collect() }
+        } else {
+            chunk.iter().take(chunk.len() - parity_size).cloned().collect()
+        }
     }).flatten().collect();
+
+    return (res, err);
 }

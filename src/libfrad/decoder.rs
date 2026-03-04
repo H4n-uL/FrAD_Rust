@@ -1,6 +1,6 @@
 //!                                  Decoder                                 !//
 //!
-//! Copyright 2024-2025 HaƞuL
+//! Copyright 2024-2026 HaƞuL
 //! Description: FrAD decoder
 
 use crate::{
@@ -136,7 +136,7 @@ impl Decoder {
                         LOSSLESS.contains(&self.asfh.profile) && crc32(0, &frad) != self.asfh.crc32 ||
                         COMPACT.contains(&self.asfh.profile) && crc16_ansi(0, &frad) != self.asfh.crc16
                     );
-                    frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
+                    frad = ecc::decode(&frad, self.asfh.ecc_ratio, repair).0;
                 }
 
                 // 1.3. Decode the FrAD frame

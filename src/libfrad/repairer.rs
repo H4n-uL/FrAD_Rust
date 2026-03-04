@@ -1,6 +1,6 @@
 //!                                 Repairer                                 !//
 //!
-//! Copyright 2024-2025 HaƞuL
+//! Copyright 2024-2026 HaƞuL
 //! Description: FrAD repairer
 
 use crate::{
@@ -78,18 +78,25 @@ impl Repairer {
                 }
 
                 // 1.1. Split out the frame data
-                let mut frad: Vec<u8> = self.buffer.split_front(self.asfh.frmbytes as usize);
+                let mut frad = self.buffer.split_front(self.asfh.frmbytes as usize);
 
                 // 1.2. Correct the error if ECC is enabled
                 if self.asfh.ecc {
                     let repair = // and if CRC mismatch
                         LOSSLESS.contains(&self.asfh.profile) && crc32(0, &frad) != self.asfh.crc32 ||
                         COMPACT.contains(&self.asfh.profile) && crc16_ansi(0, &frad) != self.asfh.crc16;
-                    frad = ecc::decode(frad, self.asfh.ecc_ratio, repair);
+                    let eccdec = ecc::decode(&frad, self.asfh.ecc_ratio, repair);
+
+                    // If ECC decoding failed, flush the ASFH and return
+                    if eccdec.1 {
+                        ret.extend(self.asfh.buffer.clone());
+                        ret.extend(frad);
+                        continue;
+                    }
                 }
 
                 // 1.3. Create Reed-Solomon error correction code
-                frad = ecc::encode(frad, self.ecc_ratio);
+                frad = ecc::encode(&frad, self.ecc_ratio);
                 (self.asfh.ecc, self.asfh.ecc_ratio) = (true, self.ecc_ratio);
 
                 // 1.4. Write the frame data to the buffer
