@@ -1,6 +1,6 @@
 //!                            Decode application                            !//
 //!
-//! Copyright 2024-2025 HaƞuL
+//! Copyright 2024-2026 HaƞuL
 //! Description: Decoder implementation example
 
 use libfrad::{DecodeResult, Decoder, ASFH, BIT_DEPTHS};
@@ -8,22 +8,37 @@ use crate::{
     common::{self, check_overwrite, get_file_stem, read_exact, write_safe, PIPEIN, PIPEOUT},
     tools::{cli::CliParams, pcmproc::PCMProcessor, process::ProcessInfo}
 };
-use std::{fs::File, io::{Read, Write}, path::Path, process::exit, thread::sleep, time::Duration};
-use rodio::{buffer::SamplesBuffer, OutputStreamBuilder, Sink};
+use core::{num::{NonZeroU16, NonZeroU32}, time::Duration};
+use std::{fs::File, io::{Read, Write}, path::Path, process::exit, thread::sleep};
+use rodio::{DeviceSinkBuilder, Player, buffer::SamplesBuffer};
 use same_file::is_same_file;
 
 /// write
-/// Writes PCM data to file or sink
-/// Parameters: Output file/sink, PCM data, PCM format, Sample rate
+/// Writes PCM data to file or player
+/// Parameters: Output file/player, PCM data, PCM format, Sample rate
 /// Parameters: Output file, PCM data
 /// Returns: None
-fn write(file: &mut Box<dyn Write>, sink: Option<&mut Sink>, dec: &DecodeResult, pcmproc: &PCMProcessor) {
-    if dec.is_empty() { return; }
-    match sink {
-        Some(s) => s.append(SamplesBuffer::new(
-                dec.channels(), dec.srate(),
-                dec.pcm().iter().map(|&x| x as f32).collect::<Vec<f32>>()
-            )),
+fn write(file: &mut Box<dyn Write>, player: Option<&mut Player>, dec: &DecodeResult, pcmproc: &PCMProcessor) {
+    if dec.is_empty() {
+        return;
+    }
+
+    let (nzchnl, nzsrate) = match (
+        NonZeroU16::new(dec.channels()),
+        NonZeroU32::new(dec.srate()))
+    {
+        (Some(chnl), Some(srate)) => (chnl, srate),
+        _ => { return; }
+    };
+
+    match player {
+        Some(p) => p.append(
+            SamplesBuffer::new(
+                nzchnl, nzsrate,
+                dec.pcm().iter().map(|&x| x as f32)
+                    .collect::<Vec<f32>>()
+            )
+        ),
         None => {
             write_safe(file, &pcmproc.from_f64(dec.pcm()));
         }
@@ -83,15 +98,16 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     let mut readfile: Box<dyn Read> = if !rpipe { Box::new(File::open(rfile).unwrap()) } else { Box::new(std::io::stdin()) };
     let mut writefile: Box<dyn Write> = if !wpipe { Box::new(File::create(wfile).unwrap()) } else { Box::new(std::io::stdout()) };
 
-    let (_stream, mut sink) = if play {
-        let mut stream = OutputStreamBuilder::open_default_stream().unwrap();
+    let (_stream, mut player) = if play {
+        let mut stream = DeviceSinkBuilder::open_default_sink()
+            .expect("open default audio stream");
         stream.log_on_drop(false);
-        let sink = Sink::connect_new(stream.mixer());
-        (Some(stream), Some(sink))
+        let player = Player::connect_new(stream.mixer());
+        (Some(stream), Some(player))
     } else { (None, None) };
 
     params.speed = if params.speed > 0.0 { params.speed } else { 1.0 };
-    sink.as_mut().map(|s| { s.set_speed(params.speed as f32); params.loglevel = 0; });
+    player.as_mut().map(|p| { p.set_speed(params.speed as f32); params.loglevel = 0; });
 
     let mut decoder = Decoder::new(params.enable_ecc);
     let (mut no, mut procinfo) = (0, ProcessInfo::new());
@@ -100,13 +116,13 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
         let mut buf = vec![0u8; 32768];
         let readlen = read_exact(&mut readfile, &mut buf);
         if readlen == 0 && decoder.is_empty() {
-            if sink.as_ref().map_or(true, |s| s.empty()) { break; }
+            if player.as_ref().map_or(true, |p| p.empty()) { break; }
             sleep(Duration::from_millis(10));
         }
 
         let decoded = decoder.process(&buf[..readlen]);
         procinfo.update(readlen, decoded.samples(), decoded.srate());
-        write(&mut writefile, sink.as_mut(), &decoded, &pcmproc);
+        write(&mut writefile, player.as_mut(), &decoded, &pcmproc);
         logging_decode(decoder.get_asfh(), &procinfo, params.loglevel, false);
 
         if decoded.crit() && !wpipe {
@@ -119,8 +135,8 @@ pub fn decode(rfile: String, mut params: CliParams, play: bool) {
     }
     let decoded = decoder.flush();
     procinfo.update(0, decoded.samples(), decoded.srate());
-    write(&mut writefile, sink.as_mut(), &decoded, &pcmproc);
+    write(&mut writefile, player.as_mut(), &decoded, &pcmproc);
     logging_decode(decoder.get_asfh(), &procinfo, params.loglevel, true);
 
-    sink.map(|s| s.sleep_until_end());
+    player.map(|p| p.sleep_until_end());
 }
